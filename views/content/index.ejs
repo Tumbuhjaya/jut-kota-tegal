@@ -24,6 +24,7 @@
     <link href="<%= rooturl %>/plugins/slick/slick.css" rel="stylesheet">
     <link href="<%= rooturl %>/plugins/slick/slick-theme.css" rel="stylesheet">
     
+    
     <script src="<%= rooturl %>/javascripts/template/jquery.min.js"></script>
 
     <!-- End Plugins This Page -->
@@ -35,14 +36,134 @@
         <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
     <![endif]-->
     <style type="text/css">
-        
+
     </style>
 </head>
 
 <body>
     <% include ../template/header.ejs %>
+    <!-- ============================================
+    HEADER / NAVBAR
+    ============================================ -->
+    <header>
+        <nav class="tech-navbar" id="techNavbar">
+            <div class="d-flex align-items-center justify-content-center flex-wrap" style="background-color: ;">
+                <!-- Logo -->
+                <a href="#" class="tech-logo" title="TechNova - Beranda">
+                    <!-- <div class="tech-logo-icon">
+                        <i class="fas fa-microchip"></i>
+                    </div> -->
+                    <div>
+                         <span class="tech-logo-sub animate-on-load fade-left seq-1" style="text-align: center;">PEMERINTAH KOTA TEGAL</span>
+                        <span class="tech-logo-text animate-on-load fade-right seq-2" style="text-align: center;">DINAS PEKERJAAN UMUM <span>DAN PENATAAN RUANG</span></span>
+                        <!-- <span class="tech-logo-sub">Database Jaringan Utilitas Telekomunikasi</span> -->
+                    </div>
+                </a>
 
-     <% include ../template/footer.ejs %>
+                <!-- Menu Desktop -->
+                
+
+                <!-- Trigger Button (Hamburger) -->
+                <!-- <button class="btn-offcanvas-trigger" id="btnToggleOffcanvas"
+                    aria-label="Toggle Sidebar Menu"
+                    title="Buka / Tutup Menu"
+                    onclick="toggleOffcanvas()">
+                    <div class="hamburger-line"></div>
+                    <div class="hamburger-line"></div>
+                    <div class="hamburger-line"></div>
+                </button> -->
+            </div>
+        </nav>
+    </header>
+
+<!-- ============================================
+MAIN CONTENT / HERO SECTION
+============================================ -->
+<main class="main-content" id="beranda">
+    <div class="container hero-section">
+        <div class="row align-items-center">
+            <div class="col-lg-7">
+                <!-- Badge -->
+                <div class="hero-badge animate-on-load fade-up seq-3">
+                    <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
+                    Geographic Information System (GIS)
+                </div>
+
+                <!-- Title -->
+                <h1 class="hero-title animate-on-load fade-left seq-4">
+                    Selamat Datang di
+                    <span class="gradient-text">Database Jaringan Utilitas Telekomunikasi</span>
+                    <br>
+                    Kota Tegal
+                </h1>
+
+                <p class="hero-description animate-on-load fade-down seq-5">
+                    Lorem ipsum dolor sit, amet consectetur adipisicing elit. Non tenetur officia voluptatum, accusantium corrupti aperiam aut nisi et aspernatur. Ab laboriosam expedita magni iure quod dicta laborum tenetur atque tempore? Quo quaerat deserunt quae? Itaque culpa veniam dolores provident perspiciatis non reprehenderit, sed assumenda accusamus quas facilis, recusandae possimus minus!
+                </p>
+
+                
+
+                <!-- Description -->
+                <!-- <p class="hero-description">
+                    TechNova adalah platform teknologi revolusioner yang dirancang untuk
+                    mengakselerasi transformasi digital Anda. Kami menyediakan
+                    <strong>solusi cerdas</strong> berbasis data, analitik real-time,
+                    dan infrastruktur cloud yang aman untuk membangun ekosistem digital
+                    yang <strong>tangguh dan futuristik</strong>.
+                </p> -->
+                <!-- <p class="hero-description" style="font-size: 0.95rem;">
+                    Jelajahi berbagai fitur unggulan kami, mulai dari manajemen data
+                    terpadu hingga visualisasi statistik yang interaktif. Dengan antarmuka
+                    yang intuitif dan teknologi mutakhir, TechNova siap menjadi mitra
+                    terpercaya dalam perjalanan digital Anda.
+                </p> -->
+
+                <!-- Actions -->
+                <div class="hero-actions">
+                    <button class="btn-tech-primary animate-on-load zoom-in seq-11" onclick="scrollToContent('#data')">
+                        <i class="fas fa-rocket mr-2"></i> Mulai Jelajah
+                    </button>
+                    <!-- <button class="btn-tech-outline" onclick="scrollToContent('#statistik')">
+                        <i class="fas fa-chart-bar mr-2"></i> Lihat Statistik
+                    </button> -->
+                </div>
+            </div>
+
+            <!-- Right side decorative element (hidden on mobile) -->
+            <div class="col-lg-5 d-none d-lg-block">
+                <div style="width: 100%;display: flex;justify-content: center;align-items: center;">
+                    <div class="feature-card animate-on-load flip-in seq-6" onclick="scrollToContent('#data')">
+                        <div class="card-icon">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <h5>Data</h5>
+                        <p>Menampilkan data hasil survey yang diambil dari kondisi real dilapangan dalam bentuk tabular.</p>
+                    </div>
+                    
+                    <div class="feature-card animate-on-load flip-in seq-7" onclick="scrollToContent('#data')">
+                        <div class="card-icon ">
+                            <i class="fas fa-globe-asia"></i>
+                        </div>
+                        <h5>Peta Interaktif</h5>
+                        <p>Menampilkan data hasil survey yang diambil dari kondisi real dilapangan dalam bentuk GIS.</p>
+                    </div>
+                </div>
+
+                <div style="width: 100%;display: flex;justify-content: center;align-items: center;">
+                    <div class="feature-card animate-on-load flip-in seq-8" onclick="scrollToContent('#statistik')">
+                        <div class="card-icon">
+                            <i class="fas fa-chart-pie"></i>
+                        </div>
+                        <h5>Statistik</h5>
+                        <p>Menampilkan visualisasi data dinamis dengan grafik interaktif.</p>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+    <% include ../template/footer.ejs %>
     <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
     <script src="<%= rooturl %>/javascripts/template/bootstrap.bundle.js"></script>
     <!-- Plugins This Page -->
@@ -54,6 +175,39 @@
     <!-- End Plugins This Page -->
     <script type="text/javascript">
         var rooturl = ''
+        let data_table  =$('#list-data').DataTable({
+            "language": {
+                "sProcessing":   "Sedang memproses...",
+                "sLengthMenu":   "_MENU_",
+                "sZeroRecords":  "Tidak ditemukan data yang sesuai",
+                "sInfo":         "Menampilkan _START_ sampai _END_ dari _TOTAL_ entri",
+                "sInfoEmpty":    "Menampilkan 0 sampai 0 dari 0 entri",
+                "sInfoFiltered": "(disaring dari _MAX_ entri keseluruhan)",
+                "sInfoPostFix":  "",
+                "sUrl":          "",
+                "oPaginate": {
+                    "sFirst":    "Pertama",
+                    "sPrevious": "Sebelumnya",
+                    "sNext":     "Selanjutnya",
+                    "sLast":     "Terakhir"
+                }
+            },
+            // "processing": true,
+            // "ajax":  `${rooturl}`,
+            // "columns": [
+            //     { "data": null},
+            // ],
+            // "columnDefs": [
+            //     { "width": "40px", "targets": 0},
+            // ],
+        });
+
+        data_table.on( 'draw.dt', function () {
+            let PageInfo = $('#list-data').DataTable().page.info();
+            data_table.column(0, { page: 'current' }).nodes().each( function (cell, i) {
+                cell.innerHTML = i + 1 + PageInfo.start;
+            });
+        });
     </script>
 </body>
 </html>

@@ -31,6 +31,7 @@ var cek_login_all = require('./isine/login.js').cek_login_all;
 
 // FE
 var basic = require('./isine/basic.js');
+var peta_spasial = require('./isine/peta_spasial.js');
 
 // BO
 var manajemen_basic = require('./isine/manajemen_basic.js');
@@ -51,7 +52,7 @@ app.set('view engine', 'ejs');
 
 
 // all environments
-app.set('port', process.env.PORT || 8936);
+app.set('port', process.env.PORT || 1234);
 
 app.use(cors({
   origin: 'http://localhost:8100' // or your Ionic frontend domain
@@ -99,6 +100,7 @@ app.use('/uploadckeditor', fn);
 app.use('/upload_excel', upload_excel);
 // FE
 app.use('/basic', basic);
+app.use('/peta_spasial', peta_spasial);
 
 // BO
 app.use('/manajemen_basic', manajemen_basic);
