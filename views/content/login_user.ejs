@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<% let rooturl = ''; %>
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="shortcut icon" href="<%= rooturl %>/images/template/shortcut_icon.ico">
+    <title>Database Jaringan Utilitas Telekomunikasi Kota Tegal</title>
+
+    <link href="<%= rooturl %>/stylesheets/template/css/bootstrap.css" rel="stylesheet">
+    <link href="<%= rooturl %>/stylesheets/template/css/style.css" rel="stylesheet">
+
+
+    <!-- Plugin This Page --> 
+    <link rel="stylesheet" href="<%= rooturl %>/plugins/fontawesome-5/css/all.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@x.x.x/dist/select2-bootstrap4.min.css">
+    <link href="https://cdn.datatables.net/1.10.22/css/dataTables.bootstrap4.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/1.1.3/sweetalert.min.css">
+    <link href="<%= rooturl %>/plugins/slick/slick.css" rel="stylesheet">
+    <link href="<%= rooturl %>/plugins/slick/slick-theme.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Blinker:wght@100;200;300;400;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+    
+    
+    <script src="<%= rooturl %>/javascripts/template/jquery.min.js"></script>
+
+    <!-- End Plugins This Page -->
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    <style type="text/css">
+        :root {
+            --navy: #0d4aa2;
+            --royal: #0f44be;
+            --blue: #1256d7;
+            --bright: #1581ee;
+            --cyan: #17c3ff;
+            --dark: #0c1e35;
+            --gray: #64748b;
+
+            /* ✅ GRADIENT BARU — Royal Blue → Cyan, 135deg */
+            --gradient-main: linear-gradient(135deg,
+            #0d4aa2 0.000%,
+            #0f44be 25.000%,
+            #1256d7 50.000%,
+            #1581ee 75.000%,
+            #17c3ff 100.000%);
+        }
+
+        * { font-family: "Blinker", sans-serif; font-size: 18px; }
+
+        /* ================================================================
+            BODY — Gradient + Perspective Grid Tech
+            ================================================================ */
+        body {
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            padding: 20px 15px;
+            background: var(--gradient-main);
+            background-size: 200% 200%;
+            animation: gradientShift 15s ease infinite;
+            background-attachment: fixed;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        /* ============================================================
+            LAYER 1: PERSPECTIVE GRID (Tron Style)
+            ============================================================ */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; right: 0; bottom: 0; left: 0;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.4;
+            background-image:
+            repeating-linear-gradient(
+                0deg,
+                rgba(255, 255, 255, 0.55) 0px,
+                rgba(255, 255, 255, 0.55) 1px,
+                transparent 1px,
+                transparent 60px
+            ),
+            repeating-linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0.45) 0px,
+                rgba(255, 255, 255, 0.45) 1px,
+                transparent 1px,
+                transparent 60px
+            );
+            background-size: 60px 60px, 60px 60px;
+            background-position: center center;
+            transform: perspective(500px) rotateX(45deg);
+            transform-origin: center 70%;
+            animation: gridPerspective 20s linear infinite;
+            -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+            mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+        }
+
+        @keyframes gridPerspective {
+            from { background-position: center 0, center center; }
+            to { background-position: center 60px, center center; }
+        }
+
+        /* ============================================================
+            LAYER 2: GLOWING NODES
+            ============================================================ */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0; right: 0; bottom: 0; left: 0;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.55;
+            background-image:
+            radial-gradient(circle, #17c3ff 1.8px, transparent 1.8px),
+            radial-gradient(circle, rgba(255, 255, 255, 0.9) 1.2px, transparent 1.2px);
+            background-size: 60px 60px, 60px 60px;
+            background-position: 0 0, 30px 30px;
+            transform: perspective(500px) rotateX(45deg);
+            transform-origin: center 70%;
+            animation: gridPerspective 20s linear infinite,
+                    dotPulse 2.5s ease-in-out infinite;
+            -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+            mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+        }
+
+        @keyframes dotPulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.9; }
+        }
+
+        /* ============================================================
+            LAYER 3: FIBER OPTIC GLOW
+            ============================================================ */
+        .fiber-glow {
+            position: fixed;
+            top: 0; right: 0; bottom: 0; left: 0;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.35;
+            background:
+            linear-gradient(115deg, transparent 0%, transparent 40%, rgba(23, 195, 255, 0.4) 45%, rgba(23, 195, 255, 0.6) 48%, rgba(255, 255, 255, 0.7) 50%, rgba(13, 74, 162, 0.6) 52%, rgba(13, 74, 162, 0.4) 55%, transparent 60%, transparent 100%),
+            linear-gradient(115deg, transparent 0%, transparent 30%, rgba(13, 74, 162, 0.3) 35%, rgba(255, 255, 255, 0.5) 38%, rgba(23, 195, 255, 0.3) 42%, transparent 50%);
+            background-size: 300% 300%, 300% 300%;
+            background-position: 0% 0%, 100% 100%;
+            animation: fiberSweep 12s ease-in-out infinite;
+        }
+
+        @keyframes fiberSweep {
+            0%, 100% { background-position: 0% 0%, 100% 100%; }
+            50% { background-position: 100% 100%, 0% 0%; }
+        }
+
+        /* ============================================================
+            LAYER 4: PULSE NETWORK ORBS
+            ============================================================ */
+        .pulse-node {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(100px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .pulse-node-1 {
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, #17c3ff 0%, transparent 70%);
+            top: -180px; left: -180px;
+            opacity: 0.5;
+            animation: pulse 8s ease-in-out infinite;
+        }
+
+        .pulse-node-2 {
+            width: 450px; height: 450px;
+            background: radial-gradient(circle, #0d4aa2 0%, transparent 70%);
+            bottom: -150px; right: -150px;
+            opacity: 0.45;
+            animation: pulse 8s ease-in-out infinite;
+            animation-delay: 4s;
+        }
+
+        .pulse-node-3 {
+            width: 320px; height: 320px;
+            background: radial-gradient(circle, #1581ee 0%, transparent 70%);
+            top: 40%; right: 15%;
+            opacity: 0.3;
+            animation: pulse 10s ease-in-out infinite;
+            animation-delay: 2s;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.45; }
+            50% { transform: scale(1.35); opacity: 0.7; }
+        }
+
+        /* ============================================================
+            PAGE WRAPPER
+            ============================================================ */
+        .page-wrapper {
+            position: relative;
+            z-index: 2;
+            min-height: calc(100vh - 40px);
+        }
+
+        /* ============================================================
+            LOGIN CARD
+            ============================================================ */
+        .login-card {
+            border: none;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow:
+            0 30px 80px -12px rgba(13, 74, 162, 0.55),
+            0 0 0 1px rgba(255, 255, 255, 0.35),
+            0 0 80px -10px rgba(23, 195, 255, 0.45);
+            width: 100%;
+            max-width: 1100px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .login-card > .row { min-height: 680px; }
+
+        .login-card > .row > [class*="col-"] {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ============================================================
+            LEFT: Branding Side
+            ============================================================ */
+        .brand-side {
+            flex: 1;
+            background: var(--gradient-main);
+            background-size: 200% 200%;
+            animation: gradientShift 15s ease infinite;
+            color: #fff;
+            padding: 3rem 2.75rem;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .brand-side::before {
+            content: '';
+            position: absolute;
+            top: 0; right: 0; bottom: 0; left: 0;
+            background-image:
+            repeating-linear-gradient(0deg, rgba(255,255,255,0.35) 0px, rgba(255,255,255,0.35) 1px, transparent 1px, transparent 40px),
+            repeating-linear-gradient(90deg, rgba(255,255,255,0.25) 0px, rgba(255,255,255,0.25) 1px, transparent 1px, transparent 40px);
+            background-size: 40px 40px, 40px 40px;
+            transform: perspective(400px) rotateX(35deg);
+            transform-origin: center 60%;
+            -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+            mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+            animation: gridPerspective 25s linear infinite;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        .brand-side::after {
+            content: '';
+            position: absolute;
+            width: 380px; height: 380px;
+            background: radial-gradient(circle, #17c3ff 0%, transparent 70%);
+            top: -120px; right: -120px;
+            border-radius: 50%;
+            filter: blur(40px);
+            opacity: 0.9;
+            animation: float 8s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        .blob-2 {
+            position: absolute;
+            width: 320px; height: 320px;
+            background: radial-gradient(circle, #0d4aa2 0%, transparent 70%);
+            bottom: -100px; left: -100px;
+            border-radius: 50%;
+            filter: blur(50px);
+            opacity: 0.85;
+            animation: float 8s ease-in-out infinite;
+            animation-delay: 2s;
+            pointer-events: none;
+        }
+
+        .scanlines {
+            position: absolute;
+            top: 0; right: 0; bottom: 0; left: 0;
+            background: repeating-linear-gradient(
+            0deg, transparent, transparent 4px,
+            rgba(255, 255, 255, 0.05) 4px, rgba(255, 255, 255, 0.05) 5px
+            );
+            pointer-events: none;
+            z-index: 1;
+            animation: scanlineShift 6s linear infinite;
+        }
+
+        @keyframes scanlineShift {
+            from { background-position: 0 0; }
+            to { background-position: 0 120px; }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(25px, -25px) scale(1.15); }
+        }
+
+        .brand-content { position: relative; z-index: 2; }
+
+        .logo-icon {
+            width: 46px; height: 46px;
+            background: rgba(255,255,255,0.2);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            border: 1.5px solid rgba(255,255,255,0.45);
+            box-shadow:
+            0 8px 20px rgba(23, 195, 255, 0.5),
+            inset 0 0 20px rgba(255,255,255,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .logo-icon::before {
+            content: '';
+            position: absolute;
+            top: 6px; right: 6px;
+            width: 6px; height: 6px;
+            background: #17c3ff;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #17c3ff;
+            animation: ping 2s ease-in-out infinite;
+        }
+
+        @keyframes ping {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.4); }
+        }
+
+        .brand-title {
+            font-size: 2.4rem;
+            font-weight: 800;
+            line-height: 1.15;
+            letter-spacing: -0.02em;
+            text-shadow: 0 2px 24px rgba(13, 74, 162, 0.5);
+        }
+
+        .brand-desc {
+            font-size: 1rem;
+            line-height: 1.7;
+            opacity: 0.95;
+            max-width: 400px;
+        }
+
+        .check-icon {
+            width: 28px; height: 28px;
+            background: rgba(255,255,255,0.2);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            border-radius: 8px;
+            border: 1.5px solid rgba(255,255,255,0.4);
+            box-shadow: 0 4px 12px rgba(23, 195, 255, 0.35);
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ============================================================
+            RIGHT: Form Side
+            ============================================================ */
+        .form-side {
+            flex: 1;
+            padding: 3rem 3.5rem;
+            background: linear-gradient(180deg, #ffffff 0%, #f5fcff 50%, #eef7ff 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .form-side::before {
+            content: '';
+            position: absolute;
+            top: 0; right: 0; bottom: 0; left: 0;
+            background-image: radial-gradient(circle, rgba(21, 129, 238, 0.15) 1.2px, transparent 1.2px);
+            background-size: 22px 22px;
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        .form-side::after {
+            content: '';
+            position: absolute;
+            bottom: 20px; right: 20px;
+            width: 140px; height: 100px;
+            background-image:
+            repeating-linear-gradient(0deg, rgba(21, 129, 238, 0.3) 0px, rgba(21, 129, 238, 0.3) 1px, transparent 1px, transparent 15px),
+            repeating-linear-gradient(90deg, rgba(21, 129, 238, 0.3) 0px, rgba(21, 129, 238, 0.3) 1px, transparent 1px, transparent 15px);
+            background-size: 15px 15px, 15px 15px;
+            transform: perspective(200px) rotateX(50deg);
+            transform-origin: bottom center;
+            -webkit-mask-image: linear-gradient(0deg, black 0%, transparent 100%);
+            mask-image: linear-gradient(0deg, black 0%, transparent 100%);
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        .form-side > * { position: relative; z-index: 1; }
+
+        .form-title {
+            font-size: 1.9rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            background: var(--gradient-main);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.25rem;
+        }
+
+        /* ============================================================
+            FORM CONTROLS
+            ============================================================ */
+        .input-icon-wrapper { position: relative; }
+
+        .input-icon-wrapper .input-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #1581ee;
+            z-index: 5;
+            pointer-events: none;
+            transition: all 0.25s;
+            width: 20px;
+            height: 20px;
+        }
+
+        .input-icon-wrapper:focus-within .input-icon {
+            color: #0f44be;
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .form-control {
+            padding: 0.8rem 1rem 0.8rem 2.75rem;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            color: var(--dark);
+            background-color: #fff;
+            border: 1.5px solid #cfe4fa;
+            box-shadow: none;
+            font-family: inherit;
+            height: auto;
+            transition: all 0.25s ease;
+        }
+
+        .form-control::placeholder { color: #94a3b8; }
+
+        .form-control:focus {
+            border-color: #1581ee;
+            background-color: #fff;
+            box-shadow:
+            0 0 0 4px rgba(21, 129, 238, 0.15),
+            0 8px 20px -8px rgba(15, 68, 190, 0.35);
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #1581ee;
+            padding: 4px;
+            z-index: 5;
+            transition: color 0.2s;
+            outline: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .toggle-password:hover { color: #0f44be; }
+        .toggle-password svg { width: 18px; height: 18px; }
+
+        /* Checkbox */
+        .custom-control-label::before {
+            border: 1.5px solid #cfe4fa;
+            background-color: #fff;
+            border-radius: 5px;
+            width: 1.1rem;
+            height: 1.1rem;
+            top: 0.15rem;
+        }
+
+        .custom-control-label::after {
+            width: 1.1rem;
+            height: 1.1rem;
+            top: 0.15rem;
+        }
+
+        .custom-control-input:checked ~ .custom-control-label::before {
+            background: var(--gradient-main);
+            border-color: #1581ee;
+            box-shadow: 0 4px 12px rgba(21, 129, 238, 0.45);
+        }
+
+        .custom-control-input:focus ~ .custom-control-label::before {
+            box-shadow: 0 0 0 3px rgba(21, 129, 238, 0.2);
+            border-color: #1581ee;
+        }
+
+        .custom-control-label {
+            font-size: 0.85rem;
+            color: var(--gray);
+            cursor: pointer;
+            padding-left: 0.4rem;
+        }
+
+        .forgot-link {
+            color: #1581ee;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+        }
+
+        .forgot-link:hover { color: #0f44be; text-decoration: underline; }
+
+        /* Primary Button */
+        .btn-gradient {
+            width: 100%;
+            padding: 0.85rem;
+            background: var(--gradient-main);
+            background-size: 200% 200%;
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            box-shadow:
+            0 10px 25px -6px rgba(21, 129, 238, 0.55),
+            0 0 0 1px rgba(15, 68, 190, 0.25);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-gradient::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.45), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .btn-gradient:hover {
+            color: #fff;
+            transform: translateY(-2px);
+            background-position: 100% 50%;
+            box-shadow:
+            0 15px 38px -6px rgba(15, 68, 190, 0.55),
+            0 8px 24px -8px rgba(23, 195, 255, 0.6);
+        }
+
+        .btn-gradient:hover::before { left: 100%; }
+        .btn-gradient:active, .btn-gradient:focus { transform: translateY(0); outline: none; color: #fff; }
+
+        /* Divider */
+        .divider {
+            display: flex;
+            align-items: center;
+            color: #94a3b8;
+            font-size: 0.75rem;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #a5d8fa, #b8d0fa, transparent);
+        }
+
+        .divider::before { margin-right: 16px; }
+        .divider::after { margin-left: 16px; }
+
+        /* Social */
+        .btn-social {
+            padding: 0.7rem;
+            background: #fff;
+            border: 1.5px solid #cfe4fa;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--dark);
+            transition: all 0.25s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-social:hover,
+        .btn-social:focus {
+            background: linear-gradient(135deg, #f0f9ff, #eef7ff);
+            border-color: #7dd3fc;
+            color: var(--dark);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px -8px rgba(21, 129, 238, 0.45);
+            outline: none;
+        }
+
+        .btn-social svg { width: 18px; height: 18px; margin-right: 8px; }
+
+        .signup-link {
+            font-weight: 700;
+            text-decoration: none;
+            background: var(--gradient-main);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .signup-link:hover { text-decoration: underline; }
+
+        .form-label-custom {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 0.4rem;
+            display: block;
+        }
+
+        /* Responsive */
+        @media (max-width: 991.98px) {
+            .login-card > .row { min-height: auto; }
+            .brand-side { padding: 2.25rem 2rem; }
+            .brand-title { font-size: 1.9rem; }
+            .brand-desc { font-size: 0.9rem; }
+            .features-list { display: none; }
+            .brand-footer { display: none; }
+            .form-side { padding: 2.25rem 2rem; }
+            .form-title { font-size: 1.6rem; }
+            .form-side::after { display: none; }
+        }
+
+        @media (max-width: 575.98px) {
+            body { padding: 15px 10px; }
+            .login-card { border-radius: 18px; }
+            .form-side, .brand-side { padding: 1.75rem 1.25rem; }
+        }
+    </style>
+</head>
+
+<body>
+    <% include ../template/header.ejs %>
+            <div class="fiber-glow"></div>
+            <div class="pulse-node pulse-node-1"></div>
+            <div class="pulse-node pulse-node-2"></div>
+            <div class="pulse-node pulse-node-3"></div>
+
+            <div class="page-wrapper d-flex align-items-center justify-content-center">
+                <div class="login-card card">
+                    <div class="row no-gutters">
+
+                        <!-- ==== KOLOM KIRI ==== -->
+                        <div class="col-lg-6">
+                            <div class="brand-side">
+                            <div class="blob-2"></div>
+                            <div class="scanlines"></div>
+
+                            <div class="brand-content">
+                                <div class="d-flex align-items-center mb-5">
+                                <span class="font-weight-bold ml-2" style="font-size: 24px;line-height: 15px;">DPUPR KOTA TEGAL<br/><span style="font-size: 16px;color: #f7ca18;">BIDANG BINA MARGA</span></span>
+                                </div>
+
+                                <h1 class="brand-title mb-3" style="font-size: 48px;">
+                                Database Jaringan Utilitas Telekomunikasi Kota Tegal
+                                </h1>
+                                <p class="brand-desc mb-5">
+                                Masuk ke akun Anda dan kelola data utilitas telekomunikasi anda disini ....
+                                </p>
+
+                                <div class="features-list">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="check-icon">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                        <path d="M9 12l2 2 4-4"/>
+                                    </svg>
+                                    </div>
+                                    <span class="ml-3 font-weight-medium">Informasi Utilitas Telekomunikasi <strong style="color: #f7ca18">Tiang</strong></span>
+                                </div>
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="check-icon">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <path d="M2 12h20"/>
+                                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                                    </svg>
+                                    </div>
+                                    <span class="ml-3 font-weight-medium">Informasi Utilitas Telekomunikasi <strong style="color: #f7ca18">Kabel</strong></span>
+                                </div>
+                                <!-- <div class="d-flex align-items-center mb-3">
+                                    <div class="check-icon">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+                                        <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+                                        <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+                                        <circle cx="12" cy="20" r="1.5" fill="white"/>
+                                    </svg>
+                                    </div>
+                                    <span class="ml-3 font-weight-medium">Koneksi cepat di seluruh dunia</span>
+                                </div> -->
+                                </div>
+                            </div>
+
+                            <div class="brand-footer position-relative small" style="z-index: 2; opacity: 0.85;">
+                                © 2026 PEMERINTAH KOTA TEGAL
+                            </div>
+                            </div>
+                        </div>
+
+                        <!-- ==== KOLOM KANAN ==== -->
+                        <div class="col-lg-6">
+                            <div class="form-side">
+                            <div class="mb-4">
+                                <h2 class="form-title">Sign In</h2>
+                                <p class="text-muted small mb-0">Masukkan username dan password yang Anda miliki</p>
+                            </div>
+
+                    <form method="POST" action="<%= rooturl %>/autentifikasi/login" class="needs-validation" novalidate="">
+
+                                <div class="form-group mb-3">
+                                <label for="email" class="form-label-custom">Username</label>
+                                <div class="input-icon-wrapper">
+                                    <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="2" y="4" width="20" height="16" rx="2"/>
+                                    <path d="M2 7l10 6 10-6"/>
+                                    </svg>
+                                    <input type="email" class="form-control" id="email" name="username" placeholder="Masukkan username" required>
+                                </div>
+                                </div>
+                                                            <input type="hidden" name="tujuan" class="form-control" value="/shortcut"/>
+
+                                <div class="form-group mb-3">
+                                <label for="password" class="form-label-custom">Password</label>
+                                <div class="input-icon-wrapper">
+                                    <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/>
+                                    <path d="M14 13.12c0 2.38 0 6.38-1 8.88"/>
+                                    <path d="M17.29 21.02c.12-.6.43-2.3.5-3.02"/>
+                                    <path d="M2 12a10 10 0 0 1 18-6"/>
+                                    <path d="M2 16h.01"/>
+                                    <path d="M21.8 16c.2-2 .131-5.354 0-6"/>
+                                    <path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2"/>
+                                    <path d="M8.65 22c.21-.66.45-1.32.57-2"/>
+                                    <path d="M9 6.8a6 6 0 0 1 9 5.2v2"/>
+                                    </svg>
+                                    <input type="password" class="form-control" id="password" name="password" placeholder="Masukkan password" required>
+                                    <button type="button" class="toggle-password" onclick="togglePassword()" aria-label="Toggle password">
+                                    <svg id="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                        <circle cx="12" cy="12" r="3"/>
+                                    </svg>
+                                    </button>
+                                </div>
+                                </div>
+<div class="form-group">
+                            <label>Captcha</label>
+                            <div class="w-100-flex" style="justify-content: center;align-items: center;background-color: ;border-top-left-radius: 10px;border-top-right-radius: 10px;border:1px solid #e4e6fc;padding-bottom: 10px;border-bottom: hidden;">
+                                <%-captcha.data%>
+                            </div> 
+                            <input type="text" class="form-control" id="captcha" name="captcha" placeholder="Isi dengan hasil penjumlahan captcha" required style="border-top-left-radius: 0;border-top-right-radius: 0;">
+                            <div class="invalid-feedback">
+                                Silahkan isi captcha
+                            </div>
+                        </div>
+                                <!-- <button type="submit" class="btn btn-gradient mb-4">Sign In</button> -->
+                                 <!-- <a href="/shortcut" class="btn btn-gradient mb-4">Sign In</a> -->
+                            <button type="submit" class="btn btn-gradient mb-4">
+                                Sign In
+                            </button>
+
+                                <!-- <p class="text-center small text-muted mb-0">
+                                Belum punya akun? <a href="#" class="signup-link">Daftar sekarang</a>
+                                </p> -->
+
+                            </form>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+    <% include ../template/footer.ejs %>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <script src="<%= rooturl %>/javascripts/template/bootstrap.bundle.js"></script>
+    <!-- Plugins This Page -->
+    <script src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.22/js/dataTables.bootstrap4.min.js"></script>
+    <script src="<%= rooturl %>/plugins/slick/slick.min.js"></script>
+    <!-- End Plugins This Page -->
+    <script type="text/javascript">
+        var rooturl = ''
+         function togglePassword() {
+            var input = document.getElementById('password');
+            var icon = document.getElementById('eye-icon');
+            if (input.type === 'password') {
+            input.type = 'text';
+            icon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+            } else {
+            input.type = 'password';
+            icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+            }
+        }
+        
+        let data_table  =$('#list-data').DataTable({
+            "language": {
+                "sProcessing":   "Sedang memproses...",
+                "sLengthMenu":   "_MENU_",
+                "sZeroRecords":  "Tidak ditemukan data yang sesuai",
+                "sInfo":         "Menampilkan _START_ sampai _END_ dari _TOTAL_ entri",
+                "sInfoEmpty":    "Menampilkan 0 sampai 0 dari 0 entri",
+                "sInfoFiltered": "(disaring dari _MAX_ entri keseluruhan)",
+                "sInfoPostFix":  "",
+                "sUrl":          "",
+                "oPaginate": {
+                    "sFirst":    "Pertama",
+                    "sPrevious": "Sebelumnya",
+                    "sNext":     "Selanjutnya",
+                    "sLast":     "Terakhir"
+                }
+            },
+            // "processing": true,
+            // "ajax":  `${rooturl}`,
+            // "columns": [
+            //     { "data": null},
+            // ],
+            // "columnDefs": [
+            //     { "width": "40px", "targets": 0},
+            // ],
+        });
+
+        data_table.on( 'draw.dt', function () {
+            let PageInfo = $('#list-data').DataTable().page.info();
+            data_table.column(0, { page: 'current' }).nodes().each( function (cell, i) {
+                cell.innerHTML = i + 1 + PageInfo.start;
+            });
+        });
+    </script>
+</body>
+</html>

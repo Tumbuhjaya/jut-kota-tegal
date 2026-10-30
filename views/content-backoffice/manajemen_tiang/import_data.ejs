@@ -1,0 +1,228 @@
+<% include ../../template-backoffice/header.ejs %>
+  <div class="main-content">
+    <section class="section">
+      <div class="w-100" style="padding: 0 30px;">
+        <div class="section-header" style="border-radius: 0.25rem;">
+          <h1>Import Data Tiang By Spasial</h1>
+          <div class="section-header-breadcrumb">
+            <div class="breadcrumb-item active"><a href="/backoffice">Dashboard</a></div>
+            <div class="breadcrumb-item active"><a href="/manajemen_tiang">Data</a></div>
+            <div class="breadcrumb-item">Tambah Data</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-body">
+        <div class="row">
+          <div class="col-12 col-lg-12 col-xl-12">
+            <div class="card">
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-12 col-lg-7 col-xl-7">
+                    <div style="width: 100%;height: 500px;background-color: whitesmoke;" id="map"></div>
+                  </div>
+                  <div class="col-12 col-lg-5 col-xl-5">
+                    <div class="form-group row mb-0">
+                      <label class="col-sm-4 col-form-label">Provider</label>
+                      <div class="col-sm-8">
+                        <select class="form-control select2" name="" id="provider_id">
+                          
+                        </select>
+                      </div>
+                    </div>
+                    <hr>
+
+                    <div class="form-group row mb-0">
+                      <label class="col-sm-4 col-form-label">Pilih File (.shp)</label>
+                      <div class="col-sm-8">
+                        <input type="file" class="form-control" name="" id="shp" accept=".shp">
+                      </div>
+                    </div>
+                    <hr>
+
+                    <div class="form-group row mb-0">
+                      <label class="col-sm-4 col-form-label">Pilih File (.shx)</label>
+                      <div class="col-sm-8">
+                        <input type="file" class="form-control" name="" id="shx" accept=".shx">
+                      </div>
+                    </div>
+                    <hr>
+
+                    <div class="form-group row mb-0">
+                      <label class="col-sm-4 col-form-label">Pilih File (.dbf)</label>
+                      <div class="col-sm-8">
+                        <input type="file" class="form-control" name="" id="dbf" accept=".dbf">
+                      </div>
+                    </div>
+                    <hr>
+                    <div class="form-group row mb-0">
+                      <div class="col-sm-10 offset-sm-4">
+                        <button class="btn btn-primary" onclick="submit()">Import</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-12 col-lg-12.col-xl-12">
+                    <hr>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-12 col-lg-12.col-xl-12">
+                    <table class="table table-bordered table-striped" id="list-data">
+                      <thead>
+                        <tr>
+                          <th>No.</th>
+                          <th>Tanggal & Waktu Import</th>
+                          <th>Provider</th>
+                          <th>Option</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        <tr>
+                          <td>1.</td>
+                          <td>-</td>
+                          <td>-</td>
+                          <td><button onclick="" class="btn btn-danger"><i class="fa fa-trash"></i></button></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <footer class="main-footer">
+    <div class="footer-left">
+      <% include ../../template-backoffice/copyright-left.ejs %>
+    </div>
+    <div class="footer-right">
+      <% include ../../template-backoffice/copyright-right.ejs %>
+    </div>
+  </footer>
+
+<% include ../../template-backoffice/footer.ejs %>
+<script type="text/javascript">
+  var rooturl = ''
+window.onload = async (params) => {
+    let data = await $.post('/provider/list')
+      console.log(data);
+
+  data.data.forEach(e => {
+    
+    $('#provider_id').append(`<option value="${e.provider_id}">${e.provider}</option>`)
+  });
+}
+    let data_table  =$('#list-data').DataTable({
+      "language": {
+          "sProcessing":   "Sedang memproses...",
+          "sLengthMenu":   "_MENU_",
+          "sZeroRecords":  "Tidak ditemukan data yang sesuai",
+          "sInfo":         "Menampilkan _START_ sampai _END_ dari _TOTAL_ entri",
+          "sInfoEmpty":    "Menampilkan 0 sampai 0 dari 0 entri",
+          "sInfoFiltered": "(disaring dari _MAX_ entri keseluruhan)",
+          "sInfoPostFix":  "",
+          "sUrl":          "",
+          "oPaginate": {
+            "sFirst":    "Pertama",
+            "sPrevious": "Sebelumnya",
+            "sNext":     "Selanjutnya",
+            "sLast":     "Terakhir"
+          }
+      },
+      "processing": true,
+      "ajax":  `${rooturl}/upload_shp/log_shp_tiang`,
+      "columns": [
+        { "data": null},
+        { "data": "insertedAt"},
+        { "data": "provider"},
+        { "data": null,render: function(data){
+        
+          return `<td><button onclick="hapus('${data.insertedAt}','${data.provider_id}')" class="btn btn-danger"><i class="fa fa-trash"></i></button></td>`
+        }},
+      ],
+      "columnDefs": [
+        { "width": "40px", "targets": 0},
+        { "width": "160px", "targets": 0}
+      ],
+    });
+
+    data_table.on( 'draw.dt', function () {
+      let PageInfo = $('#list-data').DataTable().page.info();
+      data_table.column(0, { page: 'current' }).nodes().each( function (cell, i) {
+        cell.innerHTML = i + 1 + PageInfo.start;
+      });
+    });
+    async function hapus(i,p) {
+      console.log(i,p);
+          const will_delete = await swal({
+      title: "Tambah Data",
+      text: "Apakah anda akan menghapus data ini?",
+      icon: "warning",
+      dangerMode: true,
+      buttons: ["Tidak", "Ya"],
+    });
+        if ( will_delete) {
+          try {
+                      await $.get(rooturl+`/upload_shp/hapus_shp_tiang/${i}/${p}`)
+
+                      window.location.href = rooturl+'/manajemen_tiang/import_data';
+
+          } catch (error) {
+            alert(error)
+          }
+        }
+    }
+  async function submit() {
+    const will_insert = await swal({
+      title: "Tambah Data",
+      text: "Apakah anda akan menambahkan data ini?",
+      icon: "warning",
+      dangerMode: true,
+      buttons: ["Tidak", "Ya"],
+    });
+
+    if ( will_insert) {
+      $('#button_submit').empty()
+      $('#button_submit').append('<button class="btn btn-primary btn-embossed" disabled>Simpan</button>')
+      
+      let formData = new FormData();    
+      // nama kolom db
+                formData.append('provider_id',$('#'+'provider_id').val())
+
+      if ( $(`#`+'dbf')[0].files[0]){
+            formData.append('dbf', $(`#`+'dbf')[0].files[0]);
+          } 
+          if ( $(`#`+'shp')[0].files[0]){
+            formData.append('shp', $(`#`+'shp')[0].files[0]);
+          } 
+          if ( $(`#`+'shx')[0].files[0]){
+            formData.append('shx', $(`#`+'shx')[0].files[0]);
+          } 
+      $.ajax({
+        type: 'POST',
+        enctype: 'multipart/form-data',
+        url: rooturl+'/upload_shp/shp_tiang',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(data) {
+          swal({title:text_insert.title,text:text_insert.text, icon: text_insert.icon, type:text_insert.type})
+          window.location.href = rooturl+'/manajemen_tiang/import_data';
+        },error: function(data) {
+          swal({title:text_error.title,text:text_error.text, icon: text_error.icon, type:text_error.type})
+        }
+      })      
+    } 
+  }
+</script>

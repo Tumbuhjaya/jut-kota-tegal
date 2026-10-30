@@ -121,24 +121,29 @@
         { "data": "NIP"},
         { "data": "email"},
         { "data": "is_admin",render : function (data) {
-          return data==1?'Administrator': data==2?'UPTD':''
+          return data==1?'Administrator': data==2?'Pengguna':data==3?'Vendor':''
         }},
-        { "data": "id_user",render: function(data){
+        { "data": null,render: function(data){
           let a = ''
           if (data) {
+            let b = ''
+            if (data.is_admin == 2) {
+              b = `<li class="list-inline-item"><a href="${rooturl}/manajemen_users/perusahaan/${data.id_user}" class="btn btn-info"><i class="far fa-building"></i></a></li>`
+            }
             a = `
                 <ul class="list-inline mb-0" style="text-align:center">
-                  <li class="list-inline-item"><a href="${rooturl}/manajemen_users/edit/${data}" class="btn btn-warning"><i class="fas fa-edit"></i></a></li>
-                  <li class="list-inline-item"><button  onclick="hapus(${data})"  class="btn btn-danger"><i class="fa fa-trash"></i></button></li>
-                  <li class="list-inline-item"><button  onclick="ganti_id(${data})" data-toggle="modal" data-target=".modal-ubah-password" class="btn btn-dark" style="margin-right:0;"><i class="fa fa-key"></i></button></li>
-                </ul>`
+                  <li class="list-inline-item"><a href="${rooturl}/manajemen_users/edit/${data.id_user}" class="btn btn-warning"><i class="fas fa-edit"></i></a></li>
+                  <li class="list-inline-item"><button  onclick="hapus(${data.id_user})"  class="btn btn-danger"><i class="fa fa-trash"></i></button></li>
+                  <li class="list-inline-item"><button  onclick="ganti_id(${data.id_user})" data-toggle="modal" data-target=".modal-ubah-password" class="btn btn-dark" style="margin-right:0;"><i class="fa fa-key"></i></button></li>
+                ${b}
+                  </ul>`
           }
           return `<td><center>${a}</center></td>`
         }},
       ],
       "columnDefs": [
         { "width": "40px", "targets": 0},
-        { "width": "160px", "targets": 5}
+        { "width": "180px", "targets": 5}
       ],
     });
 

@@ -1,0 +1,123 @@
+<% include ../../template-backoffice/header.ejs %>
+  <!-- Main Content -->
+  <div class="main-content">
+    <section class="section">
+      <div class="w-100" style="padding: 0 30px;">
+        <div class="section-header">
+          <h1>Data Utilitas Kabel</h1>
+          <div class="section-header-breadcrumb">
+            <div class="breadcrumb-item active"><a href="#">Dashboard</a></div>
+            <div class="breadcrumb-item">Data</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-body">
+        <div class="row">
+          <div class="col-lg-12 col-xl-12">
+            <div class="card">
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table class="table table-bordered table-striped" id="list-data">
+                    <thead>                                 
+                      <tr>
+                        <th rowspan="2" class="text-center">No.</th>
+                        <th rowspan="2" class="text-center">Ruas Jalan</th>
+                        <th rowspan="2" class="text-center">Kecamatan</th>
+                        <th rowspan="2" class="text-center">Kelurahan</th>
+                        <th rowspan="2" class="text-center">Panjang</th>
+                        <th colspan="2" class="text-center">Foto Dokumentasi</th>
+                        <th colspan="2" class="text-center">Provider</th>
+                      </tr>
+                      <tr>
+                        <th class="text-center">Foto 1</th>
+                        <th class="text-center">Foto 2</th>
+                        <th class="text-center">Lama</th>
+                        <th class="text-center">Baru</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+  <footer class="main-footer">
+    <div class="footer-left">
+      <% include ../../template-backoffice/copyright-left.ejs %>
+    </div>
+    <div class="footer-right">
+      <% include ../../template-backoffice/copyright-right.ejs %>
+    </div>
+  </footer>
+<% include ../../template-backoffice/footer.ejs %>
+
+<script type="text/javascript">
+    var rooturl = '';
+
+    // Render Foto
+    function renderFoto(kode) {
+        if (!kode) return '-';
+        let url = 'https://storage.googleapis.com/jut-tegal/' + kode;
+        return `<a href="${url}" target="_blank">
+                    <img src="${url}" alt="foto" style="width:80px;height:100px;object-fit:cover;border-radius:4px;">
+                </a>`;
+    }
+
+    let data_table = $('#list-data').DataTable({
+      "language": {
+          "sProcessing":   "Sedang memproses...",
+          "sLengthMenu":   "_MENU_",
+          "sZeroRecords":  "Tidak ditemukan data yang sesuai",
+          "sInfo":         "Menampilkan _START_ sampai _END_ dari _TOTAL_ entri",
+          "sInfoEmpty":    "Menampilkan 0 sampai 0 dari 0 entri",
+          "sInfoFiltered": "(disaring dari _MAX_ entri keseluruhan)",
+          "oPaginate": {
+            "sFirst":    "Pertama",
+            "sPrevious": "Sebelumnya",
+            "sNext":     "Selanjutnya",
+            "sLast":     "Terakhir"
+          }
+      },
+      "processing": true,
+      "serverSide": false,
+      "ajax": {
+          "url": "/api/list_kabel",
+          "type": "POST",
+          "data": function(d) {
+                            d.only_unidentified = 1;
+d.pengaku = 1
+              d.shape = 0;
+          },
+          "dataSrc": function(json) {
+              return (json && json.data) ? json.data : [];
+          }
+      },
+      "columns": [
+        { "data": null, "orderable": false, "className": "text-center" },
+        { "data": "nm_ruas", "defaultContent": "-" },
+        { "data": "kecamatan", "defaultContent": "-" },
+        { "data": "desa", "defaultContent": "-" },
+        { "data": "panjang", "defaultContent": "0" },
+        { "data": "kode_foto", "orderable": false, "render": renderFoto },
+        { "data": "kode_fot_1", "orderable": false, "render": renderFoto },
+        { "data": "provider", "defaultContent": "-" },
+        { "data": "pengaku_nama", "defaultContent": "-" } 
+      ],
+      "columnDefs": [
+        { "width": "30px", "targets": 0},
+        { "width": "150px", "targets": 1}
+      ],
+      "drawCallback": function () {
+        let info = this.api().page.info();
+        this.api().column(0, { page: 'current' }).nodes().each(function (cell, i) {
+            cell.innerHTML = i + 1 + info.start + '.';
+        });
+      }
+    });
+</script>

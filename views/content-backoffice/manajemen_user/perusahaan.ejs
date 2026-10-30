@@ -1,0 +1,246 @@
+<% include ../../template-backoffice/header.ejs %>
+
+<div class="main-content">
+  <section class="section">
+    <div class="w-100" style="padding: 0 30px;">
+      <div class="section-header" style="border-radius: 0.25rem;">
+        <h1>Manajemen Perusahaan</h1>
+        <div class="section-header-breadcrumb">
+          <div class="breadcrumb-item active"><a href="/backoffice">Dashboard</a></div>
+          <div class="breadcrumb-item active"><a href="/manajemen_users">Data</a></div>
+          <div class="breadcrumb-item">Tambah Data</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-body">
+      <div class="row">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body">
+
+              <form id="form-perusahaan">
+                <input type="hidden" id="perusahaan_id" name="perusahaan_id">
+
+                <div class="form-group row mb-0">
+                  <label class="col-sm-2 col-form-label">Perusahaan</label>
+                  <div class="col-sm-10">
+                    <input type="text" class="form-control" id="nama_perusahaan" name="nama_perusahaan" required>
+                  </div>
+                </div>
+
+
+                <hr>
+
+                <div class="form-group row">
+                  <div class="col-sm-10 offset-sm-2">
+                    <button type="submit" class="btn btn-primary" id="btn-submit">Tambahkan</button>
+                    <button type="button" class="btn btn-secondary" onclick="resetForm()">Batal</button>
+                  </div>
+                </div>
+              </form>
+
+              <hr>
+
+              <div class="table-responsive">
+                <table class="table table-bordered table-striped" id="list-data">
+                  <thead>
+                    <tr>
+                      <th>No.</th>
+                      <th>Perusahaan</th>
+                      <th>Option</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<footer class="main-footer">
+  <div class="footer-left">
+    <% include ../../template-backoffice/copyright-left.ejs %>
+  </div>
+  <div class="footer-right">
+    <% include ../../template-backoffice/copyright-right.ejs %>
+  </div>
+</footer>
+
+<% include ../../template-backoffice/footer.ejs %>
+
+<script type="text/javascript">
+  var rooturl = '';
+
+  $(function () {
+    // Guard: pastikan DataTable belum di-init
+    if ($.fn.DataTable.isDataTable('#list-data')) {
+      $('#list-data').DataTable().destroy();
+    }
+
+    let data_table = $('#list-data').DataTable({
+      ajax: {
+        url: rooturl + '/perusahaan/list',
+        dataSrc: function (json) {
+          return (json && json.data) ? json.data : [];
+        }
+      },
+      columns: [
+        { data: null, width: '30px', orderable: false, searchable: false },
+        { data: 'nama_perusahaan' },
+        {
+          data: null,
+          width: '170px',
+          orderable: false,
+          searchable: false,
+          render: function (data, type, row) {
+            return `
+              <div style="display:flex;justify-content:center;">
+                <button onclick="editData(${row.perusahaan_id})" class="btn btn-warning mr-2">
+                  <i class="fas fa-edit"></i>
+                </button>
+
+                <a href="/manajemen_users/vendor/${row.perusahaan_id}" class="btn btn-info mr-2">
+                  <i class="fas fa-users"></i>
+                </a>
+
+                <a href="/manajemen_users/provider/${row.perusahaan_id}" class="btn btn-success mr-2">
+                  <i class="fas fa-vector-square"></i>
+                </a>
+
+                <button onclick="hapus(${row.perusahaan_id})" class="btn btn-danger">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            `;
+          }
+        }
+      ],
+      columnDefs: [
+        { width: '30px', targets: 0 },
+        { width: '170px', targets: 0 }
+      ],
+      language: {
+        "sProcessing": "Sedang memproses...",
+        "sLengthMenu": "_MENU_",
+        "sZeroRecords": "Tidak ditemukan data yang sesuai",
+        "sInfo": "Menampilkan _START_ sampai _END_ dari _TOTAL_ entri",
+        "sInfoEmpty": "Menampilkan 0 sampai 0 dari 0 entri",
+        "sInfoFiltered": "(disaring dari _MAX_ entri keseluruhan)",
+        "sInfoPostFix": "",
+        "sUrl": "",
+        "oPaginate": {
+          "sFirst": "Pertama",
+          "sPrevious": "Sebelumnya",
+          "sNext": "Selanjutnya",
+          "sLast": "Terakhir"
+        }
+      }
+    });
+
+    data_table.on('draw.dt', function () {
+      let PageInfo = data_table.page.info();
+      data_table.column(0, { page: 'current' }).nodes().each(function (cell, i) {
+        cell.innerHTML = i + 1 + PageInfo.start;
+      });
+    });
+
+    // ===== Form submit =====
+    $('#form-perusahaan').on('submit', function (e) {
+      e.preventDefault();
+
+      const id = $('#perusahaan_id').val();
+      const url = id ? `${rooturl}/perusahaan/edit` : `${rooturl}/perusahaan/insert`;
+
+      $.ajax({
+        url: url,
+        method: 'POST',
+        data: $(this).serialize(),
+        dataType: 'json'
+      })
+      .done(function (res) {
+        if (res.status === 200) {
+          swal({ title: 'Berhasil', text: res.message, icon: 'success' });
+          resetForm();
+          data_table.ajax.reload(null, false);
+        } else {
+          swal({ title: 'Gagal', text: res.message || 'Terjadi kesalahan', icon: 'error' });
+        }
+      })
+      .fail(function (xhr) {
+        swal({
+          title: 'Gagal',
+          text: (xhr.responseJSON && xhr.responseJSON.message) || 'Terjadi kesalahan',
+          icon: 'error'
+        });
+      });
+    });
+
+    // expose ke global supaya onclick bisa akses
+    window.data_table = data_table;
+  });
+
+  function resetForm() {
+    $('#perusahaan_id').val('');
+    if ($('#form-perusahaan').length) $('#form-perusahaan')[0].reset();
+    $('#btn-submit').text('Tambahkan');
+  }
+
+  function editData(id) {
+    $.get(`${rooturl}/perusahaan/list`, { id: id }, function (res) {
+      const row = (res.data && res.data[0]) ? res.data[0] : null;
+      if (!row) {
+        return swal({ title: 'Gagal', text: 'Data tidak ditemukan', icon: 'error' });
+      }
+
+      $('#perusahaan_id').val(row.perusahaan_id);
+      $('#nama_perusahaan').val(row.nama_perusahaan);
+      $('#alamat').val(row.alamat || '');
+      $('#no_telepon').val(row.no_telepon || '');
+      $('#email').val(row.email || '');
+      $('#btn-submit').text('Update');
+
+      $('html, body').animate({ scrollTop: 0 }, 'fast');
+    })
+    .fail(function (xhr) {
+      swal({
+        title: 'Gagal',
+        text: (xhr.responseJSON && xhr.responseJSON.message) || 'Data tidak ditemukan',
+        icon: 'error'
+      });
+    });
+  }
+
+  async function hapus(id) {
+    const willDelete = await swal({
+      title: "Hapus Data",
+      text: "Apakah anda akan menghapus data ini?",
+      icon: "warning",
+      dangerMode: true,
+      buttons: ["Tidak", "Ya"],
+    });
+
+    if (willDelete) {
+      $.get(`${rooturl}/perusahaan/hapus/${id}`, function (res) {
+        if (res.status === 200) {
+          swal({ title: 'Berhasil', text: res.message, icon: 'success' });
+          window.data_table.ajax.reload(null, false);
+        } else {
+          swal({ title: 'Gagal', text: res.message || 'Terjadi kesalahan', icon: 'error' });
+        }
+      })
+      .fail(function (xhr) {
+        swal({
+          title: 'Gagal',
+          text: (xhr.responseJSON && xhr.responseJSON.message) || 'Terjadi kesalahan',
+          icon: 'error'
+        });
+      });
+    }
+  }
+</script>

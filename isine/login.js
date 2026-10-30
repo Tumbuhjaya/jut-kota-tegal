@@ -92,7 +92,7 @@ if (req.body.target =='penghuni') {
   }
   if (a!=0&&b!=0&&c!=0&&d!=0) {
 
-  sql_enak.raw("SELECT * from user WHERE username=?",[username]).then(function(rows) {
+  sql_enak.raw("SELECT *,u.* from user u left join perusahaan p on p.id_user = u.id_user WHERE u.username=? and u.deleted =0",[username]).then(function(rows) {
   if(rows[0].length >0){
     rows[0][0].tujuan = req.body.tujuan;
       if (rows[0][0].pwd != sha1(password)&&rows[0][0].password != sha1(password)) {
@@ -171,7 +171,7 @@ var menuju = "/backoffice";
 // define the home page route
 router.post('/login',
   passport.authenticate('local', { 
-                                   failureRedirect: rooturl+'/autentifikasi',
+                                   failureRedirect: rooturl+'/',
                                    failureFlash: true }), function(req, res) {
     res.redirect(req.user[0].tujuan)}
 );
@@ -183,14 +183,14 @@ router.post('/login_user',
 );
 router.post('/login_opd',
   passport.authenticate('local', { 
-                                   failureRedirect: rooturl+'/autentifikasi',
+                                   failureRedirect: rooturl+'/',
                                    failureFlash: true }), function(req, res) {
                                     res.json(req.user[0])
                                   });
 // define the about route
 router.get('/logout', function(req, res){
   req.logout();
-  res.redirect(rooturl+'/autentifikasi');
+  res.redirect(rooturl+'/');
 });
 router.get('/logout_depan', function(req, res){
   req.logout();
@@ -259,7 +259,8 @@ if (user[0][0] && user[0][0].google != 1){
       next();
 
   } else {
-      res.redirect(rooturl+'/autentifikasi?tujuan='+rooturl+encodeURIComponent(req.originalUrl));
+      // res.redirect(rooturl+'/autentifikasi?tujuan='+rooturl+encodeURIComponent(req.originalUrl));
+      res.redirect(rooturl+'/')
   }
 }
 
@@ -272,7 +273,9 @@ module.exports.cek_login_google = function(req, res, next) {
       next()
   
     } else {
-        res.redirect(rooturl+'/autentifikasi/auth/google?tujuan='+rooturl+encodeURIComponent(req.originalUrl));
+        // res.redirect(rooturl+'/autentifikasi/auth/google?tujuan='+rooturl+encodeURIComponent(req.originalUrl));
+              res.redirect(rooturl+'/')
+
     }
 }
 module.exports.cek_login_all = function(req, res, next) {
@@ -283,7 +286,7 @@ console.log([req.isAuthenticated(),req.user,'cek_login_all']);
 	if (req.isAuthenticated()||req.headers.token == 'ba71cc700b29dee1a57171560882bbe7563c6ce8' ){
         next();
     } else {
-        res.redirect(rooturl+'/autentifikasi');
+        res.redirect(rooturl+'/');
     }
 }
 module.exports.cek_login_penghuni = function(req, res, next) {

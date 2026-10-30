@@ -1,0 +1,105 @@
+<% include ../../template-backoffice/header.ejs %>
+  <div class="main-content">
+    <section class="section">
+      <div class="w-100" style="padding: 0 30px;">
+        <div class="section-header" style="border-radius: 0.25rem;">
+          <h1>Edit Data</h1>
+          <div class="section-header-breadcrumb">
+            <div class="breadcrumb-item active"><a href="/backoffice">Dashboard</a></div>
+            <div class="breadcrumb-item active"><a href="/manajemen_basic">Data</a></div>
+            <div class="breadcrumb-item">Edit Data</div>
+          </div>
+        </div>
+      </div>
+
+      <% include ./komponen.ejs %>
+
+    </section>
+  </div>
+
+  <footer class="main-footer">
+    <div class="footer-left">
+      <% include ../../template-backoffice/copyright-left.ejs %>
+    </div>
+    <div class="footer-right">
+      <% include ../../template-backoffice/copyright-right.ejs %>
+    </div>
+  </footer>
+
+<% include ../../template-backoffice/footer.ejs %>
+<script type="text/javascript">
+  var rooturl = ''
+  let data_basic = {}
+  window.onload =async function (params) {
+    await $.get('/api_basic/list?data_basic_id=').then(function (data) {
+      data_basic = data.data[0]
+      for (const i in data_basic) {
+        if (Object.hasOwnProperty.call(data_basic, i)) {
+          if (i.substring(0,4)=='foto') {
+            if (data_basic[i]) {
+              $('#lihat_'+i).append(`<div style="width: 30%;border:2px dashed #6777ef;padding: 5px;margin-top: 15px;border-radius: 0.25rem;"><img src="/foto/${data_basic[i]}" alt="" class="w-100" style="border-radius: 0.25rem;"></div>`)
+            }
+          }else if(i.substring(i.length-2,i.length)=='id'){
+            $('#'+i).val(data_basic[i]).select2()
+          }
+          // else if (i.substring(0,3)=='ket'){        
+          //   CKEDITOR.instances[i].setData(data_basic[i])
+          // }
+          else{
+            $('#'+i).val(data_basic[i])
+          }
+        }
+      }
+    })
+  }
+
+  async function submit() {
+    const will_update = await swal({
+      title: "Edit Data",
+      text: "Apakah anda akan mengedit data ini?",
+      icon: "warning",
+      dangerMode: true,
+      buttons: ["Tidak", "Ya"],
+    });        
+    
+    if ( will_update) {
+      $('#button_submit').empty()
+      $('#button_submit').append('<button class="btn btn-primary btn-embossed" disabled>Simpan</button>')
+    
+      let formData = new FormData();    
+      // nama kolom db
+      let arr = ['NamaKolomDb1', 'NamaKolomDb2', 'NamaKolomDb3']
+    
+      formData.append('data_basic_id', data_basic.data_basic_id);
+
+      for (let i = 0; i < arr.length; i++) {
+        if (arr[i].substring(0,4)=='foto') {
+          if ( $(`#`+arr[i])[0].files[0]){
+            formData.append(arr[i], $(`#`+arr[i])[0].files[0]);
+          } 
+        }
+        // else if (arr[i].substring(0,3)=='ket'){        
+        //   formData.append(arr[i] ,CKEDITOR.instances[arr[i]].getData())
+        // }
+        else{
+          formData.append(arr[i],$('#'+arr[i]).val())
+        }
+      }
+
+      $.ajax({
+        type: 'POST',
+        enctype: 'multipart/form-data',
+        url: rooturl+'/api_basic/edit',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(data) {
+          swal({title:text_edit.title,text:text_edit.text, icon: text_edit.icon, type:text_edit.type})
+          window.location.href = rooturl+'/manajemen_basic';
+        },error: function(data) {
+          swal({title:text_error.title,text:text_error.text, icon: text_error.icon, type:text_error.type})
+        }
+      })      
+    } 
+  }
+</script>

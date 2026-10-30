@@ -30,10 +30,10 @@ router.use(function timeLog(req, res, next) {
 router.get('/json_kec', function (req, res) {
   //connection.connect();
   //console.log(req.query)
-  connection.query("SELECT x(centroid(a.the_geom)) as x, y(centroid(a.the_geom)) as y, a.kecamatan as kec FROM kecamatan a", function (err, rows, fields) {
+  connection.query("SELECT x(centroid(a.SHAPE)) as x, y(centroid(a.SHAPE)) as y, a.kecamatan as kec FROM kecamatan a", function (err, rows, fields) {
     if (err) throw err;
 
-    //console.log("SELECT asWkt(admin_kec.the_geom) as geometry FROM admin_kec WHERE MBRContains(GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.the_geom");
+    //console.log("SELECT asWkt(admin_kec.SHAPE) as geometry FROM admin_kec WHERE MBRContains(GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.SHAPE");
 
     //res.end(JSON.stringify(rows))
 
@@ -49,19 +49,17 @@ router.get('/json_center_kel', function (req, res) {
   if (req.query.kel) {
     kel = ' where a.id_kelurahan = '+req.query.kel
   }
-  connection.query("SELECT x(centroid(a.the_geom)) as x, y(centroid(a.the_geom)) as y, a.desa as kel  , a.id_kelurahan  FROM kelurahan  a"+kel, function (err, rows, fields) {
+  connection.query("SELECT x(centroid(a.SHAPE)) as x, y(centroid(a.SHAPE)) as y, a.desa as kel  , a.id_kelurahan  FROM kelurahan  a"+kel, function (err, rows, fields) {
     if (err) throw err;
     res.send(JSON.stringify(rows))
   });
 })
-router.get('/drainase', function (req, res) {
-  if (req.query.kd_ruas) {
-    var tambahan = "where kd_ruas= '" + req.query.kd_ruas + "'";
-  } else {
-    var tambahan = "";
-
+router.get('/sk_jalan', function (req, res) {  
+   var tambahan = ''
+  if (req.query.no) {
+     tambahan += "where no= '" + req.query.no + "'";
   }
-  connection.query("SELECT *,asWkt(SHAPE) as geometry  FROM drainase " + tambahan, function (err, rows, fields) {
+  connection.query("SELECT asWkt(SHAPE) as geometry , id , no , nm_ruas, tk_ruas_aw, tk_ruas_ak, lbr_keras, t_k30cm, t_l30cm, tower_tele, jr_btk15cm, jr_btl15cm, jr_atk15cm, jr_atl15cm, kbbt_k15cm, kbbt_l15cm, jl_pribadi, usaha_kcl, usaha_mngh, usaha_bsr, brng_lain  FROM master_retribusi " + tambahan, function (err, rows, fields) {
     if (err) throw err;
     dbgeo.parse({
       "data": rows,
@@ -75,6 +73,108 @@ router.get('/drainase', function (req, res) {
       res.send(JSON.stringify(result))
     });
   });
+})
+router.get('/ruas_kabel', function (req, res) {
+  let a = ` CONCAT(kode_ruas ,kode_gps_p , kode_gps_u) kode_x ,jumlah jumlah_kabel,
+    id, no, kode_ruas, kode_gps_p, kode_gps_u, provider, 
+    ciri_kabel, jumlah, jr_atk15cm, jr_atl15cm, kode_foto, 
+    kode_fot_1, surveyor, panjang, kd_kec, kd_kel,provider_id,
+    asWkt(SHAPE) as geometry  `
+ 
+  let tambahan = ' where SHAPE IS NOT NULL  '
+  if (req.query.no) {
+     tambahan += " and kode_ruas= '" + req.query.no + "' ";
+  }
+    if (req.query.kd_kec) {
+     tambahan += " and kd_kec= '" + req.query.kd_kec + "' ";
+  }
+     if (req.query.kd_kel) {
+     tambahan += " and kd_kel= '" + req.query.kd_kel + "' ";
+  }
+    if (req.query.provider_id) {
+     tambahan += " and provider_id= '" + req.query.provider_id + "' ";
+  }
+   if (req.query.sum) {
+  a = ` sum(jumlah * panjang ) panjang_kabel `
+}else if (req.query.group_x) {
+  tambahan += '  group by kode_x'
+
+}
+let sql = `SELECT ${a}
+FROM kabel ` 
+console.log(sql+tambahan);
+
+  connection.query(sql+ tambahan, function (err, rows, fields) {
+    if (err) throw err;
+    if (req.query.sum) {
+          res.send(rows);
+
+    }else{
+ dbgeo.parse({
+    "data": rows,
+    "outputFormat": "geojson",   // sementara
+    "geometryColumn": "geometry",
+    "geometryType": "wkt"
+}, function (error, result) {
+    if (error) return console.log(error);
+    console.log('GeoJSON result:', result);
+    res.send(result);
+});
+    }
+  
+  });
+})
+router.get('/tiang', function (req, res) {
+  let a =   ` asWkt(t.SHAPE) as geometry ,SUM(t.id ) as total_tiang , CONCAT(t.kode_ruas ,t.kode_gps) as kode_x
+, mr.t_k30cm , mr.t_l30cm , t.id,  kode_ruas, kode_gps, jumlah_tia, provider, kd_foto_1, kd_foto_2, kd_foto_3, kondisi, ciri_tiang, surveyor, kd_kec, kd_kel , k.kecamatan ,k2.desa `
+let tambahan = ' where t.SHAPE IS NOT NULL  '
+
+  if (req.query.no) {
+     tambahan += " and kode_ruas= '" + req.query.no + "' ";
+  }
+    if (req.query.kd_kec) {
+     tambahan += " and kd_kec= '" + req.query.kd_kec + "' ";
+  }
+     if (req.query.kd_kel) {
+     tambahan += " and kd_kel= '" + req.query.kd_kel + "' ";
+  }
+    if (req.query.provider_id) {
+     tambahan += " and provider_id= '" + req.query.provider_id + "' ";
+  }
+if (req.query.sum) {
+  a = ` sum(jumlah_tia) jumlah_tiang `
+}else{
+  tambahan += '  group by kode_x'
+
+}
+try {
+  let sql = `SELECT  ${a}
+FROM tiang t left join master_retribusi mr on mr.no = t.kode_ruas left join kecamatan k on k.kec_id = t.kd_kec left join kelurahan k2 on k2.kel_id = t.kd_kel ` + tambahan
+console.log(sql);
+ 
+connection.query(sql, function (err, rows, fields) {
+    if (err) throw err;
+        if (req.query.sum) {
+          res.send(rows);
+
+    }else{
+   dbgeo.parse({
+    "data": rows,
+    "outputFormat": "geojson",   // sementara
+    "geometryColumn": "geometry",
+    "geometryType": "wkt"
+}, function (error, result) {
+    if (error) return console.log(error);
+    console.log('GeoJSON result:', result);
+    res.send(result);
+});
+    }
+  });
+} catch (error) {
+  console.log(error);
+      res.send(error);
+
+}
 })
 router.post('/drainase_radius', function (req, res) {
   //connection.connect();
@@ -102,7 +202,7 @@ if (req.query.id_jln) {
 }
 connection.query(`SELECT asWkt(a.SHAPE) as geometry  from drainase a  WHERE ${setup} and a.deletedAt is null order by a.id asc`, function (err, rows, fields) {
     if (err) throw err;
-    //console.log("SELECT asWkt(admin_kec.the_geom) as geometry FROM admin_kec WHERE MBRContains(GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.the_geom");
+    //console.log("SELECT asWkt(admin_kec.SHAPE) as geometry FROM admin_kec WHERE MBRContains(GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.SHAPE");
 
     //res.end(JSON.stringify(rows))
 
@@ -179,10 +279,10 @@ router.get('/topojson_kec', function (req, res) {
     var tambahan = "";
 
   }
-  connection.query("SELECT asWkt(the_geom) as geometry, kecamatan FROM kecamatan " + tambahan, function (err, rows, fields) {
+  connection.query("SELECT asWkt(SHAPE) as geometry, kecamatan FROM kecamatan " + tambahan, function (err, rows, fields) {
     if (err) throw err;
 
-    //console.log("SELECT asWkt(admin_kec.the_geom) as geometry FROM admin_kec WHERE MBRContains(GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.the_geom");
+    //console.log("SELECT asWkt(admin_kec.SHAPE) as geometry FROM admin_kec WHERE MBRContains(GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.SHAPE");
 
     //res.end(JSON.stringify(rows))
 
@@ -205,56 +305,10 @@ router.get('/topojson_kec', function (req, res) {
 
   //connection.end();
 })
-router.get('/topojson_segmen', function (req, res) {
-  //connection.connect();
-  //console.log(req.query)
-  if (req.query.id) {
-    var tambahan = "where id= '" + req.query.id + "'";
-  } else  if (req.query.id_jln) {
-    var tambahan = "where id_jln= '" + req.query.id_jln + "'";
 
-  } else {
-    var tambahan = "";
-
-  }
-  connection.query("SELECT asWkt(SHAPE) as geometry FROM drainase " + tambahan, function (err, rows, fields) {
-    if (err) throw err;
-
-    //console.log("SELECT asWkt(admin_kec.the_geom) as geometry FROM admin_kec WHERE MBRContains(GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.the_geom");
-
-    //res.end(JSON.stringify(rows))
-
-    // MySQL query...
-    //ambil geojson
-    dbgeo.parse({
-      "data": rows,
-      "outputFormat": "topojson",
-      "geometryColumn": "geometry",
-      "geometryType": "wkt"
-    }, function (error, result) {
-      if (error) {
-        return console.log(error);
-      }
-      // This will log a valid GeoJSON object
-      // console.log(result)  
-      res.send(JSON.stringify(result))
-    });
-  });
-
-  //connection.end();
-})
 router.get('/topojson_desa', function (req, res) {
-  //connection.connect();
-  //console.log(req.query)
-  connection.query("SELECT asWkt(a.the_geom) as geometry, a.desa, a.id_kelurahan FROM kelurahan a  WHERE mbrIntersects(a.the_geom,  GeomFromText('POLYGON((" + req.query.kiri_lng + " " + req.query.kiri_lat + "," + req.query.kiri_lng + " " + req.query.kanan_lat + "," + req.query.kanan_lng + " " + req.query.kanan_lat + "," + req.query.kanan_lng + " " + req.query.kiri_lat + "," + req.query.kiri_lng + " " + req.query.kiri_lat + "))', 1))", function (err, rows, fields) {
+  connection.query("SELECT asWkt(a.SHAPE) as geometry, a.desa, a.kel_id FROM kelurahan a  WHERE mbrIntersects(a.SHAPE,  GeomFromText('POLYGON((" + req.query.kiri_lng + " " + req.query.kiri_lat + "," + req.query.kiri_lng + " " + req.query.kanan_lat + "," + req.query.kanan_lng + " " + req.query.kanan_lat + "," + req.query.kanan_lng + " " + req.query.kiri_lat + "," + req.query.kiri_lng + " " + req.query.kiri_lat + "))', 1))", function (err, rows, fields) {
     if (err) throw err;
-
-    //console.log("SELECT asWkt(admin_kec.the_geom) as geometry FROM admin_kec WHERE MBRContains(GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.the_geom");
-
-    //res.end(JSON.stringify(rows))
-
-    // MySQL query...
-    //ambil geojson
     dbgeo.parse({
       "data": rows,
       "outputFormat": "topojson",
@@ -294,7 +348,7 @@ router.get('/jalan', function (req, res) {
   connection.query("SELECT asWkt(a.SHAPE) as geometry, a.id_jln, a.km_awal, a.km_akhir, a.p_ruas, a.prkrsn, a.l_ruas, a.kdns, a.foto_awal, a.foto_akhir, a.id, b.status from drainase a join daftar_induk2 b on a.id_jln = b.id_jln  " + tambahan, function (err, rows, fields) {
     if (err) throw err;
 
-    //console.log("SELECT asWkt(admin_kec.the_geom) as geometry FROM admin_kec WHERE MBRContains(GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.the_geom");
+    //console.log("SELECT asWkt(admin_kec.SHAPE) as geometry FROM admin_kec WHERE MBRContains(GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.SHAPE");
 
     //res.end(JSON.stringify(rows))
 
@@ -362,7 +416,7 @@ connection.query(`SELECT asWkt(a.SHAPE) as geometry, a.id_jln, a.km_awal, a.km_a
       }
       
     }
-    //console.log("SELECT asWkt(admin_kec.the_geom) as geometry FROM admin_kec WHERE MBRContains(GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.the_geom");
+    //console.log("SELECT asWkt(admin_kec.SHAPE) as geometry FROM admin_kec WHERE MBRContains(GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.SHAPE");
 
     //res.end(JSON.stringify(rows))
 
@@ -428,7 +482,7 @@ connection.query(`SELECT asWkt(a.SHAPE) as geometry, a.id_jln, a.km_awal, a.km_a
       }
       
     }
-    //console.log("SELECT asWkt(admin_kec.the_geom) as geometry FROM admin_kec WHERE MBRContains(GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.the_geom");
+    //console.log("SELECT asWkt(admin_kec.SHAPE) as geometry FROM admin_kec WHERE MBRContains(GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.SHAPE");
 
     //res.end(JSON.stringify(rows))
 
@@ -509,7 +563,7 @@ connection.query(`SELECT lj.*,di.status, di.nm_ruas ,di.kd_ruas,u.fullname , k.d
       }
       
     }
-    //console.log("SELECT asWkt(admin_kec.the_geom) as geometry FROM admin_kec WHERE MBRContains(GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.the_geom");
+    //console.log("SELECT asWkt(admin_kec.SHAPE) as geometry FROM admin_kec WHERE MBRContains(GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.SHAPE");
 
     //res.end(JSON.stringify(rows))
 
@@ -575,7 +629,7 @@ connection.query(`SELECT lj.*,di.status, di.nm_ruas ,di.kd_ruas,u.fullname , k.d
 //       }
       
 //     }
-//     //console.log("SELECT asWkt(admin_kec.the_geom) as geometry FROM admin_kec WHERE MBRContains(GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.the_geom");
+//     //console.log("SELECT asWkt(admin_kec.SHAPE) as geometry FROM admin_kec WHERE MBRContains(GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.SHAPE");
 
 //     //res.end(JSON.stringify(rows))
 
@@ -643,7 +697,7 @@ if (err) throw err;
       }
       
     }
-    //console.log("SELECT asWkt(admin_kec.the_geom) as geometry FROM admin_kec WHERE MBRContains(GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.the_geom");
+    //console.log("SELECT asWkt(admin_kec.SHAPE) as geometry FROM admin_kec WHERE MBRContains(GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.SHAPE");
 
     //res.end(JSON.stringify(rows))
 
@@ -676,7 +730,7 @@ router.get('/json_kecamatan',async function (req, res) {
   }
   console.log(str);
   
-  let rows =  await sql_enak.raw(`SELECT a.*,asWkt(a.the_geom) as geometry FROM kecamatan a where  deleted = 0 `+str,val)
+  let rows =  await sql_enak.raw(`SELECT a.*,asWkt(a.SHAPE) as geometry FROM kecamatan a where  deleted = 0 `+str,val)
   dbgeo.parse({
     "data": rows[0],
     "outputFormat": "geojson",
@@ -711,7 +765,7 @@ router.get('/json_kelurahan',async function (req, res) {
   
   console.log(str);
   
-  let rows =  await sql_enak.raw(`SELECT a.*,asWkt(a.the_geom) as geometry FROM kelurahan a where deleted = 0 `+str,val)
+  let rows =  await sql_enak.raw(`SELECT a.*,asWkt(a.SHAPE) as geometry FROM kelurahan a where deleted = 0 `+str,val)
   dbgeo.parse({
     "data": rows[0],
     "outputFormat": "geojson",
@@ -731,4 +785,117 @@ router.get('/json_kelurahan',async function (req, res) {
     res.send(JSON.stringify(result, null, 2));
   });
 })
+/* =========================================================
+ *  JOIN LAYER: master_retribusi + tiang + kabel
+ *  SHAPE = MySQL GEOMETRY → pakai asWkt() + dbgeo.parse
+ *  outputFormat = geojson (karena geometri campur)
+ * ========================================================= */
+
+// A. Layer MASTER RETRIBUSI (parent) + count child
+router.get('/master_retribusi_join', function (req, res) {
+  var where = ["m.SHAPE IS NOT NULL"];
+  if (req.query.no)     where.push("m.no = "     + connection.escape(req.query.no));
+  if (req.query.id_kec) where.push("m.id_kec = " + connection.escape(req.query.id_kec));
+  if (req.query.id_kel) where.push("m.id_kel = " + connection.escape(req.query.id_kel));
+
+  var sql = `
+    SELECT
+      m.id, m.no, m.nm_ruas, m.tk_ruas_aw, m.tk_ruas_ak,
+      m.lbr_keras, m.t_k30cm, m.t_l30cm, m.tower_tele,
+      m.jr_btk15cm, m.jr_btl15cm, m.jr_atk15cm, m.jr_atl15cm,
+      m.kbbt_k15cm, m.kbbt_l15cm, m.jl_pribadi,
+      m.usaha_kcl, m.usaha_mngh, m.usaha_bsr, m.brng_lain,
+      m.panjang, m.id_kec, m.id_kel,
+      (SELECT IFNULL(SUM(t.jumlah_tia),0) FROM tiang t WHERE t.kode_ruas = m.no) AS jml_tiang,
+      (SELECT IFNULL(SUM(k.jumlah),0)     FROM kabel k WHERE k.kode_ruas = m.no) AS jml_kabel,
+      asWkt(m.SHAPE) AS geometry
+    FROM master_retribusi m
+    WHERE ${where.join(' AND ')}
+  `;
+
+  connection.query(sql, function (err, rows) {
+    if (err) { console.log(err); return res.status(500).json({ error: err.message }); }
+    dbgeo.parse({
+      data: rows,
+      outputFormat: "geojson",
+      geometryColumn: "geometry",
+      geometryType: "wkt"
+    }, function (error, result) {
+      if (error) { console.log(error); return res.status(500).json({ error: String(error) }); }
+      res.json(result);
+    });
+  });
+});
+
+// B. Layer TIANG (child) + info master (nm_ruas)
+router.get('/tiang_join', function (req, res) {
+  var where = ["t.SHAPE IS NOT NULL", "t.deletedAt IS NULL"];
+  if (req.query.no)          where.push("t.kode_ruas = "   + connection.escape(req.query.no));
+  if (req.query.kd_kec)      where.push("t.kd_kec = "      + connection.escape(req.query.kd_kec));
+  if (req.query.kd_kel)      where.push("t.kd_kel = "      + connection.escape(req.query.kd_kel));
+  if (req.query.provider_id) where.push("t.provider_id = " + connection.escape(req.query.provider_id));
+
+  var sql = `
+    SELECT
+      t.id, t.kode_ruas, t.kode_gps, t.jumlah_tia, t.provider,
+      t.t_k30cm, t.t_l30cm, t.kondisi, t.ciri_tiang,
+      t.kd_kec, t.kd_kel, t.surveyor,
+      m.nm_ruas, m.tk_ruas_aw, m.tk_ruas_ak, m.panjang AS panjang_ruas,
+      k.kecamatan, k2.desa,
+      asWkt(t.SHAPE) AS geometry
+    FROM tiang t
+    LEFT JOIN master_retribusi m ON m.no       = t.kode_ruas
+    LEFT JOIN kecamatan k        ON k.kec_id   = t.kd_kec
+    LEFT JOIN kelurahan k2       ON k2.kel_id  = t.kd_kel
+    WHERE ${where.join(' AND ')}
+  `;
+
+  connection.query(sql, function (err, rows) {
+    if (err) { console.log(err); return res.status(500).json({ error: err.message }); }
+    dbgeo.parse({
+      data: rows,
+      outputFormat: "geojson",
+      geometryColumn: "geometry",
+      geometryType: "wkt"
+    }, function (error, result) {
+      if (error) { console.log(error); return res.status(500).json({ error: String(error) }); }
+      res.json(result);
+    });
+  });
+});
+
+// C. Layer KABEL (child) + info master
+router.get('/kabel_join', function (req, res) {
+  var where = ["k.SHAPE IS NOT NULL", "k.deletedAt IS NULL"];
+  if (req.query.no)          where.push("k.kode_ruas = "   + connection.escape(req.query.no));
+  if (req.query.kd_kec)      where.push("k.kd_kec = "      + connection.escape(req.query.kd_kec));
+  if (req.query.kd_kel)      where.push("k.kd_kel = "      + connection.escape(req.query.kd_kel));
+  if (req.query.provider_id) where.push("k.provider_id = " + connection.escape(req.query.provider_id));
+
+  var sql = `
+    SELECT
+      k.id, k.no, k.kode_ruas, k.kode_gps_p, k.kode_gps_u,
+      k.provider, k.ciri_kabel, k.jumlah,
+      k.jr_atk15cm, k.jr_atl15cm, k.panjang,
+      k.kd_kec, k.kd_kel, k.surveyor,
+      m.nm_ruas, m.tk_ruas_aw, m.tk_ruas_ak,
+      asWkt(k.SHAPE) AS geometry
+    FROM kabel k
+    LEFT JOIN master_retribusi m ON m.no = k.kode_ruas
+    WHERE ${where.join(' AND ')}
+  `;
+
+  connection.query(sql, function (err, rows) {
+    if (err) { console.log(err); return res.status(500).json({ error: err.message }); }
+    dbgeo.parse({
+      data: rows,
+      outputFormat: "geojson",
+      geometryColumn: "geometry",
+      geometryType: "wkt"
+    }, function (error, result) {
+      if (error) { console.log(error); return res.status(500).json({ error: String(error) }); }
+      res.json(result);
+    });
+  });
+});
 module.exports = router;

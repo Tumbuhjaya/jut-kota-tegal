@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<% let rooturl = ''; %>
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="shortcut icon" href="<%= rooturl %>/images/template/shortcut_icon.ico">
+    <title>Database Jaringan Utilitas Telekomunikasi Kota Tegal</title>
+
+    <link href="<%= rooturl %>/stylesheets/template/css/bootstrap.css" rel="stylesheet">
+    <link href="<%= rooturl %>/stylesheets/template/css/style.css" rel="stylesheet">
+
+
+    <!-- Plugin This Page --> 
+    <link rel="stylesheet" href="<%= rooturl %>/plugins/fontawesome-5/css/all.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@x.x.x/dist/select2-bootstrap4.min.css">
+    <link href="https://cdn.datatables.net/1.10.22/css/dataTables.bootstrap4.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/1.1.3/sweetalert.min.css">
+    <link href="<%= rooturl %>/plugins/slick/slick.css" rel="stylesheet">
+    <link href="<%= rooturl %>/plugins/slick/slick-theme.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Blinker:wght@100;200;300;400;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+    
+    
+    <script src="<%= rooturl %>/javascripts/template/jquery.min.js"></script>
+
+    <!-- End Plugins This Page -->
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    <style type="text/css">
+        :root {
+            --navy: #0d4aa2;
+            --royal: #0f44be;
+            --blue: #1256d7;
+            --bright: #1581ee;
+            --cyan: #17c3ff;
+
+            --gradient-main: linear-gradient(135deg,
+            #0d4aa2 0.000%,
+            #0f44be 25.000%,
+            #1256d7 50.000%,
+            #1581ee 75.000%,
+            #17c3ff 100.000%);
+        }
+
+        * { font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        /* ================================================================
+            BODY
+            ================================================================ */
+        html, body { height: 100%; }
+
+        body {
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            padding: 20px 15px;
+            background: var(--gradient-main);
+            background-size: 200% 200%;
+            animation: gradientShift 15s ease infinite;
+            background-attachment: fixed;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        /* ============================================================
+            PERSPECTIVE GRID
+            ============================================================ */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; right: 0; bottom: 0; left: 0;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.4;
+            background-image:
+            repeating-linear-gradient(0deg, rgba(255,255,255,0.55) 0px, rgba(255,255,255,0.55) 1px, transparent 1px, transparent 60px),
+            repeating-linear-gradient(90deg, rgba(255,255,255,0.45) 0px, rgba(255,255,255,0.45) 1px, transparent 1px, transparent 60px);
+            background-size: 60px 60px, 60px 60px;
+            background-position: center center;
+            transform: perspective(500px) rotateX(45deg);
+            transform-origin: center 70%;
+            animation: gridPerspective 20s linear infinite;
+            -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+            mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+        }
+
+        @keyframes gridPerspective {
+            from { background-position: center 0, center center; }
+            to { background-position: center 60px, center center; }
+        }
+
+        /* ============================================================
+            GLOWING NODES
+            ============================================================ */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0; right: 0; bottom: 0; left: 0;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.55;
+            background-image:
+            radial-gradient(circle, #17c3ff 1.8px, transparent 1.8px),
+            radial-gradient(circle, rgba(255, 255, 255, 0.9) 1.2px, transparent 1.2px);
+            background-size: 60px 60px, 60px 60px;
+            background-position: 0 0, 30px 30px;
+            transform: perspective(500px) rotateX(45deg);
+            transform-origin: center 70%;
+            animation: gridPerspective 20s linear infinite, dotPulse 2.5s ease-in-out infinite;
+            -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+            mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+        }
+
+        @keyframes dotPulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.9; }
+        }
+
+        /* Fiber optic glow */
+        .fiber-glow {
+            position: fixed;
+            top: 0; right: 0; bottom: 0; left: 0;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.35;
+            background:
+            linear-gradient(115deg, transparent 0%, transparent 40%, rgba(23, 195, 255, 0.4) 45%, rgba(23, 195, 255, 0.6) 48%, rgba(255, 255, 255, 0.7) 50%, rgba(13, 74, 162, 0.6) 52%, rgba(13, 74, 162, 0.4) 55%, transparent 60%, transparent 100%),
+            linear-gradient(115deg, transparent 0%, transparent 30%, rgba(13, 74, 162, 0.3) 35%, rgba(255, 255, 255, 0.5) 38%, rgba(23, 195, 255, 0.3) 42%, transparent 50%);
+            background-size: 300% 300%, 300% 300%;
+            background-position: 0% 0%, 100% 100%;
+            animation: fiberSweep 12s ease-in-out infinite;
+        }
+
+        @keyframes fiberSweep {
+            0%, 100% { background-position: 0% 0%, 100% 100%; }
+            50% { background-position: 100% 100%, 0% 0%; }
+        }
+
+        /* Pulse orbs */
+        .pulse-node {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(100px);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .pulse-node-1 {
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, #17c3ff 0%, transparent 70%);
+            top: -180px; left: -180px;
+            opacity: 0.5;
+            animation: pulse 8s ease-in-out infinite;
+        }
+        .pulse-node-2 {
+            width: 450px; height: 450px;
+            background: radial-gradient(circle, #0d4aa2 0%, transparent 70%);
+            bottom: -150px; right: -150px;
+            opacity: 0.45;
+            animation: pulse 8s ease-in-out infinite;
+            animation-delay: 4s;
+        }
+        .pulse-node-3 {
+            width: 320px; height: 320px;
+            background: radial-gradient(circle, #1581ee 0%, transparent 70%);
+            top: 40%; right: 15%;
+            opacity: 0.3;
+            animation: pulse 10s ease-in-out infinite;
+            animation-delay: 2s;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.45; }
+            50% { transform: scale(1.35); opacity: 0.7; }
+        }
+
+        /* ============================================================
+            MENU WRAPPER
+            ============================================================ */
+        .menu-wrapper {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            max-width: 1000px;
+            padding: 0 15px;
+        }
+
+        /* Header (logo + judul) */
+        .menu-header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: #fff;
+        }
+
+        .menu-brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .brand-logo {
+            width: 52px;
+            height: 52px;
+            background: rgba(255, 255, 255, 0.22);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            border-radius: 14px;
+            border: 1.5px solid rgba(255, 255, 255, 0.45);
+            box-shadow: 0 8px 22px rgba(23, 195, 255, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .brand-logo::before {
+            content: '';
+            position: absolute;
+            top: 8px; right: 8px;
+            width: 8px; height: 8px;
+            background: #17c3ff;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #17c3ff;
+            animation: ping 2s ease-in-out infinite;
+        }
+
+        @keyframes ping {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.4); }
+        }
+
+        .brand-name {
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            text-shadow: 0 2px 20px rgba(13, 74, 162, 0.5);
+        }
+
+        .menu-title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 24px rgba(13, 74, 162, 0.5);
+        }
+
+        .menu-subtitle {
+            font-size: 0.95rem;
+            opacity: 0.9;
+            margin-bottom: 0;
+        }
+
+        /* ============================================================
+            SHORTCUT CARD
+            ============================================================ */
+        .shortcut-card {
+            display: flex;
+            align-items: center;
+            height: 100%;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.12);
+            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
+            border: 1.5px solid rgba(255, 255, 255, 0.3);
+            border-radius: 18px;
+            padding: 20px 22px;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            color: #fff;
+            box-shadow:
+            0 10px 30px -10px rgba(13, 74, 162, 0.5),
+            inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+            min-height: 100px;
+        }
+
+        .shortcut-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .shortcut-card:hover::before { left: 100%; }
+
+        .shortcut-card:hover {
+            transform: translateY(-6px);
+            background: rgba(255, 255, 255, 0.22);
+            border-color: rgba(255, 255, 255, 0.55);
+            color: #fff;
+            text-decoration: none;
+            box-shadow:
+            0 25px 45px -12px rgba(13, 74, 162, 0.7),
+            0 0 40px -5px rgba(23, 195, 255, 0.7),
+            inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+        }
+
+        .shortcut-card:focus {
+            outline: none;
+            color: #fff;
+            text-decoration: none;
+            box-shadow:
+            0 0 0 4px rgba(23, 195, 255, 0.35),
+            0 25px 45px -12px rgba(13, 74, 162, 0.7);
+        }
+
+        .shortcut-icon {
+            width: 56px;
+            height: 56px;
+            background: rgba(255, 255, 255, 0.22);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            border: 1.5px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 8px 20px rgba(23, 195, 255, 0.4);
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-right: 18px;
+        }
+
+        .shortcut-card:hover .shortcut-icon {
+            transform: scale(1.12) rotate(-6deg);
+            background: rgba(255, 255, 255, 0.38);
+            box-shadow: 0 10px 26px rgba(23, 195, 255, 0.7);
+        }
+
+        .shortcut-content { flex: 1; min-width: 0; }
+
+        .shortcut-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+            letter-spacing: -0.01em;
+            color: #fff;
+            line-height: 1.2;
+        }
+
+        .shortcut-desc {
+            font-size: 0.85rem;
+            opacity: 0.85;
+            line-height: 1.4;
+            margin-bottom: 0;
+            color: #fff;
+        }
+
+        .shortcut-arrow {
+            color: rgba(255, 255, 255, 0.7);
+            flex-shrink: 0;
+            margin-left: 10px;
+            transition: all 0.3s;
+        }
+
+        .shortcut-card:hover .shortcut-arrow {
+            color: #fff;
+            transform: translateX(5px);
+        }
+
+        /* Footer */
+        .menu-footer {
+            text-align: center;
+            margin-top: 40px;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 575.98px) {
+            body { padding: 25px 10px; }
+            .menu-wrapper { padding: 0 5px; }
+            .menu-title { font-size: 1.7rem; }
+            .brand-name { font-size: 1.35rem; }
+            .brand-logo { width: 46px; height: 46px; }
+            .menu-header { margin-bottom: 28px; }
+            .menu-footer { margin-top: 28px; }
+            .shortcut-card { padding: 16px 18px; min-height: 90px; }
+            .shortcut-icon { width: 48px; height: 48px; margin-right: 14px; }
+            .shortcut-title { font-size: 1rem; }
+            .shortcut-desc { font-size: 0.78rem; }
+        }
+    </style>
+</head>
+
+<body>
+    <% include ../template/header.ejs %>
+    <!-- ═══ Layer efek background ═══ -->
+        <div class="fiber-glow"></div>
+        <div class="pulse-node pulse-node-1"></div>
+        <div class="pulse-node pulse-node-2"></div>
+        <div class="pulse-node pulse-node-3"></div>
+
+        <!-- ═══ MENU WRAPPER ═══ -->
+        <div class="menu-wrapper">
+
+        <!-- Header -->
+        <div class="menu-header">
+            <p class="menu-subtitle">Silakan pilih salah satu jenis izin pemanfaatan ruang miliki jalan di bawah untuk melanjutkan</p>
+        </div>
+
+        <!-- Shortcut Cards -->
+        <div class="row no-gutters">
+
+            <!-- Card 1: Sign In -->
+            <div class="col-12 col-sm-4 pl-sm-2 mb-3 mb-sm-0">
+            <a href="/perizinan/jaringan_utilitas" class="shortcut-card">
+                <div class="shortcut-icon">
+                    <i class="fas fa-map-pin" style="font-size: 28px;color: #f7ca18;"></i>
+                <!-- <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                    <polyline points="10 17 15 12 10 7"/>
+                    <line x1="15" y1="12" x2="3" y2="12"/>
+                </svg> -->
+                </div>
+                <div class="shortcut-content">
+                <div class="shortcut-title" style="color: #f7ca18;font-weight: bold;">Izin Jaringan Utilitas</div>
+                <!-- <p class="shortcut-desc">Kelola data utilitas tiang yang anda miliki</p> -->
+                </div>
+                <svg class="shortcut-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            </a>
+            </div>
+
+            <!-- Card 2: Register -->
+            <div class="col-12 col-sm-4 pl-sm-2">
+            <a href="/kabel" class="shortcut-card">
+                <div class="shortcut-icon">
+                    <i class="fas fa-vector-square" style="font-size: 28px;color: #f7ca18;"></i>
+                <!-- <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="8.5" cy="7" r="4"/>
+                    <line x1="20" y1="8" x2="20" y2="14"/>
+                    <line x1="23" y1="11" x2="17" y2="11"/>
+                </svg> -->
+                </div>
+                <div class="shortcut-content">
+                <div class="shortcut-title" style="color: #f7ca18;font-weight: bold;">Izin Reklame / Papan Iklan</div>
+                <!-- <p class="shortcut-desc">Kelola data utilitas kabel yang anda miliki</p> -->
+                </div>
+                <svg class="shortcut-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            </a>
+            </div>
+
+             <!-- Card 2: Register -->
+            <div class="col-12 col-sm-4 pl-sm-2">
+            <a href="/tidak_teridentifikasi" class="shortcut-card">
+                <div class="shortcut-icon">
+                    <i class="fas fa-times" style="font-size: 28px;color: #f7ca18;"></i>
+                <!-- <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="8.5" cy="7" r="4"/>
+                    <line x1="20" y1="8" x2="20" y2="14"/>
+                    <line x1="23" y1="11" x2="17" y2="11"/>
+                </svg> -->
+                </div>
+                <div class="shortcut-content">
+                <div class="shortcut-title" style="color: #f7ca18;font-weight: bold;">Izin Bangunan / Akses Persil Tertentu</div>
+                <!-- <p class="shortcut-desc">Kelola data utilitas kabel yang anda miliki</p> -->
+                </div>
+                <svg class="shortcut-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            </a>
+            </div>
+
+        </div>
+
+        <!-- <div class="row mt-5">
+            <div class="col-12">
+                <div style="width: 100%;display: flex;justify-content: center;">
+                    <a href="/dokumen/MANUAL_BOOK_PROVIDER_TEGAL.pdf" target="_blank" class="btn btn-outline-warning btn-lg"><i class="fas fa-download"></i> Download Manual Book</a>
+                </div>
+            </div>
+        </div> -->
+
+        
+
+        </div>
+          
+    <% include ../template/footer.ejs %>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <script src="<%= rooturl %>/javascripts/template/bootstrap.bundle.js"></script>
+    <!-- Plugins This Page -->
+    <script src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.22/js/dataTables.bootstrap4.min.js"></script>
+    <script src="<%= rooturl %>/plugins/slick/slick.min.js"></script>
+    <!-- End Plugins This Page -->
+    <script type="text/javascript">
+        var rooturl = ''
+        
+        let data_table  =$('#list-data').DataTable({
+            "language": {
+                "sProcessing":   "Sedang memproses...",
+                "sLengthMenu":   "_MENU_",
+                "sZeroRecords":  "Tidak ditemukan data yang sesuai",
+                "sInfo":         "Menampilkan _START_ sampai _END_ dari _TOTAL_ entri",
+                "sInfoEmpty":    "Menampilkan 0 sampai 0 dari 0 entri",
+                "sInfoFiltered": "(disaring dari _MAX_ entri keseluruhan)",
+                "sInfoPostFix":  "",
+                "sUrl":          "",
+                "oPaginate": {
+                    "sFirst":    "Pertama",
+                    "sPrevious": "Sebelumnya",
+                    "sNext":     "Selanjutnya",
+                    "sLast":     "Terakhir"
+                }
+            },
+            // "processing": true,
+            // "ajax":  `${rooturl}`,
+            // "columns": [
+            //     { "data": null},
+            // ],
+            // "columnDefs": [
+            //     { "width": "40px", "targets": 0},
+            // ],
+        });
+
+        data_table.on( 'draw.dt', function () {
+            let PageInfo = $('#list-data').DataTable().page.info();
+            data_table.column(0, { page: 'current' }).nodes().each( function (cell, i) {
+                cell.innerHTML = i + 1 + PageInfo.start;
+            });
+        });
+    </script>
+</body>
+</html>

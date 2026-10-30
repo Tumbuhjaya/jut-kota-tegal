@@ -12,10 +12,13 @@
     <title></title>
 
     <link href="<%= rooturl %>/stylesheets/template/css/bootstrap.css" rel="stylesheet">
-    <link href="<%= rooturl %>/stylesheets/template/css/style.css" rel="stylesheet">
+    <link href="<%= rooturl %>/stylesheets/template/css/style_new.css" rel="stylesheet">
 
 
     <!-- Plugin This Page --> 
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@x.x.x/dist/select2-bootstrap4.min.css">
+
     <link rel="stylesheet" href="<%= rooturl %>/plugins/fontawesome-5/css/all.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@x.x.x/dist/select2-bootstrap4.min.css">
@@ -43,7 +46,7 @@
     
     
     <script src="<%= rooturl %>/javascripts/template/jquery.min.js"></script>
-
+     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
     <script src="<%= rooturl %>/resources-maps/javascripts/leaflet-routing-machine.js"></script> 
     <script src="<%= rooturl %>/resources-maps/javascripts/leaflet.label.js"></script> 
     <script src="<%= rooturl %>/resources-maps/panah-asmara.js"></script> 
@@ -97,51 +100,943 @@
         <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
     <![endif]-->
     <style type="text/css">
+        .leaflet-popup-content-wrapper{
+            width: 400px;
+            max-height: 300px;
+            overflow-y: hidden;
+        }
 
+        .leaflet-popup-content{
+            width: 100% !important;
+            margin: 0;
+        }
+
+        .box-popup-peta{
+            padding: 15px;
+        }
+
+      /* ===== LAYOUT UTAMA ===== */
+        .app-wrapper {
+            min-height: calc(100vh - 70px);
+        }
+
+        /* ===== LEFT SIDEBAR (FIXED) ===== */
+        .sidebar-left {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 300px;
+            background: #0d1f36;
+            border-right: 1px solid #1a3552;
+            padding: 1.8rem 1.2rem;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+            z-index: 1040;
+            transition: transform 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-left .sidebar-title {
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin: 0;
+            color: #e6f1ff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: 0.5px;
+            padding:0 0 0.7rem 0 ;
+            border-bottom: 1px solid #1a3552;
+        }
+
+        .sidebar-left .sidebar-title i {
+            color: #4a9eff;
+            text-shadow: 0 0 20px rgba(74, 158, 255, 0.3);
+        }
+
+        /* ===== FORM ELEMENTS (tanpa input-group) ===== */
+        .sidebar-left .form-group {
+            position: relative;
+            margin-bottom: 1.2rem;
+        }
+
+        .sidebar-left .form-group .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 12px;
+            border: 1.5px solid #1a3552;
+            background: #0b1729;
+            color: #e6f1ff;
+            font-size: 0.9rem;
+            font-family: 'Inter Tight', sans-serif;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 8px rgba(74, 158, 255, 0);
+            height: auto;
+            appearance: auto;
+            -webkit-appearance: auto;
+        }
+
+        .sidebar-left .form-group .form-control:focus {
+            border-color: #4a9eff;
+            background: #0d1f36;
+            box-shadow: 0 0 24px rgba(74, 158, 255, 0.35), 0 0 60px rgba(74, 158, 255, 0.12);
+            animation: neonPulse 1.5s ease-in-out infinite alternate;
+            outline: none;
+        }
+
+        .sidebar-left .form-group .form-control::placeholder {
+            color: #4a6a8a;
+        }
+
+        /* Ikon di kiri */
+        .sidebar-left .form-group .input-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #4a6a8a;
+            font-size: 1rem;
+            pointer-events: none;
+            transition: color 0.3s, text-shadow 0.3s;
+            z-index: 2;
+        }
+
+        .sidebar-left .form-group .form-control:focus~.input-icon {
+            color: #4a9eff;
+            text-shadow: 0 0 18px rgba(74, 158, 255, 0.6);
+        }
+
+        .sidebar-left .form-group .form-control:focus~.arrow-icon {
+            color: #4a9eff;
+            text-shadow: 0 0 12px rgba(74, 158, 255, 0.4);
+        }
+
+
+        /* ===== RADIO & CHECKBOX KUSTOM ===== */
+        .sidebar-left .custom-control {
+            padding-left: 2rem;
+            margin-bottom: 0.6rem;
+            cursor: pointer;
+        }
+
+        .sidebar-left .custom-control-label {
+            color: #b0c7e6;
+            font-size: 0.88rem;
+            cursor: pointer;
+            font-family: 'Inter Tight', sans-serif;
+            transition: color 0.3s, text-shadow 0.3s;
+        }
+
+        .sidebar-left .custom-control-label::before {
+            background-color: #0b1729;
+            border: 1.5px solid #1a3552;
+            border-radius: 4px;
+            width: 1.2rem;
+            height: 1.2rem;
+            top: 0.1rem;
+            left: -2rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 8px rgba(74, 158, 255, 0);
+        }
+
+        .sidebar-left .custom-radio .custom-control-label::before {
+            border-radius: 50%;
+        }
+
+        .sidebar-left .custom-control-label::after {
+            width: 1.2rem;
+            height: 1.2rem;
+            top: 0.1rem;
+            left: -2rem;
+        }
+
+        /* Hover effect */
+        .sidebar-left .custom-control:hover .custom-control-label {
+            color: #e6f1ff;
+        }
+        .sidebar-left .custom-control:hover .custom-control-label::before {
+            border-color: #4a9eff;
+            box-shadow: 0 0 16px rgba(74, 158, 255, 0.2);
+        }
+
+        /* Checked state - NEON EFFECT */
+        .sidebar-left .custom-control-input:checked~.custom-control-label {
+            color: #ffffff;
+            text-shadow: 0 0 16px rgba(74, 158, 255, 0.3);
+        }
+
+        .sidebar-left .custom-control-input:checked~.custom-control-label::before {
+            background-color: #4a9eff;
+            border-color: #4a9eff;
+            box-shadow: 0 0 24px rgba(74, 158, 255, 0.5), 0 0 60px rgba(74, 158, 255, 0.15);
+            animation: neonPulseCheck 2s ease-in-out infinite alternate;
+        }
+
+        /* Checkbox centang */
+        .sidebar-left .custom-checkbox .custom-control-input:checked~.custom-control-label::after {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3e%3cpath fill='%23fff' d='M6.564.75l-3.59 3.612-1.538-1.55L0 4.26l2.974 2.99L8 2.193z'/%3e%3c/svg%3e");
+        }
+
+        /* Radio bullet */
+        .sidebar-left .custom-radio .custom-control-input:checked~.custom-control-label::after {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e");
+        }
+
+        @keyframes neonPulse {
+            0% {
+                box-shadow: 0 0 16px rgba(74, 158, 255, 0.25), 0 0 40px rgba(74, 158, 255, 0.08);
+                border-color: #4a9eff;
+            }
+            100% {
+                box-shadow: 0 0 32px rgba(74, 158, 255, 0.5), 0 0 80px rgba(74, 158, 255, 0.15);
+                border-color: #6ab0ff;
+            }
+        }
+
+         /* Label group untuk radio & checkbox */
+        .sidebar-left .filter-label {
+            font-size: 14px;
+            color: #4a6a8a;
+            font-weight: 600;
+            margin: 1rem 0 0.6rem 0;
+            display: block;
+        }
+
+        .sidebar-left .filter-label:first-of-type {
+            margin-top: 0.2rem;
+        }
+
+        /* ===== TOMBOL FILTER DATA (berdiri sendiri) ===== */
+        .sidebar-left .btn-filter-data {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            width: 100%;
+            padding: 0.7rem 1rem;
+            border-radius: 12px;
+            border: 1.5px solid #1a3552;
+            background: rgba(74, 158, 255, 0.06);
+            color: #b0c7e6;
+            font-family: 'Inter Tight', sans-serif;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(74, 158, 255, 0);
+            flex-shrink: 0;
+        }
+
+        .sidebar-left .btn-filter-data i {
+            color: #4a6a8a;
+            transition: color 0.3s, text-shadow 0.3s;
+        }
+
+        .sidebar-left .btn-filter-data:hover {
+            background: rgba(74, 158, 255, 0.15);
+            border-color: #4a9eff;
+            color: #ffffff;
+            box-shadow: 0 0 24px rgba(74, 158, 255, 0.2), 0 0 60px rgba(74, 158, 255, 0.05);
+            transform: translateY(-1px);
+        }
+
+        .sidebar-left .btn-filter-data:hover i {
+            color: #4a9eff;
+            text-shadow: 0 0 18px rgba(74, 158, 255, 0.6);
+        }
+
+        .sidebar-left .btn-filter-data:active {
+            transform: scale(0.97);
+        }
+
+
+
+        .sidebar-left .menu-group {
+            flex: 1;
+        }
+        .sidebar-left .menu-group .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 0.7rem 0.9rem;
+            border-radius: 10px;
+            color: #b0c7e6;
+            font-weight: 450;
+            font-size: 0.92rem;
+            transition: all 0.2s ease;
+            cursor: default;
+            margin-bottom: 2px;
+            font-family: 'Inter Tight', sans-serif;
+        }
+        .sidebar-left .menu-group .menu-item i {
+            width: 22px;
+            font-size: 1.05rem;
+            color: #4a6a8a;
+            transition: color 0.2s;
+        }
+        .sidebar-left .menu-group .menu-item:hover {
+            background: rgba(74, 158, 255, 0.08);
+            color: #fff;
+            text-shadow: 0 0 12px rgba(74, 158, 255, 0.3);
+        }
+        .sidebar-left .menu-group .menu-item:hover i {
+            color: #4a9eff;
+            text-shadow: 0 0 16px rgba(74, 158, 255, 0.4);
+        }
+        .sidebar-left .menu-group .menu-item.active {
+            background: rgba(74, 158, 255, 0.12);
+            color: #fff;
+            text-shadow: 0 0 12px rgba(74, 158, 255, 0.3);
+        }
+        .sidebar-left .menu-group .menu-item.active i {
+            color: #4a9eff;
+            text-shadow: 0 0 16px rgba(74, 158, 255, 0.4);
+        }
+
+        .sidebar-left .sidebar-footer {
+            border-top: 1px solid #1a3552;
+            padding-top: 1.2rem;
+            margin-top: auto;
+            font-size: 0.75rem;
+            color: #4a6a8a;
+        }
+        .sidebar-left .sidebar-footer .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #4ade80;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse-dot 2s infinite;
+            box-shadow: 0 0 12px rgba(74, 222, 128, 0.3);
+        }
+
+        .sidebar-left .offcanvas-body {
+            flex: 1;
+        }
+
+        .sidebar-left .offcanvas-body .summary-item {
+            background: rgba(11, 23, 41, 0.6);
+            border: 1px solid #1a3552;
+            border-radius: 14px;
+            padding: 1.2rem 1.4rem;
+            margin-bottom: 1rem;
+            transition: border-color 0.25s, box-shadow 0.3s;
+        }
+        .sidebar-left .offcanvas-body .summary-item:hover {
+            border-color: #4a9eff;
+            box-shadow: 0 0 30px rgba(74, 158, 255, 0.08);
+        }
+        .sidebar-left .offcanvas-body .summary-item .label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #4a6a8a;
+            font-weight: 600;
+            font-family: 'Inter Tight', sans-serif;
+        }
+        .sidebar-left .offcanvas-body .summary-item .value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #e6f1ff;
+            margin-top: 4px;
+            font-family: 'Orbitron', sans-serif;
+        }
+        .sidebar-left .offcanvas-body .summary-item .value small {
+            font-weight: 400;
+            font-size: 0.8rem;
+            color: #4a6a8a;
+            margin-left: 8px;
+            font-family: 'Inter Tight', sans-serif;
+        }
+        .sidebar-left .offcanvas-body .summary-item .trend {
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 6px;
+        }
+        .sidebar-left .offcanvas-body .summary-item .trend.up {
+            color: #4ade80;
+            text-shadow: 0 0 12px rgba(74, 222, 128, 0.2);
+        }
+        .sidebar-left .offcanvas-body .summary-item .trend.down {
+            color: #f87171;
+            text-shadow: 0 0 12px rgba(248, 113, 113, 0.2);
+        }
+
+        .sidebar-left .offcanvas-body .divider-light {
+            border: none;
+            border-top: 1px solid #1a3552;
+            margin: 1.5rem 0;
+        }
+
+        
+        @keyframes pulse-dot {
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.5;
+                transform: scale(0.9);
+            }
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        .main-content {
+            flex: 1;
+            margin-left: 260px;
+            min-height: calc(100vh - 70px);
+            padding-left: 45px;
+        }
+
+        /* ===== OFFCANVAS RIGHT ===== */
+        .offcanvas-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 1060;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.35s ease, visibility 0.35s ease;
+        }
+        .offcanvas-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .offcanvas-right {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 400px;
+            max-width: 92vw;
+            height: 100%;
+            background: #0d1f36;
+            border-left: 1px solid #1a3552;
+            z-index: 1070;
+            transform: translateX(105%);
+            transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+            display: flex;
+            flex-direction: column;
+            box-shadow: -10px 0 40px rgba(0, 0, 0, 0.5);
+        }
+        .offcanvas-right.open {
+            transform: translateX(0);
+        }
+
+        .offcanvas-right .offcanvas-header {
+            padding: 1.5rem 1.8rem;
+            border-bottom: 1px solid #1a3552;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        .offcanvas-right .offcanvas-header h5 {
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin: 0;
+            color: #e6f1ff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: 0.5px;
+        }
+        .offcanvas-right .offcanvas-header h5 i {
+            color: #4a9eff;
+            text-shadow: 0 0 20px rgba(74, 158, 255, 0.3);
+        }
+        .offcanvas-right .offcanvas-header .btn-close-offcanvas {
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
+            color: #8892b0;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .offcanvas-right .offcanvas-header .btn-close-offcanvas:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .offcanvas-right .offcanvas-body {
+            padding: 1.8rem;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .offcanvas-right .offcanvas-body .summary-item {
+            background: rgba(11, 23, 41, 0.6);
+            border: 1px solid #1a3552;
+            border-radius: 14px;
+            padding: 1.2rem 1.4rem;
+            margin-bottom: 1rem;
+            transition: border-color 0.25s, box-shadow 0.3s;
+        }
+        .offcanvas-right .offcanvas-body .summary-item:hover {
+            border-color: #4a9eff;
+            box-shadow: 0 0 30px rgba(74, 158, 255, 0.08);
+        }
+        .offcanvas-right .offcanvas-body .summary-item .label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #4a6a8a;
+            font-weight: 600;
+            font-family: 'Inter Tight', sans-serif;
+        }
+        .offcanvas-right .offcanvas-body .summary-item .value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #e6f1ff;
+            margin-top: 4px;
+            font-family: 'Orbitron', sans-serif;
+        }
+        .offcanvas-right .offcanvas-body .summary-item .value small {
+            font-weight: 400;
+            font-size: 0.8rem;
+            color: #4a6a8a;
+            margin-left: 8px;
+            font-family: 'Inter Tight', sans-serif;
+        }
+        .offcanvas-right .offcanvas-body .summary-item .trend {
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 6px;
+        }
+        .offcanvas-right .offcanvas-body .summary-item .trend.up {
+            color: #4ade80;
+            text-shadow: 0 0 12px rgba(74, 222, 128, 0.2);
+        }
+        .offcanvas-right .offcanvas-body .summary-item .trend.down {
+            color: #f87171;
+            text-shadow: 0 0 12px rgba(248, 113, 113, 0.2);
+        }
+
+        .offcanvas-right .offcanvas-body .divider-light {
+            border: none;
+            border-top: 1px solid #1a3552;
+            margin: 1.5rem 0;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 992px) {
+            .sidebar-left {
+                transform: translateX(-100%);
+                width: 280px;
+                box-shadow: 4px 0 30px rgba(0, 0, 0, 0.5);
+            }
+            .sidebar-left.mobile-open {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+                padding: 1.5rem 0;
+            }
+            .navbar-custom .navbar-collapse {
+                background: #0d1f36;
+                padding: 1rem 1.2rem;
+                border-radius: 14px;
+                border: 1px solid #1a3552;
+                margin-top: 10px;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            }
+        }
+
+        @media (max-width: 576px) {
+            .navbar-custom {
+                padding: 0.5rem 1rem;
+                height: 62px;
+            }
+            .app-wrapper {
+                margin-top: 62px;
+            }
+            .sidebar-left {
+                top: 62px;
+                width: 260px;
+                padding: 1.2rem 0.9rem;
+            }
+            .main-content {
+                padding: 1.2rem 0;
+            }
+            .offcanvas-right {
+                width: 100%;
+                max-width: 100%;
+            }
+            .btn-toggle-offcanvas span {
+                display: none;
+            }
+        }
+
+        /* ===== UTILITY ===== */
+        .text-glow-blue {
+            text-shadow: 0 0 40px rgba(74, 158, 255, 0.15);
+        }
+        .border-glow-blue {
+            box-shadow: 0 0 30px rgba(74, 158, 255, 0.06);
+        }
+        .bg-surface-dark {
+            background: #0d1f36;
+        }
+
+        /* toggle sidebar mobile button */
+        .btn-sidebar-toggle {
+            background: transparent;
+            border: none;
+            color: #b0c7e6;
+            font-size: 1.3rem;
+            padding: 0.2rem 0.5rem;
+            transition: color 0.2s;
+            display: none;
+        }
+        .btn-sidebar-toggle:hover {
+            color: #fff;
+        }
+
+        @media (max-width: 992px) {
+            .btn-sidebar-toggle {
+                display: block;
+            }
+        }
+
+        .select2-container--bootstrap4 .select2-results__option{
+            color: #000;
+        }
     </style>
 </head>
 
 <body>
     <% include ../template/header.ejs %>
-    <!-- ============================================
-    HEADER / NAVBAR
-    ============================================ -->
-    <header>
-        <nav class="tech-navbar" id="techNavbar">
-            <div class="container">
-                <div class="row">
-                    <div class="col-lg-4 col-xl-4">
-                        <div class="w-100-flex" style="height: 40px;justify-content: flex-start;align-items: center;background-color: ;">
-                            <h4 style="font-family: var(--font-display);font-weight: 800;">DPUPR <span style=" background: linear-gradient(90deg, var(--accent-cyan), var(--accent-blue), var(--accent-purple));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;">KOTA TEGAL</span></h4>
-                        </div>
-                    </div>
+    <!-- ============================================================ -->
+    <!-- APP WRAPPER (sidebar kiri + main content) -->
+    <!-- ============================================================ -->
+    <div class="app-wrapper">
+        <!-- ===== LEFT SIDEBAR (FIXED) ===== -->
+        <aside class="sidebar-left" id="sidebarLeft">
+          <button class="btn-toggle-offcanvas" id="openOffcanvasBtn" style="position: absolute;top:30px;right:10px;z-index: 9999;">
+                                <i class="fas fa-chevron-circle-right"></i>
+                            </button>
+            <div class="sidebar-title">
+                <i class="fas fa-filter mr-2"></i> Filter Data
+            </div>
 
-                    <div class="col-lg-8 col-xl-8">
-                        <div class="w-100-flex" style="height: 40px;justify-content: space-around;align-items: center;">
-                            <a href="/"><h6 style="font-family: var(--font-display);">BERANDA</h6></a>
-                            <a href="#"><h6 style="font-family: var(--font-display);">DATA</h6></a>
-                            <a href="#"><h6 style="font-family: var(--font-display);">PETA INTERAKTIF</h6></a>
-                            <a href="#"><h6 style="font-family: var(--font-display);">STATISTIK</h6></a>
-                        </div>
-                    </div>
+            <!-- Filter Select (tanpa input-group) -->
+            <div class="form-group mb-1">
+                <label class="filter-label">Kecamatan</label>
+                <select class="form-control" name="" id="kec_id">
+                    <option value="">-- Pilih --</option>
+                </select>
+            </div>
+
+
+            <div class="form-group mb-1">
+                <label class="filter-label">Ruas Jalan</label>
+                <select class="form-control autocomplete" name="" id="ruas_id" >
+                    <option value="" style="color: red;">-- Pilih --</option>
+                </select>
+            </div>
+            <div class="form-group mb-1">
+                <label class="filter-label">Nomor Ruas</label>
+                <select class="form-control autocomplete" name="" id="no_ruas_id">
+                    <option value="" style="color: red;">-- Pilih --</option>
+                </select>
+            </div>
+            <div class="form-group mb-1">
+                <label class="filter-label">Provider</label>
+                <select class="form-control autocomplete" name="" id="provider_id">
+                    <option value="">-- Pilih --</option>
+                </select>
+            </div>
+
+            <div class="form-group mb-1">
+                <label class="filter-label">Layer Jaringan Utilitas Telekomunikasi</label>
+                <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input" id="chkChart">
+                    <label class="custom-control-label" for="chkChart">Tiang</label>
                 </div>
+                <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input" id="chkPrediction">
+                    <label class="custom-control-label" for="chkPrediction">Kabel</label>
+                </div>
+            </div>
+
+            <!-- ===== TOMBOL FILTER DATA (berdiri sendiri) ===== -->
+            <button class="btn-filter-data" id="filterDataBtn" onclick="filterDataBtn()">
+                <i class="fas fa-filter"></i>
+                Filter Data
+            </button>
+
+            <div class="offcanvas-body">
+                <hr class="divider-light" />
             </div>
             
-        </nav>
-    </header>
+            <div class="sidebar-title">
+                <i class="fas fa-tachometer-alt"></i> Ringkasan Data
+            </div>
 
-    <div class="section">
-        <div class="container-fluid">
-            <div class="row">
-                <div class="col-lg-12 col-xl-12 p-0">
-                    <div id="map" style="width: 100%;height: 90vh;margin-top: 65px;"></div>
+            <!-- Body offcanvas -->
+            <div class="offcanvas-body">
+                <!-- Item ringkasan 1 -->
+                <div class="summary-item">
+                    <div class="label" style=" font-family: 'Orbitron', sans-serif;">Jumlah Tiang</div>
+                    <div class="value" style="color: #4a9eff;text-shadow: 0 0 16px rgba(74, 158, 255, 0.4);" id="jml_t"><small>Tiang</small></div>
+                </div>
+
+                <!-- Item ringkasan 2 -->
+                <div class="summary-item">
+                    <div class="label" style=" font-family: 'Orbitron', sans-serif;">Panjang Kabel</div>
+                    <div class="value" style="color: #4a9eff;text-shadow: 0 0 16px rgba(74, 158, 255, 0.4);" id="pjg_k"><small>Meter</small></div>
+                </div>
+
+              <!-- Item ringkasan 3 -->
+                <div class="summary-item">
+                    <div class="label" style=" font-family: 'Orbitron', sans-serif;">Jumlah Provider</div>
+                    <div class="value" style="color: #4a9eff;text-shadow: 0 0 16px rgba(74, 158, 255, 0.4);" id="jml_p_1"><small>Provider</small></div>
                 </div>
             </div>
-        </div>
+        </aside>
+
+        <!-- ===== MAIN CONTENT ===== -->
+        <main class="main-content">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-12 col-xl-12 p-0">
+                        <div style="width: 100%;height: 100vh;background-color: whitesmoke;" id="map"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
+
+    <!-- ===== OFFCANVAS RIGHT ===== -->
+    <aside class="offcanvas-right" id="offcanvasRight">
+        <!-- Header offcanvas -->
+        <div class="offcanvas-header">
+            <h5>
+                <i class="fas fa-chart-pie"></i> Detail Data
+            </h5>
+            <button class="btn-close-offcanvas" id="closeOffcanvasBtn">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- Body offcanvas -->
+        <div class="offcanvas-body">
+          <!-- Info ruas -->
+          <div id="info-ruas">
+            <div class="row">
+                <div class="col-12 col-lg-12 col-xl-12">
+                    <h6 class="filter-label" style="font-family: 'Inter Tight', sans-serif;">Ruas Jalan</h6>
+                    <h6 class="filter-label-white" style="font-size: 18px; color: #4a9eff;text-shadow: 0 0 16px rgba(74, 158, 255, 0.4);" id="nm_ruas"></h6>
+                </div>
+
+                <div class="col-12 col-lg-12 col-xl-12">
+                    <h6 class="filter-label" style="font-family: 'Inter Tight', sans-serif;">Ruas Pangkal</h6>
+                    <h6 class="filter-label-white" style="font-size: 18px; color: #4a9eff;text-shadow: 0 0 16px rgba(74, 158, 255, 0.4);" id="tk_ruas_aw"></h6>
+                </div>
+
+                <div class="col-12 col-lg-12 col-xl-12">
+                    <h6 class="filter-label" style="font-family: 'Inter Tight', sans-serif;">Ruas Ujung</h6>
+                    <h6 class="filter-label-white" style="font-size: 18px; color: #4a9eff;text-shadow: 0 0 16px rgba(74, 158, 255, 0.4);" id="tk_ruas_ak"></h6>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-12">
+                    <hr class="divider-light" />
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-12">
+                    <div class="summary-item">
+                        <div class="label" style=" font-family: 'Orbitron', sans-serif;">Total Retribusi Tiang</div>
+                        <h6 class="filter-label-white m-0" style="font-size: 18px; color: #4ade80;text-shadow: 0 0 12px rgba(74, 222, 128, 0.2);" id="t_retri_t"></h6>
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <div class="summary-item">
+                        <div class="label" style=" font-family: 'Orbitron', sans-serif;">Total Retribusi Kabel</div>
+                        <h6 class="filter-label-white m-0" style="font-size: 18px; color: #4ade80;text-shadow: 0 0 12px rgba(74, 222, 128, 0.2);" id="t_retri_k"></h6>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-12">
+                    <div style="width: 100%;display: flex;justify-content: space-between;gap: 10px;">
+                        <!-- Item ringkasan 1 -->
+                        <div class="summary-item" style="flex:1;margin-bottom: 0;">
+                            <div class="label" style=" font-family: 'Orbitron', sans-serif;letter-spacing: normal;">Jumlah Tiang</div>
+                            <div class="value" style="color: #4a9eff;text-shadow: 0 0 16px rgba(74, 158, 255, 0.4);" id="t_total_t">000</div>
+                        </div>
+
+                        <!-- Item ringkasan 2 -->
+                        <div class="summary-item" style="flex:1;margin-bottom: 0;">
+                            <div class="label" style=" font-family: 'Orbitron', sans-serif;letter-spacing: normal;">Panjang Kabel</div>
+                            <div class="value" style="color: #4a9eff;text-shadow: 0 0 16px rgba(74, 158, 255, 0.4);" id="t_total_k">0000</div>
+                        </div>
+
+                        <!-- Item ringkasan 3 -->
+                        <div class="summary-item" style="flex:1;margin-bottom: 0;">
+                            <div class="label" style=" font-family: 'Orbitron', sans-serif;letter-spacing: normal;">Jumlah Provider</div>
+                            <div class="value" style="color: #4a9eff;text-shadow: 0 0 16px rgba(74, 158, 255, 0.4);" id="jml_p">000</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            
+
+            <div class="row">
+                <div class="col-12">
+                    <hr class="divider-light" />
+                </div>
+            </div>
+
+
+            <div class="row">
+                <div class="col-12">
+                    <!-- Item ringkasan 4 -->
+                    <div class="summary-item custom-border">
+                        <table class="table table-bordered table-striped table-sm">
+                            <thead>
+                                <tr>
+                                    <th class="filter-label-white"><h6 class="mt-2 mb-2 text-center" style="letter-spacing: 0.5px;">TABEL RETRIBUSI</h6></th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <h6 style="font-weight: 300;font-family: 'Inter Tight', sans-serif;color: #4a9eff;text-shadow: 0 0 16px rgba(74, 158, 255, 0.4);">Pemasangan Tiang Listrik, Telekomunikasi Diameter <30 CM (Unit/Tahun)</h6>
+                                        <h6 class="filter-label-white m-0" style="font-size: 18px; color: #4ade80;text-shadow: 0 0 12px rgba(74, 222, 128, 0.2);" id="t_k30cm">Rp 141.000</h6>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <h6 style="font-weight: 300;font-family: 'Inter Tight', sans-serif;color: #4a9eff;text-shadow: 0 0 16px rgba(74, 158, 255, 0.4);">Pemasangan Tiang Listrik, Telekomunikasi Diameter >30 CM (Unit/Tahun)</h6>
+                                        <h6 class="filter-label-white m-0" style="font-size: 18px; color: #4ade80;text-shadow: 0 0 12px rgba(74, 222, 128, 0.2);"  id="t_l30cm">Rp 1.285.000</h6>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>
+                                        <h6 style="font-weight: 300;font-family: 'Inter Tight', sans-serif;color: #4a9eff;text-shadow: 0 0 16px rgba(74, 158, 255, 0.4);">Pendirian Tower / Menara Telekomunikasi (Unit/Tahun)</h6>
+                                        <h6 class="filter-label-white m-0" style="font-size: 18px; color: #4ade80;text-shadow: 0 0 12px rgba(74, 222, 128, 0.2);"  id="tower_tele">Rp 10.282.000</h6>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>
+                                        <h6 style="font-weight: 300;font-family: 'Inter Tight', sans-serif;color: #4a9eff;text-shadow: 0 0 16px rgba(74, 158, 255, 0.4);">Pemasangan Pipa/Kabel/Jaringan Utilitas Bawah Tanah <15CM (Meter/Tahun)</h6>
+                                        <h6 class="filter-label-white m-0" style="font-size: 18px; color: #4ade80;text-shadow: 0 0 12px rgba(74, 222, 128, 0.2);"  id="jr_btk15cm">Rp 3.000</h6>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>
+                                        <h6 style="font-weight: 300;font-family: 'Inter Tight', sans-serif;color: #4a9eff;text-shadow: 0 0 16px rgba(74, 158, 255, 0.4);">Pemasangan Pipa/Kabel/Jaringan Utilitas Bawah Tanah >15CM (Meter/Tahun)</h6>
+                                        <h6 class="filter-label-white m-0" style="font-size: 18px; color: #4ade80;text-shadow: 0 0 12px rgba(74, 222, 128, 0.2);"  id="jr_btl15cm">Rp 13.000</h6>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>
+                                        <h6 style="font-weight: 300;font-family: 'Inter Tight', sans-serif;color: #4a9eff;text-shadow: 0 0 16px rgba(74, 158, 255, 0.4);">Pemasangan Pipa/Kabel/Jaringan Utilitas Atas Tanah <15CM (Meter/Tahun)</h6>
+                                        <h6 class="filter-label-white m-0" style="font-size: 18px; color: #4ade80;text-shadow: 0 0 12px rgba(74, 222, 128, 0.2);"  id="jr_atk15cm">Rp 8.000</h6>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>
+                                        <h6 style="font-weight: 300;font-family: 'Inter Tight', sans-serif;color: #4a9eff;text-shadow: 0 0 16px rgba(74, 158, 255, 0.4);">Pemasangan Pipa/Kabel/Jaringan Utilitas Atas Tanah >15CM (Meter/Tahun)</h6>
+                                        <h6 class="filter-label-white m-0" style="font-size: 18px; color: #4ade80;text-shadow: 0 0 12px rgba(74, 222, 128, 0.2);"  id="jr_atl15cm">Rp 32.000</h6>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>
+                                        <h6 style="font-weight: 300;font-family: 'Inter Tight', sans-serif;color: #4a9eff;text-shadow: 0 0 16px rgba(74, 158, 255, 0.4);">Pemasangan Kabel Bawah Tanah Melalui Ducting Utilitas <15CM (Meter/Tahun)</h6>
+                                        <h6 class="filter-label-white m-0" style="font-size: 18px; color: #4ade80;text-shadow: 0 0 12px rgba(74, 222, 128, 0.2);"  id="kbbt_k15cm">Rp 5.000</h6>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>
+                                        <h6 style="font-weight: 300;font-family: 'Inter Tight', sans-serif;color: #4a9eff;text-shadow: 0 0 16px rgba(74, 158, 255, 0.4);">Pemasangan Kabel Bawah Tanah Melalui Ducting Utilitas >15CM (Meter/Tahun)</h6>
+                                        <h6 class="filter-label-white m-0" style="font-size: 18px; color: #4ade80;text-shadow: 0 0 12px rgba(74, 222, 128, 0.2);"  id="kbbt_l15cm">Rp 19.000</h6>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>
+                                        <h6 style="font-weight: 300;font-family: 'Inter Tight', sans-serif;color: #4a9eff;text-shadow: 0 0 16px rgba(74, 158, 255, 0.4);">Akses Jalan Kepentingan Pribadi (M2/Tahun)</h6>
+                                        <h6 class="filter-label-white m-0" style="font-size: 18px; color: #4ade80;text-shadow: 0 0 12px rgba(74, 222, 128, 0.2);"  id="">Rp 8.000</h6>
+                                    </td>
+                                </tr>
+                      
+
+                                <tr>
+                                    <td>
+                                        <h6 style="font-weight: 300;font-family: 'Inter Tight', sans-serif;color: #4a9eff;text-shadow: 0 0 16px rgba(74, 158, 255, 0.4);">Akses Jalan Usaha Kecil (M2/Tahun)</h6>
+                                        <h6 class="filter-label-white m-0" style="font-size: 18px; color: #4ade80;text-shadow: 0 0 12px rgba(74, 222, 128, 0.2);"  id="usaha_kcl">Rp 42.000</h6>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>
+                                        <h6 style="font-weight: 300;font-family: 'Inter Tight', sans-serif;color: #4a9eff;text-shadow: 0 0 16px rgba(74, 158, 255, 0.4);">Akses Jalan Usaha Menengah (M2/Tahun)</h6>
+                                        <h6 class="filter-label-white m-0" style="font-size: 18px; color: #4ade80;text-shadow: 0 0 12px rgba(74, 222, 128, 0.2);"  id="usaha_mngh">Rp 85.000</h6>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>
+                                        <h6 style="font-weight: 300;font-family: 'Inter Tight', sans-serif;color: #4a9eff;text-shadow: 0 0 16px rgba(74, 158, 255, 0.4);">Akses Jalan Usaha Besar (M2/Tahun)</h6>
+                                        <h6 class="filter-label-white m-0" style="font-size: 18px; color: #4ade80;text-shadow: 0 0 12px rgba(74, 222, 128, 0.2);"  id="usaha_bsr">Rp 170.000</h6>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>
+                                        <h6 style="font-weight: 300;font-family: 'Inter Tight', sans-serif;color: #4a9eff;text-shadow: 0 0 16px rgba(74, 158, 255, 0.4);">Peralatan / Barang Lainnya (M2/Tahun)</h6>
+                                        <h6 class="filter-label-white m-0" style="font-size: 18px; color: #4ade80;text-shadow: 0 0 12px rgba(74, 222, 128, 0.2);"  id="brng_lain">Rp 170.000</h6>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+          </div>
+
+          <!-- Info tiang -->
+          <div id="info-ruas">
+            <div class="row" id="list_tiang"></div>
+          </div>
+
+          <!-- Info kabel -->
+          <div id="info-ruas">
+            <div class="row" id="list_kabel"></div>
+          </div>
+        </div>
+    </aside>
     <% include ../template/footer.ejs %>
     <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
     <script src="<%= rooturl %>/javascripts/template/bootstrap.bundle.js"></script>
@@ -153,7 +1048,68 @@
     <script src="<%= rooturl %>/plugins/slick/slick.min.js"></script>
     <!-- End Plugins This Page -->
     <script type="text/javascript">
+         $(document).ready(function() {
+          $('.autocomplete').select2({
+            theme: 'bootstrap4',
+          });
+      });
+        /**
+ * Format angka ke mata uang Rupiah (Indonesia)
+ */
+function formatRupiah(angka, denganRp = true, tampilkanDesimal = false) {
+    if (angka === undefined || angka === null || angka === '') return '-';
+
+    let cleaned = String(angka).replace(/[^0-9,.]/g, '').replace(',', '.');
+    let num = parseFloat(cleaned);
+    if (isNaN(num)) return '-';
+
+    let isFloat = (num % 1 !== 0) || tampilkanDesimal;
+    let parts = num.toFixed(isFloat ? 2 : 0).split('.');
+    let integerPart = parts[0];
+    let decimalPart = parts[1] || '';
+
+    let integerWithSeparator = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+    let result = integerWithSeparator;
+    if (isFloat && decimalPart) {
+        result += ',' + decimalPart.padEnd(2, '0');
+    }
+
+    return denganRp ? 'Rp ' + result : result;
+}
         var rooturl = ''
+        let jml_p = 0
+                       window.onload = async () => {
+                        
+                    let kec = await $.post(rooturl + `/api/list_kecamatan`)
+                    kec.data.forEach(e => {
+                                            $('#kec_id').append(`<option value="${e.kec_id}">-- ${e.kecamatan} --</option>`)
+
+                    });
+                     let ruas = await $.post(rooturl + `/api/list_ruas`)
+                    ruas.data.forEach(e => {
+                            $('#no_ruas_id').append(`<option value="${e.no}">-- ${e.no} --</option>`)
+
+                                            $('#ruas_id').append(`<option value="${e.no}">-- ${e.nm_ruas} --</option>`)
+
+                    });
+                        let provider = await $.post(rooturl + `/provider/list`)
+                        jml_p =  provider.data.length
+                    provider.data.forEach(e => {
+                                            $('#provider_id').append(`<option value="${e.provider_id}">-- ${e.provider} --</option>`)
+
+                    });
+                  }
+   // Sinkron: pilih dari "Ruas Jalan" → isi otomatis "Nomor Ruas", dan sebaliknya
+$('#ruas_id').on('select2:select', function(e) {
+    $('#no_ruas_id').val(e.params.data.id).trigger('change.select2');
+});
+$('#no_ruas_id').on('select2:select', function(e) {
+    $('#ruas_id').val(e.params.data.id).trigger('change.select2');
+});
+$('#ruas_id, #no_ruas_id').on('select2:unselect', function() {
+    $('#ruas_id, #no_ruas_id').val(null).trigger('change.select2');
+});
         let data_table  =$('#list-data').DataTable({
             "language": {
                 "sProcessing":   "Sedang memproses...",
@@ -171,14 +1127,6 @@
                     "sLast":     "Terakhir"
                 }
             },
-            // "processing": true,
-            // "ajax":  `${rooturl}`,
-            // "columns": [
-            //     { "data": null},
-            // ],
-            // "columnDefs": [
-            //     { "width": "40px", "targets": 0},
-            // ],
         });
 
         data_table.on( 'draw.dt', function () {
@@ -187,6 +1135,128 @@
                 cell.innerHTML = i + 1 + PageInfo.start;
             });
         });
+
+        (function() {
+            'use strict';
+
+            // ----- ELEMENTS -----
+            const sidebarLeft = document.getElementById('sidebarLeft');
+            const sidebarToggle = document.getElementById('sidebarToggleMobile');
+            const offcanvasRight = document.getElementById('offcanvasRight');
+            const offcanvasOverlay = document.getElementById('offcanvasOverlay');
+            const openBtn = document.getElementById('openOffcanvasBtn');
+            const closeBtn = document.getElementById('closeOffcanvasBtn');
+            const searchInput = document.getElementById('searchInput');
+
+            // ----- LEFT SIDEBAR (mobile toggle) -----
+            if (sidebarToggle) {
+                sidebarToggle.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    sidebarLeft.classList.toggle('mobile-open');
+                });
+            }
+
+            // Tutup sidebar kiri saat klik di luar (mobile)
+            document.addEventListener('click', function(e) {
+                if (window.innerWidth <= 992) {
+                    if (sidebarLeft.classList.contains('mobile-open')) {
+                        const isClickInside = sidebarLeft.contains(e.target) ||
+                            sidebarToggle.contains(e.target);
+                        if (!isClickInside) {
+                            sidebarLeft.classList.remove('mobile-open');
+                        }
+                    }
+                }
+            });
+
+            function openOffcanvas() {
+                offcanvasRight.classList.add('open');
+                if (offcanvasOverlay) offcanvasOverlay.classList.add('show');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeOffcanvas() {
+                offcanvasRight.classList.remove('open');
+                if (offcanvasOverlay) offcanvasOverlay.classList.remove('show');
+                document.body.style.overflow = '';
+            }
+
+            if (openBtn) {
+                openBtn.addEventListener('click', openOffcanvas);
+            }
+            if (closeBtn) {
+                closeBtn.addEventListener('click', closeOffcanvas);
+            }
+            if (offcanvasOverlay) {
+                offcanvasOverlay.addEventListener('click', closeOffcanvas);
+            }
+
+            // Tutup offcanvas dengan tombol ESC
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeOffcanvas();
+                }
+            });
+
+            // ----- SEARCH (feedback sederhana) -----
+            if (searchInput) {
+                searchInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        const val = this.value.trim();
+                        if (val.length > 0) {
+                            alert('🔍 Pencarian untuk: "' + val + '" (demo)');
+                            this.value = '';
+                        }
+                    }
+                });
+            }
+
+            // ----- NAV LINK AKTIF (toggle class) -----
+            const navLinks = document.querySelectorAll('.navbar-custom .nav-link');
+            navLinks.forEach(function(link) {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    navLinks.forEach(function(l) { l.classList.remove('active'); });
+                    this.classList.add('active');
+                    const collapse = document.getElementById('navbarNav');
+                    if (collapse && collapse.classList.contains('show')) {
+                        $(collapse).collapse('hide');
+                    }
+                });
+            });
+
+            // ----- SIDEBAR MENU AKTIF -----
+            const menuItems = document.querySelectorAll('.sidebar-left .menu-item');
+            menuItems.forEach(function(item) {
+                item.addEventListener('click', function() {
+                    menuItems.forEach(function(i) { i.classList.remove('active'); });
+                    this.classList.add('active');
+                    if (window.innerWidth <= 992) {
+                        sidebarLeft.classList.remove('mobile-open');
+                    }
+                });
+            });
+
+            // ----- RESIZE: tutup sidebar mobile saat layar > 992px -----
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 992) {
+                    sidebarLeft.classList.remove('mobile-open');
+                }
+            });
+
+            // ----- AUTO SCROLL ke menu aktif -----
+            window.addEventListener('load', function() {
+                const activeMenu = document.querySelector('.sidebar-left .menu-item.active');
+                if (activeMenu) {
+                    setTimeout(function() {
+                        activeMenu.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                    }, 100);
+                }
+            });
+
+            console.log('🚀 TechData Landing Page siap.');
+
+        })();
 
         function toWKT (layer) { 
                           var lng, lat, coords = []; 
@@ -256,27 +1326,11 @@
                           });
                         });
 
-                        // $.ajax({ 
-                        //   type : "GET", 
-                        //   async : false, 
-                        //   global : false, 
-                        //   url : root + "peta/json_kec", 
-                        //   dataType : 'json', 
-                        //   success: function (data) { 
-                        //    $("#kabupaten").empty(); 
-                        //     $("#kabupaten").append('<option value="">Pilih Kecamatan / Kota</option>') 
-                        //  $.each(data, function(){ 
-                        //       $("#kabupaten").append('<option value="'+ this.kecamatan +'">'+ this.kecamatan +'</option>') 
-                        //   }) 
-                             
-                        //   } 
-                        // }); 
-                         
                            $("#parsepeta").on("click", function () { 
                             drawnItems.clearLayers(); 
                             inputan_koordinat =""; 
                             end_koordinat = ""; 
-                          var tableHtml=$('table.order-list')  // tableHtml is a jQuery of the table 
+                          var tableHtml=$('table.order-list')
          
                           tableHtml.find('tbody > tr').each(function(){  
                                 
@@ -293,7 +1347,6 @@
                                layer_parse.eachLayer(function (layer) { 
          
                                                   var bounds = layer.getBounds(); 
-                                    //         // Get center of bounds 
                                              var center = bounds.getCenter(); 
                                      
          
@@ -320,7 +1373,6 @@
          
                                cols += '<td><input type="button" class="ibtnDel"  value="Hapus" style="width:100%"></td>'; 
                                newRow.append(cols); 
-                             //  if (counter == 4) $('#addrow').attr('disabled', true).prop('value', "You've reached the limit"); 
                                $("table.order-list").append(newRow); 
                                counter++; 
                                $("table.order-list").on("click", ".ibtnDel", function (event) { 
@@ -330,7 +1382,6 @@
                                    counter -= 1 
                                    $('#addrow').attr('disabled', false).prop('value', "Tambah Koordinat"); 
                                }); 
-                               //  var price = +row.find('input[name^="price"]').val(); 
                            }); 
                          
                     }); 
@@ -346,29 +1397,7 @@
                             map.setView(e.latlng, 13); 
                             center++; 
                           } 
-                         //   var koordinat = {latlng:{lat: ye, lng: xe}}; 
-                          
-                             
-                         //console.log(koordinat) 
                           clickHandler(e) 
-                          // iht_layer.eachLayer(function (layer) { 
-                          //   layer_lat_long = layer.getLatLng(); 
-                          //   layer_lat = layer.getLatLng().lat; 
-                          //   layer_lng = layer.getLatLng().lng; 
-         
-                          //   // jarak ke point saat ini dalam meter 
-                          //   var posisi_kita_lat = e.latlng.lat; 
-                          //   var posisi_kita_lng = e.latlng.lng; 
-         
-                          //   jarak = layer_lat_long.distanceTo(e.latlng); 
-         
-                          //   var popupContent = getPopup( layer, posisi_kita_lat, posisi_kita_lng, layer_lat, layer_lng ); 
-                          //   layer.bindPopup(popupContent, popupOptions); 
-                          //   if(jarak > 30000){ 
-                          //      // layer.setOpacity(0); 
-                          //      // layer.unbindPopup(); 
-                          //   } 
-                          // }); 
                         } 
                        
          
@@ -382,8 +1411,6 @@
                           } 
                           else{ 
                             navigasi =  L.Routing.control({ 
-                              // waypointIcon : 
-                              // waypoints : [L.latLng(x_awal, y_awal), L.latLng(x_akhir, y_akhir)] 
                               plan: L.Routing.plan([ 
                                   L.latLng(x_awal, y_awal), 
                                   L.latLng(x_akhir, y_akhir) 
@@ -395,8 +1422,6 @@
                                     icon: routeIcon 
                                   }); 
                                 } 
-                                // geocoder: L.Control.Geocoder.nominatim(), 
-                                // routeWhileDragging: true 
                               }) 
                             }); 
                             navigasi.addTo(map); 
@@ -414,10 +1439,8 @@
                         } 
          
                         function tambah_titik(x, y, id_jalan){ 
-         
                           map.panTo(new L.LatLng(x, y)); 
                           map.setZoom(16); 
-         
                           jalan_layer.eachLayer(function (layer) { 
                             if ( layer.feature.properties.id_jalan == id_jalan ) { 
                               console.log(layer.feature.properties) 
@@ -432,18 +1455,9 @@
                             map.panTo(new L.LatLng(ye, xe)); 
                           map.setZoom(16); 
                           var koordinat = {latlng:{lat: ye, lng: xe}}; 
-                          
-                             
-                         //console.log(koordinat) 
                           clickHandler(koordinat) 
                         }) 
          
-         
-                        /** 
-                         *  
-                         *  Variables Initialization 
-                         *  
-                         */ 
                         var kabupaten_layer; 
                         var iht_layer = null; 
                         var source = null; 
@@ -454,11 +1468,6 @@
                         var kabupaten_layer; 
                         var marker_search=''; 
          
-                        /** 
-                         *  
-                         *  Layer Styling 
-                         *  
-                         */ 
                         var sembunyi = { 
                           color : "transparent", 
                           weight : 1, 
@@ -466,14 +1475,17 @@
                           fillOpacity : 0 
                         }; 
                          
+                         /* [FIX] fill: false supaya klik di area kecamatan TIDAK menyerap klik
+                            pada layer jalan di bawahnya. */
                          var style_kabupaten = { 
                               color : "yellow",  
                               weight : 3,  
                               opacity : 1,  
+                              fill : false,
                               fillOpacity  : 0, 
                               dashArray : 3 
                             }; 
-                                var style_persil = { 
+                                var style_sk_jalan = { 
                               color : "blue",  
                               weight : 3,  
                               opacity : 1,  
@@ -487,20 +1499,19 @@
                                
                             }; 
                              var style_desa = { 
-                              color : "white",  
+                              color : "red",  
                               weight : 1,  
                               opacity : 1,  
+                              fill : false,
                               fillOpacity  : 0, 
                               dashArray : 3 
                             }; 
                 
-                      
-                       
-         
                         var style_kabupaten_gelap = { 
                           color : "#000",  
                           weight : 1,  
                           opacity : 1,  
+                          fill : false,
                           fillOpacity  : 0, 
                           dashArray : 3 
                         }; 
@@ -512,18 +1523,11 @@
                           closeOnClick : true 
                         }; 
          
-                        /** 
-                         *  
-                         *  Map initialization 
-                         *  
-                        . The Longitude of Kota Pati is  
-                         */ 
                         var southWest = L.latLng(-7.7228245, 111.2106116), 
                           northEast = L.latLng(-7.5578955, 111.3991254), 
                           bounds = L.latLngBounds(southWest, northEast); 
                         var map = L.map('map', { 
                             center: [ -7.653612465060216, 111.32634662536874], 
-                            // maxBounds: bounds, 
                             zoom: 12, 
                             minZoom:2, 
                             maxZoom:22, 
@@ -533,43 +1537,10 @@
                             } 
                         }); 
          
-         
-                        //ngilangi garis putih 
-                 
-         
-         
-         
                           function clickHandler(e) { 
-                          
-               //  var clickBounds = L.latLngBounds(e.latlng, e.latlng); 
-         
-               //  var intersectingFeatures = []; 
-               //    for (var l in map._layers) { 
-               //    var overlay = map._layers[l]; 
-               //    if (overlay._layers) { 
-               //      for (var f in overlay._layers) { 
-               //        var feature = overlay._layers[f]; 
-               //        var bounds; 
-               //        if (feature.getBounds) bounds = feature.getBounds(); 
-               //        else if (feature._latlng) { 
-               //          bounds = L.latLngBounds(feature._latlng, feature._latlng); 
-               //        } 
-               //        if (bounds && clickBounds.intersects(bounds)) { 
-               //          intersectingFeatures.push(feature); 
-               //        } 
-               //      } 
-               //    } 
-               //  } 
-               // intersectingFeatures.map(function(o) { 
-               //    console.log(o) 
-               //  }) 
-               //  var html = "Found features: " + intersectingFeatures.length + "<br/>" + intersectingFeatures.map(function(o) { 
-               //    return o.feature 
-               //  }).join('<br/>'); 
                $('#xe').val(e.latlng.lng)  
                $('#ye').val(e.latlng.lat)  
               var html =""; 
-                
                 html = html + "</br></br>Pola Ruang RTRW : </br>" 
                $.ajax({ 
                         type : "GET", 
@@ -578,7 +1549,6 @@
                         url : root + "peta/list_polaruang?x="+e.latlng.lng+"&y="+e.latlng.lat, 
                         dataType : 'json', 
                         success: function (data) { 
-                       // console.log(data) 
                        $.each(data, function(){ 
                             html = html + this.rencana_tg+"</br>"; 
                         }) 
@@ -588,17 +1558,8 @@
          
                html = html + "</br>Koordinat : </br>" 
                 html = html + "</br>"+e.latlng.lng+" "+e.latlng.lat+"</br>" 
-         
-                 
-                    
                 map.openPopup(html, e.latlng); 
               } 
-         
-         
-         
-         
-         
-                        // map.fitBounds(bounds); 
          
                         var google_roadmap    = L.gridLayer.googleMutant({ 
                                                                         type: 'roadmap', 
@@ -606,95 +1567,29 @@
                                                                                     {elementType: 'geometry', stylers: [{color: '#242f3e'}]}, 
                                                                                     {elementType: 'labels.text.stroke', stylers: [{color: '#242f3e'}]}, 
                                                                                     {elementType: 'labels.text.fill', stylers: [{color: '#746855'}]}, 
-                                                                                    { 
-                                                                                      featureType: 'administrative.locality', 
-                                                                                      elementType: 'labels.text.fill', 
-                                                                                      stylers: [{color: '#d59563'}] 
-                                                                                    }, 
-                                                                                    { 
-                                                                                      featureType: 'poi', 
-                                                                                      elementType: 'labels.text.fill', 
-                                                                                      stylers: [{color: '#d59563'}] 
-                                                                                    }, 
-                                                                                    { 
-                                                                                      featureType: 'poi.park', 
-                                                                                      elementType: 'geometry', 
-                                                                                      stylers: [{color: '#263c3f'}] 
-                                                                                    }, 
-                                                                                    { 
-                                                                                      featureType: 'poi.park', 
-                                                                                      elementType: 'labels.text.fill', 
-                                                                                      stylers: [{color: '#6b9a76'}] 
-                                                                                    }, 
-                                                                                    { 
-                                                                                      featureType: 'road', 
-                                                                                      elementType: 'geometry', 
-                                                                                      stylers: [{color: '#38414e'}] 
-                                                                                    }, 
-                                                                                    { 
-                                                                                      featureType: 'road', 
-                                                                                      elementType: 'geometry.stroke', 
-                                                                                      stylers: [{color: '#212a37'}] 
-                                                                                    }, 
-                                                                                    { 
-                                                                                      featureType: 'road', 
-                                                                                      elementType: 'labels.text.fill', 
-                                                                                      stylers: [{color: '#9ca5b3'}] 
-                                                                                    }, 
-                                                                                    { 
-                                                                                      featureType: 'road.highway', 
-                                                                                      elementType: 'geometry', 
-                                                                                      stylers: [{color: '#746855'}] 
-                                                                                    }, 
-                                                                                    { 
-                                                                                      featureType: 'road.highway', 
-                                                                                      elementType: 'geometry.stroke', 
-                                                                                      stylers: [{color: '#1f2835'}] 
-                                                                                    }, 
-                                                                                    { 
-                                                                                      featureType: 'road.highway', 
-                                                                                      elementType: 'labels.text.fill', 
-                                                                                      stylers: [{color: '#f3d19c'}] 
-                                                                                    }, 
-                                                                                    { 
-                                                                                      featureType: 'transit', 
-                                                                                      elementType: 'geometry', 
-                                                                                      stylers: [{color: '#2f3948'}] 
-                                                                                    }, 
-                                                                                    { 
-                                                                                      featureType: 'transit.station', 
-                                                                                      elementType: 'labels.text.fill', 
-                                                                                      stylers: [{color: '#d59563'}] 
-                                                                                    }, 
-                                                                                    { 
-                                                                                      featureType: 'water', 
-                                                                                      elementType: 'geometry', 
-                                                                                      stylers: [{color: '#17263c'}] 
-                                                                                    }, 
-                                                                                    { 
-                                                                                      featureType: 'water', 
-                                                                                      elementType: 'labels.text.fill', 
-                                                                                      stylers: [{color: '#515c6d'}] 
-                                                                                    }, 
-                                                                                    { 
-                                                                                      featureType: 'water', 
-                                                                                      elementType: 'labels.text.stroke', 
-                                                                                      stylers: [{color: '#17263c'}] 
-                                                                                    } 
+                                                                                    {featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{color: '#d59563'}]}, 
+                                                                                    {featureType: 'poi', elementType: 'labels.text.fill', stylers: [{color: '#d59563'}]}, 
+                                                                                    {featureType: 'poi.park', elementType: 'geometry', stylers: [{color: '#263c3f'}]}, 
+                                                                                    {featureType: 'poi.park', elementType: 'labels.text.fill', stylers: [{color: '#6b9a76'}]}, 
+                                                                                    {featureType: 'road', elementType: 'geometry', stylers: [{color: '#38414e'}]}, 
+                                                                                    {featureType: 'road', elementType: 'geometry.stroke', stylers: [{color: '#212a37'}]}, 
+                                                                                    {featureType: 'road', elementType: 'labels.text.fill', stylers: [{color: '#9ca5b3'}]}, 
+                                                                                    {featureType: 'road.highway', elementType: 'geometry', stylers: [{color: '#746855'}]}, 
+                                                                                    {featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{color: '#1f2835'}]}, 
+                                                                                    {featureType: 'road.highway', elementType: 'labels.text.fill', stylers: [{color: '#f3d19c'}]}, 
+                                                                                    {featureType: 'transit', elementType: 'geometry', stylers: [{color: '#2f3948'}]}, 
+                                                                                    {featureType: 'transit.station', elementType: 'labels.text.fill', stylers: [{color: '#d59563'}]}, 
+                                                                                    {featureType: 'water', elementType: 'geometry', stylers: [{color: '#17263c'}]}, 
+                                                                                    {featureType: 'water', elementType: 'labels.text.fill', stylers: [{color: '#515c6d'}]}, 
+                                                                                    {featureType: 'water', elementType: 'labels.text.stroke', stylers: [{color: '#17263c'}]} 
                                                                                   ] 
-                                                                   // valid values are 'roadmap', 'satellite', 'terrain' and 'hybrid' 
                                                                     }) 
          
-                        var google_hybrid     = L.gridLayer.googleMutant({ 
-                                                                        type: 'hybrid' // valid values are 'roadmap', 'satellite', 'terrain' and 'hybrid' 
-                                                                    }) 
-                        var google_satelit    = L.gridLayer.googleMutant({ 
-                                                                        type: 'satellite' // valid values are 'roadmap', 'satellite', 'terrain' and 'hybrid' 
-                                                                    }) 
+                        var google_hybrid     = L.gridLayer.googleMutant({ type: 'hybrid' }) 
+                        var google_satelit    = L.gridLayer.googleMutant({ type: 'satellite' }) 
                         var osm               = L.tileLayer('https://{s}.tile.osm.org/{z}/{x}/{y}.png', {}); 
                         var Esri_WorldImagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'); 
-                       // var RBI            = L.tileLayer('http://portal.ina-sdi.or.id/arcgis/rest/services/IGD/RupabumiIndonesia/MapServer'); 
-         
+ 
                         var RBI =  L.esri.tiledMapLayer({ 
                           url: "https://portal.ina-sdi.or.id/arcgis/rest/services/IGD/RupabumiIndonesia/MapServer" 
                         }); 
@@ -703,9 +1598,7 @@
                             L.GridLayer.include({ 
                                 _initTile: function (tile) { 
                                     originalInitTile.call(this, tile); 
-         
                                     var tileSize = this.getTileSize(); 
-         
                                     tile.style.width = tileSize.x + 1 + 'px'; 
                                     tile.style.height = tileSize.y + 1 + 'px'; 
                                 } 
@@ -716,32 +1609,16 @@
                         var legend = L.control({position: 'bottomleft'}); 
                         var streetview = L.control({position: 'bottomright'}); 
                          
-                        //gambar 
                         var drawnItems = L.featureGroup().addTo(map); 
                         var options = { 
                               position: 'topleft', 
                               draw: { 
                                   polyline: false, 
-                                //   polygon: { 
-                                //    showArea: true, 
-                                //       allowIntersection: false, // Restricts shapes to simple polygons 
-                                //       drawError: { 
-                                //           color: '#e1e100', // Color the shape will turn when intersects 
-                                //           message: '<strong>Digitasi Salah!' // Message that will show when intersect 
-                                //       }, 
-                                //       shapeOptions: { 
-                                //           color: '#bada55' 
-                                //       } 
-                                //   }, 
-                                polygon:false,
-                                  circle: false, // Turns off this drawing tool 
+                                  polygon:false, 
+                                  circle: false, 
                                   rectangle: false, 
-                                  marker: true 
+                                  marker: false 
                               }, 
-                              edit: { 
-                                  featureGroup: drawnItems, //REQUIRED!! 
-                                  remove: true 
-                              } 
                           }; 
                            
                           var drawControl = new L.Control.Draw(options); 
@@ -752,34 +1629,9 @@
                               var layer = event.layer; 
                                     var latlngss = layer.getLatLng(); 
                             console.log(latlngss) 
-                            $('#xe').val(latlngss.lng)
-                            
-                            $('#ye').val(latlngss.lat)
-                                //  var seeArea =  L.GeometryUtil.geodesicArea(latlngss[0]); 
-                                                //  seeArea = L.GeometryUtil.readableArea(seeArea, true, {}) 
-                                               // console.log(seeArea); 
-                                 // console.log(toWKT(layer)); 
-                                 // console.log(layer); 
-                             
-                                      
-                                               
-         
-                               //    html = html+"</br>"+"<a href='/peta/print?p="+toWKT(layer)+"' style='color:blue' target='_blank'>[DOWNLOAD]</a>"; 
-                                        //  var bounds = layer.getBounds(); 
-                                //         // Get center of bounds 
-                                        //  var center = bounds.getCenter(); 
-                                  // map.openPopup(html, center, { 
-                                  //     offset: L.point(0, -24) 
-                                  //   }); 
-                                  //  $('#konten_polaruang').empty() 
-                                  // $('#konten_polaruang').append(html) 
-         
-                                  // // $("#konten-detail").toggle("slide", {direction:"right"}, 500); 
-                                  // $('.modal').modal('show'); 
-                            //  drawnItems.addLayer(layer); 
+                            $('#xe').val(latlngss.lng) 
+                            $('#ye').val(latlngss.lat) 
                                 peta_pemohon(toWKT(layer)) 
-                              
-                            
                             }); 
 
 
@@ -788,19 +1640,10 @@
                              
                                     var latlngss = layer.getLatLng(); 
                             console.log(latlngss) 
-                            $('#xe').val(latlngss.lng)
-                            
-                            $('#ye').val(latlngss.lat)
-                                
-                                // peta_pemohon(toWKT(layer)) 
-                              
-                                })
+                            $('#xe').val(latlngss.lng) 
+                            $('#ye').val(latlngss.lat) 
+                                }) 
                             }); 
-         
-         
-                        //gambar end  
-         
-         
          
                         var locateIcon = L.ExtraMarkers.icon({ 
                             icon: 'fa-map-marker',  
@@ -842,17 +1685,10 @@
                             shape: 'square' 
                         }); 
          
-                        // $.getJSON( root + "index.php/kabupaten", function( json ) { 
-                        //   $.each(json, function( i, item ) { 
-                        //     $('#kabupaten').append('<option value="'+item.id_kabupaten+'">'+item.nama_kabupaten+'</option>'); 
-                        //   }) 
-                        // }); 
-                      //ambil ksp   
                       var label_kec = []; 
                       var label_desa = []; 
                   var popup = new L.popup(); 
                       
-                              //topojson 
                               L.TopoJSON = L.GeoJSON.extend({   
                                 addData: function(jsonData) {     
                                   if (jsonData.type === "Topology") { 
@@ -866,11 +1702,10 @@
                                   } 
                                 }   
                               }); 
-                              //topojson 
                         var wellmaxzoom = 13;        
                       var polaruang_layer = new L.GeoJSON(); 
                       var kabupaten_layer = new L.TopoJSON(); 
-                      var persil_layer = new L.TopoJSON(); 
+                      var sk_jalan_layer = new L.TopoJSON(); 
 
                       
                       var desa_layer = new L.TopoJSON(); 
@@ -882,12 +1717,10 @@
                       var inovasi = new L.TopoJSON(); 
                       var inovasi_markers = L.markerClusterGroup(); 
                        
-                      //hapus labeh 
                       function hapus_label_kec(){ 
                          var ii = 0; 
                               kabupaten_layer.eachLayer(function (layer) { 
                             map.removeLayer(label_kec[ii]); 
-                            // label[ii].clearLayers(); 
                              ii++; 
                           }) 
                               label_kec = []; 
@@ -896,7 +1729,6 @@
                          var ii = 0; 
                                   kabupaten_layer.eachLayer(function (layer) { 
                                     label_kec[ii].setOpacity(1); 
-                                // label[ii].clearLayers(); 
                                  ii++; 
                               }) 
                       } 
@@ -904,7 +1736,6 @@
                          var ii = 0; 
                                   kabupaten_layer.eachLayer(function (layer) { 
                                     label_kec[ii].setOpacity(0); 
-                                // label[ii].clearLayers(); 
                                  ii++; 
                               }) 
                       } 
@@ -915,8 +1746,6 @@
                                if(label_desa[ii]){ 
                                  map.removeLayer(label_desa[ii]); 
                                } 
-                             
-                            // label[ii].clearLayers(); 
                              ii++; 
                           }) 
                               label_desa = []; 
@@ -925,7 +1754,6 @@
                          var ii = 0; 
                                   desa_layer.eachLayer(function (layer) { 
                                     label_desa[ii].setOpacity(1); 
-                                // label[ii].clearLayers(); 
                                  ii++; 
                               }) 
                       } 
@@ -933,10 +1761,9 @@
                          var ii = 0; 
                                   desa_layer.eachLayer(function (layer) { 
                                     label_desa[ii].setOpacity(0); 
-                                // label[ii].clearLayers(); 
                                  ii++; 
                               }) 
-                      } 
+                      }
                      function loadGeoJsonkec(data) {
     kabupaten_layer.clearLayers();
     kabupaten_layer.addData(data);
@@ -959,36 +1786,30 @@
         label_kec[i].setContent(labelnya);
         label_kec[i].setLatLng(center);
         map.showLabel(label_kec[i]);
-        layer.on('click', function (e) {
-            // ...
-        });
+        /* [FIX] Handler klik kosong DIHAPUS — kalau dibiarkan, klik di area
+           kecamatan akan diserap & tidak tembus ke sk_jalan_layer. */
         i++;
     });
     hide_label_kec();
 
-    // 🔁 ZOOM OTOMATIS ke seluruh kecamatan
     if (kabupaten_layer.getLayers().length > 0) {
         map.fitBounds(kabupaten_layer.getBounds(), {
-            padding: [20, 20],   // beri jarak tepi
-            maxZoom: 12          // batas zoom maksimal agar tidak terlalu dekat
+            padding: [20, 20],
+            maxZoom: 12
         });
     }
 }
-var batasGroup = L.featureGroup().addTo(map);   // untuk menampung garis batas sementara
-var ruas_layer = new L.GeoJSON();               // layer untuk semua ruas batas
+var batasGroup = L.featureGroup().addTo(map);
+var ruas_layer = new L.GeoJSON();
 
-// 2. Fungsi untuk memuat data ruas (panggil setelah halaman siap)
 function loadRuas(data) {
     ruas_layer.clearLayers();
     ruas_layer.addData(data);
-    // Jangan ditambahkan ke map secara permanen, cukup disimpan di memori
 }
-// --- Correct implementation of tampilkanBatas ---
 function tampilkanBatas(id_ruas, color, label) {
     if (!id_ruas) return;
     var found = false;
     ruas_layer.eachLayer(function(layer) {
-        // Adjust property name as needed – the server returns 'id'
         if (layer.feature.properties.id == id_ruas) {
             var clone = layer.clone();
             clone.setStyle({
@@ -1005,125 +1826,484 @@ function tampilkanBatas(id_ruas, color, label) {
         console.warn('Ruas dengan ID ' + id_ruas + ' tidak ditemukan.');
     }
 }
+var tiang_layer = null
+var selectedJalanLayer = null;
+var ruasKabelLayer = null;
+var colorPalette = {};
+function loadGeoJsonRuasKabel(data) {
+    if (ruasKabelLayer) {
+        map.removeLayer(ruasKabelLayer);
+        ruasKabelLayer = null;
+    }
 
-// --- loadGeoJsonPersil as a separate function ---
-function loadGeoJsonPersil(data) {
-    persil_layer.clearLayers();
-    persil_layer.addData(data);
-    console.log('loadGeoJsonPersil');
+    var geojson;
+    if (data.type === 'Topology') {
+        var key = Object.keys(data.objects)[0];
+        geojson = topojson.feature(data, data.objects[key]);
+    } else {
+        geojson = data;
+    }
 
-    persil_layer.addTo(map);
+    if (!geojson.features || geojson.features.length === 0) {
+        console.warn('Tidak ada fitur ruas kabel.');
+        return;
+    }
 
-    persil_layer.eachLayer(function (layer) {
-        layer.setStyle(style_persil);
-        
-        layer.on('click', function (e) {
-            var props = layer.feature.properties;
-            
-            var popupContent = `
-                <div style="min-width: 300px;">
-                    <h6 style="font-weight: bold; color: #A37E62; margin-bottom: 8px;">
-                        <i class="fas fa-home"></i> ${props.desa || 'Desa'} - ${props.kecamatan || 'Kecamatan'}
-                    </h6>
-                    <hr style="margin: 5px 0;">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px 10px; font-size: 12px;">
-                        <span><strong>Penguasa:</strong></span>
-                        <span>${props.nm_pnguasa || '-'}</span>
-                        <span><strong>NIK:</strong></span>
-                        <span>${props.nik || '-'}</span>
-                        <span><strong>No Sertifikat:</strong></span>
-                        <span>${props.no_srtfkt || '-'}</span>
-                        <span><strong>Luas Tanah:</strong></span>
-                        <span>${props.l_tanah || '-'} m²</span>
-                        <span><strong>Jenis Hak:</strong></span>
-                        <span>${props.jns_hak || '-'}</span>
-                        <span><strong>Luas Bangunan:</strong></span>
-                        <span>${props.l_bangunan || '-'}</span>
-                        <span><strong>NOP:</strong></span>
-                        <span>${props.nop || '-'}</span>
-                        <span><strong>Pemanfaatan Lahan:</strong></span>
-                        <span>${props.pmftn_lhn || '-'}</span>
-                        <span><strong>Peruntukan Lahan:</strong></span>
-                        <span>${props.prntkn_lhn || '-'}</span>
-                    </div>
-                    <hr style="margin: 5px 0;">
-                    <div style="font-size: 11px; color: #666; text-align: center;">
-                        <i class="far fa-calendar-alt"></i> ${props.updated_at ? new Date(props.updated_at).toLocaleDateString('id-ID') : '-'}
-                    </div>
-                </div>
-            `;
-            
-            L.popup({
-                maxWidth: 400,
-                className: 'persil-popup'
-            })
-            .setLatLng(e.latlng)
-            .setContent(popupContent)
-            .openOn(map);
+    ruasKabelLayer = L.geoJSON(geojson, {
+          interactive: true,
+        style: function(feature) {
+            var provider = feature.properties.provider || 'unknown';
+            return {
+                color: getColorByProvider(provider),
+                weight: 5,
+                opacity: 1,
+                fillOpacity: 0
+            };
+        },
+       onEachFeature:async function(feature, layer) {
+    var props = feature.properties;
 
-            // Clear previous batas and show new ones
-            batasGroup.clearLayers();
+   layer.on('click', async function(e) {
+                L.DomEvent.stopPropagation(e);
 
-            var batasList = [
-                { id: props.bts_brt, color: 'red',    label: 'Batas Barat' },
-                { id: props.bts_tmr, color: 'blue',   label: 'Batas Timur' },
-                { id: props.bts_sltn, color: 'green', label: 'Batas Selatan' },
-                { id: props.bts_utr, color: 'orange', label: 'Batas Utara' }
-            ];
+                try {
+                    let response = await $.get('/api/detail_kabel_by_code/' + props.kode_x);
+                    console.log('Data dari API:', response);
 
-            batasList.forEach(function(item) {
-                tampilkanBatas(item.id, item.color, item.label);
+                    let items = response.data || response;
+
+                    if (!Array.isArray(items) || items.length === 0) {
+                        this.bindPopup('<b>Tidak ada data</b>').openPopup();
+                        return;
+                    }
+
+                    var popupContent = '<div class="box-popup-peta"><div style="overflow-y: scroll;height: 280px;padding:0 5px;">';
+                    items.forEach(function(item) {
+    var foto = item.kode_foto || '';
+    var fotoUrl = foto ? (foto.indexOf('/') > -1 ? foto : '/foto/' + foto) : '';
+
+    popupContent += '<table class="table table-bordered table-sm"><tbody><tr><td style="width:50%">'+'<b style="font-size:14px">Provider</b><br/>' + (item.provider || '-') + '<br>' +'<b style="font-size:14px">Panjang</b><br/>' + (item.panjang.toFixed(2) || '-') + ' m<br>' +'<b style="font-size:14px">Jumlah Kabel</b><br/> ' + (item.jumlah || '-') + '<br>' +'<b style="font-size:14px">Total Retribusi</b><br/> Rp ' + (item.retribusi_k || '-')+' ,-' + '<br>' +'</td><td style="width:50%">'+ (fotoUrl
+            ? '<img src="' + fotoUrl + '" class="img-responsive" ' +
+              'style="max-height:180px;border-radius:6px; border:1px solid #444;width:100%" ' +
+              'onerror="this.style.display=\'none\'" ' +
+              'alt="Foto Kabel">' 
+            : '')+'</td></tr></table>';
+});
+                    popupContent += '</div></div>';
+
+                    this.bindPopup(popupContent).openPopup();
+
+                } catch (error) {
+                    console.error('Gagal mengambil data:', error);
+                    this.bindPopup('<b>Error mengambil data</b>').openPopup();
+                }
             });
+  }
+      });
+
+
+    ruasKabelLayer.addTo(map);
+
+    if (ruasKabelLayer.getLayers().length > 0) {
+        map.fitBounds(ruasKabelLayer.getBounds(), { padding: [30, 30] });
+    }
+}
+function loadGeoJsonTiang(data) {
+    if (tiang_layer) {
+        map.removeLayer(tiang_layer);
+        tiang_layer = null;
+    }
+
+    var geojson;
+    if (data.type === 'Topology') {
+        var key = Object.keys(data.objects)[0];
+        geojson = topojson.feature(data, data.objects[key]);
+    } else {
+        geojson = data;
+    }
+
+    if (!geojson.features || geojson.features.length === 0) {
+        console.warn('Tidak ada fitur ruas kabel.');
+        return;
+    }
+
+    tiang_layer = L.geoJSON(geojson, {
+          interactive: true,
+        style: function(feature) {
+            var provider = feature.properties.provider || 'unknown';
+            return {
+                color: 'green',
+                weight: 5,
+                opacity: 1,
+                fillOpacity: 0
+            };
+        },
+       onEachFeature:async function(feature, layer) {
+    var props = feature.properties;
+
+   layer.on('click', async function(e) {
+                L.DomEvent.stopPropagation(e);
+
+                try {
+                    let response = await $.get('/api/detail_tiang_by_code/' + props.kode_x);
+                    console.log('Data dari API:', response);
+
+                    let items = response.data || response;
+
+                    if (!Array.isArray(items) || items.length === 0) {
+                        this.bindPopup('<b>Tidak ada data</b>').openPopup();
+                        return;
+                    }
+
+                    var popupContent = '<div class="box-popup-peta"><div style="overflow-y: scroll;height: 280px;padding:0 5px;">';
+                    items.forEach(function(item) {
+    var foto = item.kd_foto_1 || '';
+    var fotoUrl = foto ? (foto.indexOf('/') > -1 ? foto : '/foto/' + foto) : '';
+
+    popupContent += '<table class="table table-bordered table-sm"><tbody><tr><td style="width:50%">'+'<b style="font-size:14px">Nama Ruas</b><br/>' + (item.nm_ruas || '-') + '<br>'+'<b style="font-size:14px">Provider</b><br/>' + (item.provider || '-') + '<br>' +'<b style="font-size:14px">Jumlah Tiang</b><br/>' + (item.jumlah_tia || '-') + '<br>' +'<b style="font-size:14px">Retribusi</b><br/>Rp ' + (item.retribusi_k || '-')+',-' + '<br>' +'</td><td style="width:50%">'+(fotoUrl
+            ? '<img src="' + fotoUrl + '" class="img-responsive" ' +
+              'style="max-height:180px;border-radius:6px; border:1px solid #444;width:100%" ' +
+              'onerror="this.style.display=\'none\'" ' +
+              'alt="Foto Tiang">' 
+            : '') +'</td></tr></tbody></table>';
+});
+                    popupContent += '</div></div>';
+
+                    this.bindPopup(popupContent).openPopup();
+
+                } catch (error) {
+                    console.error('Gagal mengambil data:', error);
+                    this.bindPopup('<b>Error mengambil data</b>').openPopup();
+                }
+            });
+  }
+      });
+
+
+    tiang_layer.addTo(map);
+
+    if (tiang_layer.getLayers().length > 0) {
+        map.fitBounds(tiang_layer.getBounds(), { padding: [30, 30] });
+    }
+}
+
+function getColorByProvider(provider) {
+    var providerColors = {
+      "My Republik":'#e74c3c'
+
+    };
+
+    if (!providerColors[provider]) {
+        if (!colorPalette[provider]) {
+            colorPalette[provider] = randomColor();
+        }
+        return colorPalette[provider];
+    }
+    return providerColors[provider];
+}
+
+function randomColor() {
+    return '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+}
+
+/* ================================================================
+ *  Helper: ambil daftar provider unik (Set) dari response
+ *  GeoJSON / TopoJSON.
+ * ================================================================ */
+function extractProviderSet(data) {
+    let set = new Set();
+    if (!data) return set;
+
+    let geojson;
+    if (data.type === 'Topology') {
+        let key = Object.keys(data.objects)[0];
+        geojson = topojson.feature(data, data.objects[key]);
+    } else {
+        geojson = data;
+    }
+
+    if (geojson && geojson.features) {
+        geojson.features.forEach(function (f) {
+            let p = f.properties && f.properties.provider;
+            if (p !== undefined && p !== null && String(p).trim() !== '') {
+                set.add(String(p).trim());
+            }
+        });
+    }
+    return set;
+}
+
+async function loadGeoJsonSk_jalan(data) {
+
+    sk_jalan_layer.clearLayers();
+    sk_jalan_layer.addData(data);
+
+    console.log('loadGeoJsonsk_jalan');
+
+    sk_jalan_layer.addTo(map);
+    /* [FIX] Pastikan sk_jalan_layer selalu di atas kabupaten_layer
+       supaya tidak tertutup polygon kecamatan saat diklik. */
+    if (sk_jalan_layer.bringToFront) sk_jalan_layer.bringToFront();
+
+    sk_jalan_layer.eachLayer(function(layer) {
+
+        layer.setStyle(style_sk_jalan);
+
+        /* [FIX] paksa tiap ruas untuk selalu di depan */
+        if (layer.bringToFront) layer.bringToFront();
+
+        layer.on('click', async function(e) {
+
+            console.log('=== CLICK RUAS ===', this.feature.properties);
+
+            if (selectedJalanLayer && selectedJalanLayer !== this) {
+                selectedJalanLayer.setStyle(style_sk_jalan);
+            }
+
+            selectedJalanLayer = layer;
+
+            layer.setStyle({
+                color: 'green',
+                weight: 5,
+                opacity: 1
+            });
+
+            var props = this.feature.properties;
+
+            /* ============================================================
+             *  HEADER RUAS (nama ruas, pangkal, ujung) — di panel kanan
+             * ============================================================ */
+            $('#nm_ruas').html(props.nm_ruas || '-');
+            $('#tk_ruas_aw').html(props.tk_ruas_aw || '-');
+            $('#tk_ruas_ak').html(props.tk_ruas_ak || '-');
+
+            /* ============================================================
+             *  BACA CHECKBOX
+             * ============================================================ */
+            let showTiang = $('#chkChart').prop('checked');
+            let showKabel = $('#chkPrediction').prop('checked');
+            console.log('Checkbox:', { showTiang: showTiang, showKabel: showKabel, no: props.no });
+
+            /* ============================================================
+             *  POPUP CONTENT (tabel klasifikasi retribusi)
+             * ============================================================ */
+            var content = '<div class="box-popup-peta"><div style="overflow-y: scroll;height: 280px;padding:0 5px;">';
+            content += '<b>Nama Ruas :</b> ' + (props.nm_ruas || '-') + '<br>'+
+                       '<b>Ruas Awal :</b> ' + (props.tk_ruas_aw || '-') + '<br>'+
+                       '<b>Ruas Akhir :</b> ' + (props.tk_ruas_ak || '-') + '<br>'+
+                       '<hr>'+
+                       '<table class="table table-borderless table-striped table-sm">'+
+                       '<thead><tr><th colspan="3" style="text-align:center;font-size:16px;">Klasifikasi Retribusi</th><tr></thead>'+
+                       '<tbody>'+
+                       '<tr><td style="width:190px">Pemasangan Tiang Listrik, Telekomunikasi Diameter <30 CM (Unit/Tahun)</td><td style="text-align:center">:</td><td style="text-align:right">Rp ' + (props.t_k30cm || '-') + '</td></tr>'+
+                       '<tr><td>Pemasangan Tiang Listrik, Telekomunikasi Diameter >30 CM (Unit/Tahun)</td><td style="text-align:center">:</td><td style="text-align:right">Rp ' + (props.t_l30cm || '-') + '</td></tr>'+
+                       '<tr><td>Pendirian Tower / Menara Telekomunikasi (Unit/Tahun)</td><td style="text-align:center">:</td><td style="text-align:right">Rp ' + (props.tower_tele || '-') + '</td></tr>'+
+                       '<tr><td>Pemasangan Pipa/Kabel/Jaringan Utilitas Bawah Tanah <15CM (Meter/Tahun)</td><td style="text-align:center">:</td><td style="text-align:right">Rp ' + (props.jr_btk15cm || '-') + '</td></tr>'+
+                       '<tr><td>Pemasangan Pipa/Kabel/Jaringan Utilitas Bawah Tanah >15CM (Meter/Tahun)</td><td style="text-align:center">:</td><td style="text-align:right">Rp ' + (props.jr_btl15cm || '-') + '</td></tr>'+
+                       '<tr><td>Pemasangan Pipa/Kabel/Jaringan Utilitas Atas Tanah <15CM (Meter/Tahun)</td><td style="text-align:center">:</td><td style="text-align:right">Rp ' + (props.jr_atk15cm || '-') + '</td></tr>'+
+                       '<tr><td>Pemasangan Pipa/Kabel/Jaringan Utilitas Atas Tanah >15CM (Meter/Tahun)</td><td style="text-align:center">:</td><td style="text-align:right">Rp ' + (props.jr_atl15cm || '-') + '</td></tr>'+
+                       '<tr><td>Pemasangan Kabel Bawah Tanah Melalui Ducting Utilitas <15CM (Meter/Tahun)</td><td style="text-align:center">:</td><td style="text-align:right">Rp ' + (props.kbbt_k15cm || '-') + '</td></tr>'+
+                       '<tr><td>Pemasangan Kabel Bawah Tanah Melalui Ducting Utilitas >15CM (Meter/Tahun)</td><td style="text-align:center">:</td><td style="text-align:right">Rp ' + (props.kbbt_l15cm || '-') + '</td></tr>'+
+                       '<tr><td>Akses Jalan Kepentingan Pribadi (M2/Tahun)</td><td style="text-align:center">:</td><td style="text-align:right">Rp ' + (props.jl_pribadi || '-') + '</td></tr>'+
+                       '<tr><td>Akses Jalan Usaha Kecil (M2/Tahun)</td><td style="text-align:center">:</td><td style="text-align:right">Rp ' + (props.usaha_kcl || '-') + '</td></tr>'+
+                       '<tr><td>Akses Jalan Usaha Menengah (M2/Tahun)</td><td style="text-align:center">:</td><td style="text-align:right">Rp ' + (props.usaha_mngh || '-') + '</td></tr>'+
+                       '<tr><td>Akses Jalan Usaha Besar (M2/Tahun)</td><td style="text-align:center">:</td><td style="text-align:right">Rp ' + (props.usaha_bsr || '-') + '</td></tr>'+
+                       '<tr><td>Peralatan / Barang Lainnya (M2/Tahun)</td><td style="text-align:center">:</td><td style="text-align:right">Rp ' + (props.brng_lain || '-') + '</td></tr>'+
+                       '</tbody></table></div></div>';
+
+            /* ============================================================
+             *  SECTION TIANG — hanya jalan jika checkbox Tiang dicentang
+             *  try/catch terpisah supaya error tidak menghentikan flow
+             * ============================================================ */
+            if (showTiang) {
+                try {
+                    console.log('Fetch tiang:', '/api/summary_provider_tiang/' + props.no);
+                    let response = await $.get('/api/summary_provider_tiang/' + props.no);
+                    console.log('Tiang response:', response);
+
+                    let items = (response && response.data) ? response.data : response;
+                    $('#list_tiang').empty();
+
+                    if (Array.isArray(items) && items.length > 0) {
+                        items.forEach(function(item) {
+                            $('#list_tiang').append(`
+<div class="col-12">
+  <div class="summary-item">
+    <div class="label" style="font-family:'Orbitron',sans-serif;">Ruas</div>
+    <h6 class="filter-label-white m-0" style="font-family:'Inter Tight',sans-serif;color:#4a9eff;text-shadow:0 0 16px rgba(74,158,255,0.4);">${item.nm_ruas || '-'}</h6>
+    <hr class="divider-light mt-2 mb-2"/>
+    <div class="label" style="font-family:'Orbitron',sans-serif;">Provider</div>
+    <h6 class="filter-label-white m-0" style="font-family:'Orbitron',sans-serif;color:#4a9eff;text-shadow:0 0 16px rgba(74,158,255,0.4);">${item.provider || '-'}</h6>
+    <hr class="divider-light mt-2 mb-2" />
+    <div class="label" style="font-family:'Orbitron',sans-serif;">Jumlah Tiang</div>
+    <h6 class="filter-label-white m-0" style="font-family:'Orbitron',sans-serif;color:#4a9eff;text-shadow:0 0 16px rgba(74,158,255,0.4);">${Math.round(item.total || 0)}</h6>
+    <hr class="divider-light mt-2 mb-2" />
+    <div class="label" style="font-family:'Orbitron',sans-serif;">Retribusi</div>
+    <h6 class="filter-label-white m-0" style="font-family:'Orbitron',sans-serif;color:#4ade80;text-shadow:0 0 12px rgba(74,222,128,0.2);">Rp ${(Math.round(item.retribusi_k || 0)+'').replace(/\B(?=(\d{3})+(?!\d))/g, '.')}</h6>
+    ${item.kd_foto_1 ? '<img src="/foto/'+item.kd_foto_1+'" style="max-height:150px;max-width:100%;margin-top:8px;border-radius:6px;" onerror="this.style.display=\'none\'">' : ''}
+  </div>
+</div>`);
+                        });
+                    } else {
+                        $('#list_tiang').append('<div class="col-12"><div class="summary-item text-center" style="color:#4a6a8a;font-size:0.85rem;">Tidak ada data tiang</div></div>');
+                    }
+                } catch (errT) {
+                    console.error('❌ ERROR tiang:', errT);
+                }
+            } else {
+                $('#list_tiang').empty();
+            }
+
+            /* ============================================================
+             *  SECTION KABEL — hanya jalan jika checkbox Kabel dicentang
+             * ============================================================ */
+            if (showKabel) {
+                try {
+                    console.log('Fetch kabel:', '/api/summary_provider_kabel/' + props.no);
+                    let response2 = await $.get('/api/summary_provider_kabel/' + props.no);
+                    console.log('Kabel response:', response2);
+
+                    let items2 = (response2 && response2.data) ? response2.data : response2;
+                    $('#list_kabel').empty();
+
+                    if (Array.isArray(items2) && items2.length > 0) {
+                        items2.forEach(function(item) {
+                            $('#list_kabel').append(`
+<div class="col-12">
+  <div class="summary-item">
+    <div class="label" style="font-family:'Orbitron',sans-serif;">Ruas</div>
+    <h6 class="filter-label-white m-0" style="font-family:'Inter Tight',sans-serif;color:#4a9eff;text-shadow:0 0 16px rgba(74,158,255,0.4);">${item.nm_ruas || '-'}</h6>
+    <hr class="divider-light mt-2 mb-2"/>
+    <div class="label" style="font-family:'Orbitron',sans-serif;">Provider</div>
+    <h6 class="filter-label-white m-0" style="font-family:'Orbitron',sans-serif;color:#4a9eff;text-shadow:0 0 16px rgba(74,158,255,0.4);">${item.provider || '-'}</h6>
+    <hr class="divider-light mt-2 mb-2" />
+    <div class="label" style="font-family:'Orbitron',sans-serif;">Jumlah Kabel</div>
+    <h6 class="filter-label-white m-0" style="font-family:'Orbitron',sans-serif;color:#4a9eff;text-shadow:0 0 16px rgba(74,158,255,0.4);">${item.jumlah_kab || 0}</h6>
+    <hr class="divider-light mt-2 mb-2" />
+    <div class="label" style="font-family:'Orbitron',sans-serif;">Kategori Kabel</div>
+    <h6 class="filter-label-white m-0" style="font-family:'Inter Tight',sans-serif;color:#4a9eff;text-shadow:0 0 16px rgba(74,158,255,0.4);">Pemasangan Pipa/Kabel/Jaringan Utilitas Atas Tanah ${item.jr_atk15cm?'':' >15cm'}</h6>
+    <hr class="divider-light mt-2 mb-2" />
+    <div class="label" style="font-family:'Orbitron',sans-serif;">Panjang Kabel</div>
+    <h6 class="filter-label-white m-0" style="font-family:'Orbitron',sans-serif;color:#4a9eff;text-shadow:0 0 16px rgba(74,158,255,0.4);">${Math.round(item.total || 0)} Meter</h6>
+    <hr class="divider-light mt-2 mb-2" />
+    <div class="label" style="font-family:'Orbitron',sans-serif;">Retribusi</div>
+    <h6 class="filter-label-white m-0" style="font-family:'Orbitron',sans-serif;color:#4ade80;text-shadow:0 0 12px rgba(74,222,128,0.2);">Rp ${(Math.round(item.retribusi_k || 0)+'').replace(/\B(?=(\d{3})+(?!\d))/g, '.')}</h6>
+    ${item.kode_foto ? '<img src="/foto/'+item.kode_foto+'" style="max-height:150px;max-width:100%;margin-top:8px;border-radius:6px;" onerror="this.style.display=\'none\'">' : ''}
+  </div>
+</div>`);
+                        });
+                    } else {
+                        $('#list_kabel').append('<div class="col-12"><div class="summary-item text-center" style="color:#4a6a8a;font-size:0.85rem;">Tidak ada data kabel</div></div>');
+                    }
+                } catch (errK) {
+                    console.error('❌ ERROR kabel:', errK);
+                }
+            } else {
+                $('#list_kabel').empty();
+            }
+
+            /* ============================================================
+             *  SECTION SUMMARY — total retribusi, jumlah tiang/kabel, dst
+             * ============================================================ */
+            try {
+                let a = await $.get('/api/data_kabel/' + props.no);
+                let b = await $.get('/api/data_tiang/' + props.no);
+                console.log('Summary a,b:', a, b);
+
+                let aRow = (a && a.data && a.data[0]) ? a.data[0] : null;
+                let bRow = (b && b.data && b.data[0]) ? b.data[0] : null;
+
+                $('#t_retri_t').html(bRow ? formatRupiah(bRow.retribusi_k, true, true) : 'Rp 0');
+                $('#t_retri_k').html(aRow ? formatRupiah(aRow.retribusi_k, true, true) : 'Rp 0');
+                $('#t_total_t').html(bRow ? Math.round(bRow.total) : 0);
+                $('#t_total_k').html(aRow ? Math.round(aRow.total) : 0);
+
+                // Provider unik = union tiang + kabel sesuai checkbox
+                let providerSetRuas = new Set();
+                if (showTiang && b && b.data3) {
+                    b.data3.forEach(function (p) {
+                        if (p && p.provider_id != null) providerSetRuas.add(String(p.provider_id));
+                    });
+                }
+                if (showKabel && a && a.data3) {
+                    a.data3.forEach(function (p) {
+                        if (p && p.provider_id != null) providerSetRuas.add(String(p.provider_id));
+                    });
+                }
+
+                // Set di panel kanan (#jml_p) DAN sidebar kiri (#jml_p_1)
+                $('#jml_p').html(providerSetRuas.size);
+                $('#jml_p_1').html(providerSetRuas.size);
+
+            } catch (errS) {
+                console.error('❌ ERROR summary:', errS);
+            }
+
+            /* ============================================================
+             *  Loop props → format Rupiah (isolated try/catch)
+             * ============================================================ */
+            try {
+                for (const i in props) {
+                    let val = props[i];
+                    if (!isNaN(parseFloat(val)) && isFinite(val)) {
+                        $('#' + i).html(formatRupiah(val, true, false));
+                    } else {
+                        $('#' + i).html(val);
+                    }
+                }
+            } catch (eLoop) {
+                console.warn('skip props loop:', eLoop);
+            }
+
+            this.bindPopup(content).openPopup();
         });
     });
+
+    if (sk_jalan_layer.getLayers().length > 0) {
+        var bounds = sk_jalan_layer.getBounds();
+        map.fitBounds(bounds, {
+            padding: [20, 20]
+        });
+    }
 }
+
 function loadGeoJsondesa(data) { 
-         
-                        hapus_label_desa(); 
-                        desa_layer.clearLayers(); 
-                        desa_layer.addData(data); 
-                        desa_layer.addTo(map); 
-                        var i = 0; 
-                        var labelnya = ""; 
-                         desa_layer.eachLayer(function (layer) { 
-         
-                               
-                                   layer.setStyle(style_desa); 
-         
-                                // layer.bindPopup(feature.properties.kabupaten); 
-                                // Get bounds of polygon 
-                                var bounds = layer.getBounds(); 
-                                // Get center of bounds 
-                                var center = bounds.getCenter(); 
-                                //center.on('click', alert('asu')); 
-                                // Use center to put marker on map 
-                                //var marker = L.marker(center).addTo(map); 
-                                //labelnya 
-                                 label_desa[i] = new L.Tooltip({ 
-                                noHide: false, 
-                                direction: 'auto', 
-                                permanent : true 
-                                }); 
-                                  labelnya = layer.feature.properties.desa; 
-                                  
-                              label_desa[i].setContent(labelnya); 
-                              label_desa[i].setLatLng(center); 
-                              label_desa[i].setOpacity(0); 
-                              map.showLabel(label_desa[i]); 
-                               layer.on('click', function (e) { 
-                     
-                                                  }); 
-                              i++; 
-                            
-                         }); 
-                         tampil_label_desa(); 
-                         map.removeLayer(drawnItems); 
-                        drawnItems.addTo(map); 
-         
-                       // map.removeLayer(rtlh); 
-                      //  rtlh.addTo(map); 
-                      } 
-                      function loadGeoJsoninovasi(data) { 
+
+    hapus_label_desa(); 
+    desa_layer.clearLayers(); 
+    desa_layer.addData(data); 
+    desa_layer.addTo(map); 
+
+    var i = 0; 
+    var labelnya = ""; 
+
+    desa_layer.eachLayer(function(layer) { 
+
+        layer.setStyle(style_desa); 
+
+        var bounds = layer.getBounds();
+        var center = bounds.getCenter();
+
+        label_desa[i] = new L.Tooltip({ 
+            noHide: false, 
+            direction: 'auto', 
+            permanent: true 
+        }); 
+
+        labelnya = layer.feature.properties.desa; 
+
+        label_desa[i].setContent(labelnya); 
+        label_desa[i].setLatLng(center); 
+        label_desa[i].setOpacity(0); 
+        map.showLabel(label_desa[i]); 
+
+        i++; 
+    }); 
+
+    tampil_label_desa(); 
+
+}
+function loadGeoJsoninovasi(data) { 
                        
                         inovasi.clearLayers(); 
                         inovasi.addData(data); 
@@ -1131,7 +2311,6 @@ function loadGeoJsondesa(data) {
                     
                         var i = 0; 
                         var labelnya = ""; 
-                       //  console.log(data.objects.output.geometries.length) 
                        inovasi.eachLayer(function (layer) { 
          
                            
@@ -1144,29 +2323,15 @@ function loadGeoJsondesa(data) {
                     
                               popupContent = popupContent+"</br>Kategori : "+layer.feature.properties.sub_kategori; 
                               popupContent = popupContent+"</br>Jenis  : "+layer.feature.properties.jenisnya; 
-                              // var n = layer.feature.properties.foto_tampak_depan.search("-"); 
                               var foto = layer.feature.properties.foto1; 
-                              // if(n > -1){ 
-                              //     foto = foto.split("-"); 
-                              //     foto = foto[0]; 
-                              // } 
                               popupContent = popupContent+'<img src="/foto/'+foto+'" class="img-responsive" style="height: 100px;"> '; 
                         
          
                               i++; 
-                              // if(data.objects.output.geometries.length == 1){ 
-                              //      var bounds = layer.getBounds(); 
-                              //      map.fitBounds(bounds) 
-                              //        popup.setLatLng(bounds.getCenter()); 
-                              //        popup.setContent(popupContent); 
-                              //         map.openPopup(popup); 
-                              // } 
                                 layer.on("click", function (e) { 
-                                   //  var bounds = layer.getBounds(); 
                                       popup.setLatLng(layer.getLatLng()); 
                                     popup.setContent(popupContent); 
                                       map.openPopup(popup); 
-                                   //  $('#bs-example-modal-lg').modal('show'); 
                                   }); 
                          }); 
                            map.removeLayer(inovasi); 
@@ -1179,12 +2344,8 @@ function loadGeoJsondesa(data) {
                   
                        
                      
-              // do stuff after marker has been added 
-         
-                 
               function doAnimations(){ 
                  var myIcon = document.querySelector('.gps_ring') 
-                //sesudah 
                  myIcon.style.width = '1000px' 
                   
               } 
@@ -1192,36 +2353,12 @@ function loadGeoJsondesa(data) {
                       //ambil kec 
                         var geoJsonUrl =root+"peta/topojson_kec";  
                           $.getJSON(geoJsonUrl) 
-                            .done(loadGeoJsonkec); 
-                                var geoJsonUrl =root+"peta/topojson_persil";  
+                            .done(loadGeoJsonkec).then(function (params) {
+                                     var geoJsonUrl =root+"peta/sk_jalan";  
                           $.getJSON(geoJsonUrl) 
-                            .done(loadGeoJsonPersil); 
-// Muat layer RDTR Karangrejo
-// console.log(root + "peta/topojson_rdtr",root + "peta/topojson_kabmagetan")
-// Muat layer Pola Ruang Kab Magetan
-// $.getJSON(root + "peta/topojson_kabmagetan")
-//     .done(loadKabmagetan)
-//     .fail(function(jqXHR, textStatus, errorThrown) {
-//         console.error('Gagal load Kab Magetan:', textStatus, errorThrown);
-//     });
-// $.getJSON(root + "peta/topojson_rdtr")
-//     .done(loadRdtr)
-//     .fail(function(jqXHR, textStatus, errorThrown) {
-//         console.error('Gagal load RDTR:', textStatus, errorThrown);
-//     });
+                            .done(loadGeoJsonSk_jalan); 
+                            })
 
-
-
-
-                            //ambil polaruang 
-                        //     var geoJsonUrl =root+"peta/inovasi";  
-                        //   $.getJSON(geoJsonUrl) 
-                        //     .done(loadGeoJsoninovasi); 
-                             
-                           
-                             
-                          //pencarian 
-         
                           $('#kecamatan').change(function(){ 
                               if($('#kecamatan').val()=="0"){ 
                                   alert("Pilih Desa Terlebih Dahulu !") 
@@ -1246,25 +2383,13 @@ function loadGeoJsondesa(data) {
                                
                           }) 
          
-                           //  map.on('moveend', function(){ 
-                           //   if(map.getZoom() > 10 && map.getZoom() < 14){ 
-                           //         tampil_label_kec(); 
-                           //   }else{ 
-                           //    hide_label_kec(); 
-                           //   } 
-                           // }) 
                               var kiri_atas_lng  = map.getBounds().getSouthWest().lng; 
                         var kiri_atas_lat  = map.getBounds().getSouthWest().lat; 
                         var kanan_bawah_lng = map.getBounds().getNorthEast().lng; 
                         var kanan_bawah_lat = map.getBounds().getNorthEast().lat; 
                             
-                                 
-                                
-                            //end ambil_kec 
-         
-                      //saat pindah 
                       function ambil_desa(){ 
-         
+
                       } 
 
                       map.on('moveend', function(){ 
@@ -1275,46 +2400,19 @@ function loadGeoJsondesa(data) {
                           hide_label_kec()
                         }
                        if(map.getZoom() > wellmaxzoom){ 
-                        //kembali ke asal 
-         
-                        
-                       //kembali ke asal 
-         
                         var kiri_atas_lng  = map.getBounds().getSouthWest().lng; 
                         var kiri_atas_lat  = map.getBounds().getSouthWest().lat; 
                         var kanan_bawah_lng = map.getBounds().getNorthEast().lng; 
                         var kanan_bawah_lat = map.getBounds().getNorthEast().lat; 
-                       //   var geoJsonUrl =root + "index.php/peta/geo_kec_bound/"+kiri_atas_lng+"/"+kiri_atas_lat+"/"+kanan_bawah_lng+"/"+kanan_bawah_lat;  
                           var geoJsonUrl =root+"peta/topojson_desa?kiri_lng="+kiri_atas_lng+"&kiri_lat="+kiri_atas_lat+"&kanan_lng="+kanan_bawah_lng+"&kanan_lat="+kanan_bawah_lat;  
-                         // console.log(geoJsonUrl); 
-                        // console.log(map.getBounds().toBBoxString()); 
-                        // console.log(map.getBounds().getSouthWest().lng + ';' + map.getBounds().getSouthWest().lat + ';' + map.getBounds().getNorthEast().lng + ';' + map.getBounds().getNorthEast().lat); 
-                      //    var boundingBox = L.rectangle(map.getBounds(), {color: "#ff7800", weight: 1}); 
-                      // map.addLayer(boundingBox); 
-                          // $.ajax({ 
-                          //     url: geoJsonUrl, 
-                          //     datatype: 'json', 
-                          //     jsonCallback: 'getJson', 
-                          //     success: loadGeoJson 
-                          //     }); 
-                          //load desa 
-                          // $.getJSON(geoJsonUrl) 
-                          //   .done(loadGeoJsondesa); 
-         
-         
-                             
                           }else{ 
                           hapus_label_desa(); 
                             map.removeLayer(desa_layer); 
                           }; 
                       }); 
          
-                      //end moveend 
-         
                  legend.onAdd = function (map) { 
                           var div = L.DomUtil.create('div', 'info-legend') 
-                          
-                         // loop through our density intervals and generate a label with a colored square for each interval 
                           for (var i = 0; i < warna_total.length; i++) { 
                             div.innerHTML += '<i style="background:' + warna_total[i] + '"></i> ' + labels[i] + '<br>'; 
                           } 
@@ -1332,62 +2430,26 @@ function loadGeoJsondesa(data) {
                           "RBI": RBI 
                         }; 
                          
-                        // var overlays = { 
-                        //   "kecamatan": kabupaten_layer, 
-                        //   "<span>RTRW Semapadan Sungai</span>&nbsp;&nbsp;<span style='background-color:#499277;padding:2px 8px 2px 8px;'></span>": sempadan_sungai, 
-                        //   "<span>RTRW Sempadan Pantai</span>&nbsp;&nbsp;<span style='background-color:#3F786F;padding:2px 8px 2px 8px;'></span>": sempadan_pantai, 
-                        //   "<span>RTRW Kawasan Konservasi/KA</span>&nbsp;&nbsp;<span style='background-color:#195344;padding:2px 8px 2px 8px;'></span>": kawasan_konservasi, 
-                        //   "<span>RTRW Hutan Lindung</span>&nbsp;&nbsp;<span style='background-color:#8C8D88;padding:2px 8px 2px 8px;'></span>": hutan_lindung, 
-                        //   "<span>RTRW Tambak</span>&nbsp;&nbsp;<span style='background-color:#48B3C5;padding:2px 8px 2px 8px;'></span>": tambak, 
-                        //   "<span>RTRW Lahan Basah Kering</span>&nbsp;&nbsp;<span style='background-color:#C8DEB0;padding:2px 8px 2px 8px;'></span>": lahan_basah_kering, 
-                        //   "<span>RTRW Permukiman Perkotaan</span>&nbsp;&nbsp;<span style='background-color:#E8B05D;padding:2px 8px 2px 8px;'></span>": permukiman_perkotaan, 
-                        //   "<span>RTRW Permukiman Perdesaan</span>&nbsp;&nbsp;<span style='background-color:#E8B05D;padding:2px 8px 2px 8px;'></span>": permukiman_perdesaan, 
-                        //   "<span>RTRW Perkebunan</span>&nbsp;&nbsp;<span style='background-color:#ABBC6E;padding:2px 8px 2px 8px;'></span>": perkebunan, 
-                        //   "<span>RTRW Industri</span>&nbsp;&nbsp;<span style='background-color:#9E8986;padding:2px 8px 2px 8px;'></span>": industri, 
-                        //   "<span>RTRW Hutan Produksi Terbatas</span>&nbsp;&nbsp;<span style='background-color:#7EA4D3;padding:2px 8px 2px 8px;'></span>": hutan_produksi_terbatas, 
-                        //   "<span>RTRW Hutan Produksi</span>&nbsp;&nbsp;<span style='background-color:#7EA4D3;padding:2px 8px 2px 8px;'></span>": hutan_produksi, 
-                        //   "<span>Jalan</span>&nbsp;&nbsp;<span style='background-color:red;padding:2px 8px 2px 8px;'></span>": jalan_layer 
-                          
-                           
-                        // }; 
-                         
-                        // L.control.layers(baseLayers,overlays,{ 
-                        //   position : 'topright' 
-                        // }, {'drawlayer':drawnItems}, { position: 'topleft', collapsed: false }).addTo(map); 
-         
-                                        var groupedOverlays = { 
-                                             "Administrasi": { 
-                               "&nbsp;&nbsp;Kabupaten": kabupaten_layer
-                               }, 
-                                   "Layer": {
-        // "<span>Inovasi</span>&nbsp;&nbsp;<span style=';padding:2px 8px 2px 8px;'></span>": inovasi_markers,
-        // 👇 Tambahkan dua baris berikut
-        "<span>&nbsp;&nbsp;RDTR Karangrejo</span>&nbsp;&nbsp;<span style='background-color:#ff7800;padding:2px 8px 2px 8px;'></span>": rdtr_layer,
-        "<span>&nbsp;&nbsp;Pola Ruang Kab Magetan</span>&nbsp;&nbsp;<span style='background-color:#3388ff;padding:2px 8px 2px 8px;'></span>": kabmagetan_layer
-    }
-                             }; 
-                                   var options = { 
-                     // Make the "Landmarks" group exclusive (use radio inputs) 
-                    // exclusiveGroups: ["Landmarks"], 
-                     // Show a checkbox next to non-exclusive group labels for toggling all 
-                     collapsed:true, 
-                     groupCheckboxes: false 
-                   }; 
+                        var groupedOverlays = { 
+                            "Administrasi": { 
+                                "&nbsp;&nbsp;Kabupaten": kabupaten_layer,
+                                "&nbsp;&nbsp;Jalan": sk_jalan_layer,
+                            }, 
+                            "Layer": {
+                            }
+                        }; 
+                        var options = { 
+                            collapsed:true, 
+                            groupCheckboxes: false 
+                        }; 
                         L.control.groupedLayers(baseLayers, groupedOverlays, options).addTo(map); 
                       
                         
-         
-         
                         streetview.onAdd = function (map) { 
                           var div = L.DomUtil.create('div', 'sv') 
-                          
-                         // loop through our density intervals and generate a label with a colored square for each interval 
                             div.innerHTML += ''; 
-                           
                           return div; 
                         }; 
-         
-                       // streetview.addTo(map); 
          
                         L.control.scale({ 
                           position : 'bottomright', 
@@ -1395,18 +2457,6 @@ function loadGeoJsondesa(data) {
                           imperial : false 
                         }).addTo(map); 
                          
-                        // lc = L.control.locate({ 
-                        //   position : 'topleft', 
-                        //   follow : true, 
-                        //   strings : { 
-                        //     title : "Lokasi Anda", 
-                        //     popup: "Anda berada di radius {distance} {unit} dari titik ini" 
-                        //   }, 
-                        //   markerClass : L.marker, 
-                        //   markerStyle : {icon: locateIcon}, 
-                        //   keepCurrentZoomLevel : true 
-                        // }).addTo(map); 
-         
                         map 
                           .on('startfollowing', function() { 
                             map.on('dragstart', lc._stopFollowing, lc); 
@@ -1417,17 +2467,11 @@ function loadGeoJsondesa(data) {
          
                         map.on('locationfound', onLocationFound); 
                          
-         
-                        // map.on('moveend', function() {  
-                        //      console.log(map.getBounds()); 
-                        // }); 
-         
                         map.on('baselayerchange', function(e) { 
                           console.log(e.name); 
          
                           if ( e.name == 'Google Roadmap' || e.name == 'Open Street Map' || e.name == 'Mapbox Street') { 
                             kabupaten_layer.eachLayer(function (layer) { 
-                           //   layer.setStyle(style_kabupaten_gelap); 
                             }); 
                           }else{ 
                             kabupaten_layer.eachLayer(function (layer) { 
@@ -1437,18 +2481,12 @@ function loadGeoJsondesa(data) {
          
                         }); 
                          
-                        //ganti kabupaten 
                         $('#search_maps').hide(); 
          
-         
-                       // $('.leaflet-bottom.leaflet-left').hide(); 
-                         
                         $('.leaflet-bar-part.leaflet-bar-part-single').click(function () { 
                           
                         }) 
-                         
          
-                        //panorama 
                        var marker= ""; 
                        var titik_panorama = null; 
                         function panorama(xe,ye){ 
@@ -1472,15 +2510,91 @@ function loadGeoJsondesa(data) {
                             
                       } 
                         map.on('click', function(e) { 
-         
-                      console.log(e.latlng.lat+' '+e.latlng.lng); 
-                    // var xe = e.latlng.lat; 
-                    // var ye = e.latlng.lng; 
-                      
-                    // panorama(xe,ye) 
-                    
-                            
+                      /* [DEBUG] kalau log ini muncul saat klik peta,
+                         berarti klik sudah tembus layer dan bisa lanjut
+                         untuk klik di garis ruas. */
+                      console.log('🖱️ MAP CLICK:', e.latlng.lat, e.latlng.lng);
                   });
+
+                 /* ============================================================
+                  *  filterDataBtn()
+                  *  - Await hasil getJSON supaya bisa ekstrak provider.
+                  *  - Hitung provider UNIK (union tiang + kabel) sesuai checkbox.
+                  *  - Set ke #jml_p (kanan) dan #jml_p_1 (kiri).
+                  *  - Fix typo "math.round" → "Math.round".
+                  * ============================================================ */
+                 async function filterDataBtn() {
+    let kec_id      = $('#kec_id').val();
+let noruas = $('#no_ruas_id').val() || $('#ruas_id').val();
+    let provider_id = $('#provider_id').val();
+
+    let showTiang = $('#chkChart').prop('checked');
+    let showKabel = $('#chkPrediction').prop('checked');
+
+    // Set gabungan provider unik dari hasil filter
+    let providerSet = new Set();
+
+    // --- 1. Muat Kecamatan ---
+    let geoJsonUrlKec = root + "peta/topojson_kec?id_kec=" + kec_id;
+    $.getJSON(geoJsonUrlKec)
+        .done(loadGeoJsonkec)
+        .then(function() {
+            // --- 2. Muat Ruas Jalan ---
+            let geoJsonUrlJalan = root + "peta/sk_jalan?no=" + noruas;
+            $.getJSON(geoJsonUrlJalan).done(loadGeoJsonSk_jalan);
+        });
+
+    // --- 3. Tiang (jika dicentang) ---
+    if (showTiang) {
+        let urlTiang = root + `peta/tiang?no=${noruas}&kd_kec=${kec_id}&provider_id=${provider_id}`;
+        let tiangData = await $.getJSON(urlTiang);
+
+        // Kumpulkan provider unik dari hasil tiang
+        extractProviderSet(tiangData).forEach(function(p) { providerSet.add(p); });
+
+        loadGeoJsonTiang(tiangData);
+
+        let jumlah_tiang = await $.get(root + `peta/tiang?no=${noruas}&kd_kec=${kec_id}&provider_id=${provider_id}&sum=1`);
+        console.log(jumlah_tiang);
+        if (jumlah_tiang && jumlah_tiang[0]) {
+            $('#jml_t').html(jumlah_tiang[0].jumlah_tiang);
+        }
+    } else {
+        $('#jml_t').html(0);
+        if (tiang_layer) {
+            map.removeLayer(tiang_layer);
+            tiang_layer = null;
+        }
+    }
+
+    // --- 4. Kabel (jika dicentang) ---
+    if (showKabel) {
+        let urlKabel = root + `peta/ruas_kabel?no=${noruas}&kd_kec=${kec_id}&provider_id=${provider_id}`;
+        let kabelData = await $.getJSON(urlKabel);
+
+        // Kumpulkan provider unik dari hasil kabel
+        extractProviderSet(kabelData).forEach(function(p) { providerSet.add(p); });
+
+        loadGeoJsonRuasKabel(kabelData);
+
+        let a = await $.get(root + `peta/ruas_kabel?no=${noruas}&kd_kec=${kec_id}&provider_id=${provider_id}&sum=1`);
+        console.log(a);
+        if (a && a[0]) {
+            $('#pjg_k').html(Math.round(a[0].panjang_kabel));
+        }
+    } else {
+        if (ruasKabelLayer) {
+            map.removeLayer(ruasKabelLayer);
+            ruasKabelLayer = null;
+        }
+        $('#pjg_k').html(0);
+    }
+
+    // --- 5. Tampilkan jumlah provider unik (gabungan tiang + kabel) ---
+    let jmlProviderTampil = provider_id ? 1 : providerSet.size;
+    $('#jml_p').html(jmlProviderTampil);     // kanan (offcanvas detail)
+    $('#jml_p_1').html(jmlProviderTampil);   // kiri (sidebar ringkasan)
+}
     </script>
 </body>
 </html>

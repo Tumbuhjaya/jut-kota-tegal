@@ -1,4 +1,5 @@
-   var root ="https://pindah.fosan.id/";
+  //  var root ="https://pindah.fosan.id/";
+  var root = "http://survplus.id:8940/"
    String.prototype.replaceAll = function(search, replacement) {
        var target = this;
        return target.split(search).join(replacement);

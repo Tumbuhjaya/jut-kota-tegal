@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cetak Tiang Provider</title>
+
+    <style type="text/css">
+        body {
+            font-family: 'Arial', sans-serif !important;
+            font-size: 12pt;
+            line-height: 1.25em;
+            margin: 0;
+            padding: 30mm 60mm;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            margin: 0;
+            font-weight: normal;
+            font-size: 12pt;
+            line-height: 1.25em;
+            text-align: justify;
+        }
+
+        .w-100 { width: 100%; }
+
+        .kolom {
+            word-break: break-word;
+            overflow-wrap: break-word;
+            overflow: hidden;
+        }
+
+        th {
+            vertical-align: middle;
+            border: 1px solid #333;
+            -webkit-print-color-adjust: exact;
+        }
+
+        td {
+            vertical-align: top;
+            border: 1px solid #333;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .bh-top    { border-top: hidden; }
+        .bh-bottom { border-bottom: hidden; }
+        .bh-left   { border-left: hidden; }
+        .bh-right  { border-right: hidden; }
+
+        /* Tombol cetak per bagian */
+        #tombol-cetak {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            max-width: 700px;
+            text-align: right;
+            z-index: 9999;
+        }
+        #tombol-cetak button {
+            position: static;
+            margin: 4px;
+            padding: 8px 12px;
+            font-size: 11pt;
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        /* Foto dibatasi tingginya supaya baris tidak terlalu tinggi */
+        .foto-cell img {
+            width: 100%;
+            max-height: 30mm;      /* sebelumnya bisa > 50mm */
+            object-fit: cover;
+            display: block;
+        }
+
+        @media print {
+            @page {
+                size: A4 Portrait;
+                margin: 10mm;
+            }
+
+            body {
+                background-color: white;
+                font-size: 12pt;
+                line-height: 1.25em;
+                margin: 0;
+                padding: 0;
+            }
+
+            .page {
+                width: 210mm;
+                height: auto !important;   /* penting agar bisa multi-halaman */
+                padding: 0;
+                background: white;
+            }
+
+            #tombol-cetak { display: none !important; }
+            .no-print     { display: none !important; }
+
+            * {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+
+        @media screen {
+            body { background-color: #f0f0f0; padding: 20px; }
+            .page {
+                width: 210mm;
+                min-height: 297mm;
+                background: white;
+                margin: 0 auto 20px auto;
+                box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Tombol cetak per bagian (di-generate via JS) -->
+    <div id="tombol-cetak" class="no-print"></div>
+
+    <table class="print-container">
+        <tbody>
+            <tr>
+                <td class="bh-left bh-top bh-right bh-bottom">
+                    <div class="page">
+
+                        <!-- KOP: hanya tampil di PDF pertama -->
+                        <div class="w-100" id="header-kop">
+                            <h5 style="text-align:center; font-weight:bold;">
+                                DAFTAR JARINGAN UTILITAS TELEKOMUNIKASI (TIANG) KOTA TEGAL
+                            </h5>
+                            <h5 style="text-align:center; font-weight:bold;">
+                                PROVIDER <span id="PROVIDER"></span>
+                            </h5>
+                        </div>
+
+                        <div class="w-100" style="margin-top:2.5mm;">
+                            <table border="1" cellpadding="5" cellspacing="0"
+                                   style="border-collapse:collapse; width:100%;">
+                                <thead>
+                                    <tr>
+                                        <th>No.</th>
+                                        <th style="width:30mm;">Nama Ruas</th>
+                                        <th style="width:25mm;">GPS</th>
+                                        <th style="width:20mm;">Latitude & Longtitude</th>
+                                        <th>Jml</th>
+                                        <th style="width:20mm;">Kondisi</th>
+                                        <th style="width:25mm;">Ket.</th>
+                                        <th style="width:30mm;">Foto</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-data">
+                                    <tr><td colspan="8" style="text-align:center;">Memuat data…</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+<script>
+(function () {
+    // ====== KONFIGURASI ======
+    var ROWS_PER_PDF = 500;    // tepat 500 baris per PDF (kecuali bagian terakhir)
+
+    var allRows = [];          // datar: 1 baris = 1 provider (atau 1 group kosong)
+    var chunks  = [];          // array of array of rows
+
+    // ====== HELPER ======
+    function escapeHtml(s) {
+        if (s === null || s === undefined) return '';
+        return String(s).replace(/[&<>"']/g, function (c) {
+            return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+        });
+    }
+
+    function fotoUrl(name) {
+        if (!name) return 'https://placehold.co/130x200?text=No+Foto';
+        if (/^https?:\/\//i.test(name) || name.indexOf('/') === 0) return name;
+        return 'https://storage.googleapis.com/jut-tegal/' + encodeURIComponent(name);
+    }
+
+    function val(v) {
+        return (v === null || v === undefined || v === '') ? '-' : escapeHtml(v);
+    }
+
+    // ====== INTI PERBAIKAN ======
+    // 1) Ratakan groups jadi rows. 1 provider = 1 row.
+    //    Group tanpa provider tetap dihitung 1 row kosong.
+    function flattenGroups(groups) {
+        var rows = [];
+        groups.forEach(function (g, gi) {
+            g._no = gi + 1;   // nomor urut asli group (tidak berubah)
+            var provs = g.providers || [];
+            if (provs.length === 0) {
+                rows.push({ group: g, provider: null });
+            } else {
+                provs.forEach(function (p) {
+                    rows.push({ group: g, provider: p });
+                });
+            }
+        });
+        return rows;
+    }
+
+    // 2) Pecah rows jadi beberapa chunk berisi TEPAT maxRows baris
+    function chunkRows(rows, maxRows) {
+        var out = [];
+        for (var i = 0; i < rows.length; i += maxRows) {
+            out.push(rows.slice(i, i + maxRows));
+        }
+        return out;
+    }
+
+    // 3) Render satu chunk. Hitung rowspan ulang per chunk.
+    function renderChunk(rows) {
+        var html = '';
+        var i = 0;
+
+        while (i < rows.length) {
+            var g   = rows[i].group;
+            var end = i;
+            while (end < rows.length && rows[end].group === g) end++;
+            var span = end - i;   // rowspan di chunk INI saja
+
+            var noTxt   = g._no + '.';
+            var kodeGps = val(g.kode_gps);
+            var lat     = (g.lat !== null && g.lat !== undefined) ? g.lat : '-';
+            var lng     = (g.lng !== null && g.lng !== undefined) ? g.lng : '-';
+            var latTxt  = (typeof lat === 'number') ? lat.toFixed(9) : lat;
+            var lngTxt  = (typeof lng === 'number') ? lng.toFixed(9) : lng;
+            var f1      = fotoUrl(g.foto_1);
+
+            for (var k = i; k < end; k++) {
+                var r = rows[k];
+                html += '<tr>';
+
+                if (k === i) {
+                    // Baris pertama group di chunk ini → tampilkan kolom group dgn rowspan
+                    html += '<td rowspan="' + span + '" style="vertical-align:middle;text-align:center">' + noTxt + '</td>';
+                    html += '<td rowspan="' + span + '" style="vertical-align:middle;text-align:center">' + escapeHtml(g.nm_ruas || '') + '</td>';
+                    html += '<td rowspan="' + span + '" style="vertical-align:middle;text-align:center" class="kolom">' + kodeGps + '</td>';
+                    html += '<td rowspan="' + span + '" style="vertical-align:middle;text-align:center">' + latTxt + ', ' + lngTxt + '</td>';
+                }
+
+                if (r.provider) {
+                    html += '<td style="vertical-align:middle;text-align:center">' + val(r.provider.jumlah) + '</td>';
+                    html += '<td style="vertical-align:middle;text-align:center">' + val(r.provider.kondisi) + '</td>';
+                    html += '<td style="vertical-align:middle;text-align:center" class="kolom">' + val(r.provider.keterangan) + '</td>';
+                    html += '<td class="foto-cell" style="vertical-align:middle;"><img src="' + f1 + '" alt="Foto"></td>';
+                } else {
+                    html += '<td colspan="4" style="text-align:center;color:#999;">-</td>';
+                }
+
+                html += '</tr>';
+            }
+
+            i = end;
+        }
+
+        return html;
+    }
+
+    // Tunggu gambar selesai dimuat sebelum print
+    function waitForImages(container, timeout) {
+        timeout = timeout || 8000;
+        var imgs    = Array.prototype.slice.call(container.querySelectorAll('img'));
+        var pending = imgs.filter(function (img) { return !img.complete; });
+        if (!pending.length) return Promise.resolve();
+
+        return Promise.race([
+            Promise.all(pending.map(function (img) {
+                return new Promise(function (resolve) {
+                    img.addEventListener('load',  resolve, { once: true });
+                    img.addEventListener('error', resolve, { once: true });
+                });
+            })),
+            new Promise(function (r) { setTimeout(r, timeout); })
+        ]);
+    }
+
+    function showChunk(index, doPrint) {
+        var c = chunks[index];
+        if (!c) return;
+
+        document.getElementById('tbody-data').innerHTML =
+            renderChunk(c) ||
+            '<tr><td colspan="8" style="text-align:center;">Tidak ada data</td></tr>';
+
+        document.getElementById('header-kop').style.display =
+            (index === 0) ? '' : 'none';
+
+        if (doPrint) {
+            waitForImages(document.getElementById('tbody-data')).then(function () {
+                window.print();
+            });
+        }
+    }
+
+    window.printChunk = function (index) {
+        showChunk(index, true);
+    };
+
+    // Label tombol pakai posisi baris AKTUAL (1..total)
+    function buildButtons() {
+        var html     = '';
+        var startRow = 1;
+
+        chunks.forEach(function (c, i) {
+            var endRow = startRow + c.length - 1;
+            html += '<button onclick="printChunk(' + i + ')">' +
+                        'Cetak PDF Bagian ' + (i + 1) +
+                    '</button>';
+            startRow = endRow + 1;
+        });
+
+        document.getElementById('tombol-cetak').innerHTML = html;
+    }
+
+    // ====== LOAD DATA ======
+    $(function () {
+        var pathParts = window.location.pathname.split('/').filter(Boolean);
+        var masterId  = pathParts[pathParts.length - 1];
+
+        var urlParams = new URLSearchParams(window.location.search);
+        var idKec     = urlParams.get('id_kec');
+
+        var ajaxUrl = '/manajemen_laporan/provider/tiang_provider_detail/' + masterId;
+        if (idKec) ajaxUrl += '?id_kec=' + encodeURIComponent(idKec);
+
+        $.getJSON(ajaxUrl)
+            .done(function (res) {
+                var groups = res.groups || [];
+
+                // 1) Nama provider
+                var provName = '-';
+                if (groups[0] && groups[0].providers && groups[0].providers[0]) {
+                    provName = groups[0].providers[0].nama.toUpperCase();
+                }
+                document.getElementById('PROVIDER').textContent = provName;
+
+                // 2) Ratakan & pecah
+                allRows = flattenGroups(groups);
+                chunks  = chunkRows(allRows, ROWS_PER_PDF);
+
+                // 3) Verifikasi ke console (untuk memastikan tidak ada yang hilang)
+                var totalProvider = allRows.filter(function (r) { return !!r.provider; }).length;
+                var totalGroup    = groups.length;
+                console.log('[CETAK] Total baris (flat) :', allRows.length);
+                console.log('[CETAK] Total provider    :', totalProvider);
+                console.log('[CETAK] Total group       :', totalGroup);
+                console.log('[CETAK] Jumlah chunk      :', chunks.length);
+                chunks.forEach(function (c, i) {
+                    console.log('[CETAK]  Chunk ' + (i+1) + ' : ' + c.length + ' baris');
+                });
+
+                buildButtons();
+                showChunk(0, false);
+            })
+            .fail(function (xhr) {
+                document.getElementById('tbody-data').innerHTML =
+                    '<tr><td colspan="8" style="text-align:center;color:red;">' +
+                    'Gagal memuat data (' + xhr.status + ')</td></tr>';
+            });
+    });
+})();
+</script>
+</body>
+</html>

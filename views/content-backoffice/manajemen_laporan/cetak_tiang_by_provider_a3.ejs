@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="shortcut icon" href="#" type="image/png">
+
+    <title>Cetak Tiang Provider A3</title>
+
+    <link href="/resources-maps/stylesheets/leaflet-routing-machine.css" rel="stylesheet"/>
+    <link href="/resources-maps/stylesheets/L.Control.Locate.min.css" rel="stylesheet"/>
+    <link href="/resources-maps/stylesheets/leaflet.extra-markers.css" rel="stylesheet"/>
+    <link href="/resources-maps/stylesheets/leaflet.label.css" rel="stylesheet"/>
+    <link href="/resources-maps/stylesheets/groupedlayercontrol.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="/resources-maps/stylesheets/leaflet.draw.css" />
+    <link href="https://unpkg.com/leaflet@1.3.4/dist/leaflet.css" rel="stylesheet">
+    <link href="/resources-maps/stylesheets/Control.FullScreen.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="/resources-maps/stylesheets/MarkerCluster.css" />
+    <link rel="stylesheet" href="/resources-maps/stylesheets/MarkerCluster.Default.css" />
+
+    <script src="https://unpkg.com/leaflet@1.3.4/dist/leaflet-src.js"></script>
+    <script src="https://unpkg.com/esri-leaflet@2.1.1/dist/esri-leaflet.js"
+       integrity="sha512-ECQqaYZke9cSdqlFG08zSkudgrdF6I1d8ViSa7I3VIszJyVqw4ng1G8sehEXlumdMnFYfzY0tMgdQa4WCs9IUw=="
+       crossorigin=""></script>
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+
+    <script src="/resources-maps/javascripts/leaflet-routing-machine.js"></script>
+    <script src="/resources-maps/javascripts/leaflet.label.js"></script>
+    <script src="/resources-maps/panah-asmara.js"></script>
+    <script src="https://maps.google.com/maps/api/js?v=3.2&key=AIzaSyBy8irzccEOp7ezf5nQ2UPaLGcte_AEsOQ"></script>
+    <script src="https://unpkg.com/leaflet.gridlayer.googlemutant@latest/dist/Leaflet.GoogleMutant.js"></script>
+    <script src="/resources-maps/javascripts/L.Control.Locate.js" ></script>
+    <script src="/resources-maps/javascripts/leaflet.extra-markers.js"></script>
+    <script src="/resources-maps/javascripts/leaflet-image.js"></script>
+    <script src="https://d3js.org/topojson.v1.min.js"></script>
+    <script src="/resources-maps/javascripts/Control.FullScreen.js"></script>
+    <script src="/resources-maps/javascripts/groupedlayercontrol.js"></script>
+    <script src="/resources-maps/javascripts/wicket.js"></script>
+    <script src="/resources-maps/javascripts/wicket-leaflet.js"></script>
+    <script src="/resources-maps/javascripts/leaflet-omnivore.min.js"></script>
+    <script src="/resources-maps/javascripts/leaflet.markercluster-src.js"></script>
+    <!-- drawing -->
+    <script src="/resources-maps/draw/Leaflet.draw.js"></script>
+    <script src="/resources-maps/draw/Leaflet.Draw.Event.js"></script>
+    <script src="/resources-maps/draw/Toolbar.js"></script>
+    <script src="/resources-maps/draw/Tooltip.js"></script>
+    <script src="/resources-maps/draw/ext/GeometryUtil.js"></script>
+    <script src="/resources-maps/draw/ext/LatLngUtil.js"></script>
+    <script src="/resources-maps/draw/ext/LineUtil.Intersect.js"></script>
+    <script src="/resources-maps/draw/ext/Polygon.Intersect.js"></script>
+    <script src="/resources-maps/draw/ext/Polyline.Intersect.js"></script>
+    <script src="/resources-maps/draw/ext/TouchEvents.js"></script>
+    <script src="/resources-maps/draw/draw/DrawToolbar.js"></script>
+    <script src="/resources-maps/draw/draw/handler/Draw.Feature.js"></script>
+    <script src="/resources-maps/draw/draw/handler/Draw.SimpleShape.js"></script>
+    <script src="/resources-maps/draw/draw/handler/Draw.Polyline.js"></script>
+    <script src="/resources-maps/draw/draw/handler/Draw.Marker.js"></script>
+    <script src="/resources-maps/draw/draw/handler/Draw.Polygon.js"></script>
+    <script src="/resources-maps/draw/draw/handler/Draw.Rectangle.js"></script>
+    <script src="/resources-maps/draw/edit/EditToolbar.js"></script>
+    <script src="/resources-maps/draw/edit/handler/EditToolbar.Edit.js"></script>
+    <script src="/resources-maps/draw/edit/handler/EditToolbar.Delete.js"></script>
+    <script src="/resources-maps/draw/Control.Draw.js"></script>
+    <script src="/resources-maps/draw/edit/handler/Edit.Poly.js"></script>
+    <script src="/resources-maps/draw/edit/handler/Edit.SimpleShape.js"></script>
+    <script src="/resources-maps/draw/edit/handler/Edit.Rectangle.js"></script>
+    <script src="/resources-maps/draw/edit/handler/Edit.Marker.js"></script>
+    <script src="/resources-maps/main.js"></script>
+
+    <style type="text/css">
+        .leaflet-container .leaflet-control-attribution{
+            display: none;
+        }
+        /* Aturan Dasar */
+        body {
+            font-family: 'Arial', sans-serif !important;
+            font-size: 11pt;
+            line-height: 1.25em;
+            margin: 0;
+            padding: 30mm 60mm;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            margin: 0;
+            font-weight: normal;
+            font-size: 11pt;
+            line-height: 1.25em;
+            text-align: justify;
+        }
+
+        .w-100 { width: 100%; }
+        .w-100-flex { width: 100%; display: flex; }
+        .custom-border-table { width: 100%; border-collapse: collapse; }
+
+        th{
+            /* padding:1.5mm 1.5mm; */
+            vertical-align: middle;
+            border:1px solid #333 ;
+            -webkit-print-color-adjust: exact;
+        }
+
+        td{
+            /* padding:1.5mm 1.5mm; */
+            vertical-align: top;
+            border:1px solid #333 ;
+            -webkit-print-color-adjust: exact;
+        }
+        
+        .bh-top{
+            border-top: hidden;
+        }
+
+        .bh-bottom{
+            border-bottom: hidden;
+        }
+
+        .bh-left{
+            border-left: hidden;
+        }
+
+        .bh-right{
+            border-right: hidden;
+        }
+
+        /* Container foto agar rapi */
+        .foto-box {
+            width: 100%;
+            height: 50mm;
+            overflow: hidden;
+            background-color: #f3f4f6;
+            border: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .foto-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .foto-box .empty-text {
+            color: #999;
+            font-size: 9pt;
+        }
+
+        /* --- KONFIGURASI CETAK --- */
+        @media print {
+            @page {
+                size: A3 portrait;
+                margin: 10mm;
+            }
+
+            body {
+                background-color: white;
+                font-size: 11pt;
+                line-height: 1.25em;
+                margin: 0;
+                padding: 0;
+            }
+
+            th{
+                /* padding:1.5mm 1.5mm; */
+                vertical-align: middle;
+                border:1px solid #333 ;
+                -webkit-print-color-adjust: exact;
+            }
+            
+            td{
+                /* padding:1.5mm 1.5mm; */
+                vertical-align: top;
+                border:1px solid #333 ;
+                -webkit-print-color-adjust: exact;
+            }
+
+            .bh-top{
+                border-top: hidden;
+            }
+
+            .bh-bottom{
+                border-bottom: hidden;
+            }
+
+            .bh-left{
+                border-left: hidden;
+            }
+
+            .bh-right{
+                border-right: hidden;
+            }
+
+            .no-print { display: none; }
+            .print-container { width: 100%; border-collapse: collapse; }
+
+            .header-content {
+                position: fixed; top: 0; left: 0; right: 0; height: 100px;
+            }
+            .footer-content {
+                position: fixed; bottom: 0; left: 0; right: 0; height: 60px;
+                text-align: center; font-size: 10pt; color: #555;
+            }
+            .header-space { height: 0; background-color: pink; }
+            .footer-space { height: 18mm; }
+
+            * {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .page {
+                width: 297mm;
+                height: 420mm;
+                padding: 0;
+                /* margin: 0 auto 20px auto; */
+                background: white;
+                /* box-shadow: 0 0 10px rgba(0,0,0,0.1); */
+                /* box-sizing: border-box; */
+                /* border: 1px solid black; */
+            }
+
+            
+        }
+
+        /* Styling Tambahan (Visual) */
+        .line-bold {
+            border: none;
+            border-top: 3px solid black;
+            margin-top: 5px;
+        }
+
+        button {
+            padding: 10px 20px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            position: absolute;
+            top: 30px;
+            right: 30px;
+        }
+
+        .custom-capital { display: inline-block; text-transform: lowercase; }
+        .custom-capital::first-letter { text-transform: uppercase; }
+
+        @media screen {
+            body { background-color: #f0f0f0; padding: 20px; }
+            .page {
+                width: 297mm;
+                height: 420mm;
+                /* padding: 2.5mm; */
+                /* margin: 0 auto 20px auto; */
+                background: white;
+                /* box-shadow: 0 0 10px rgba(0,0,0,0.1); */
+                /* box-sizing: border-box; */
+                /* border: 1px solid black; */
+            }
+        }
+
+   
+    </style>
+</head>
+
+<body>
+    <div class="no-print actions">
+        <button onclick="window.print()">Cetak Dokumen / Save PDF</button>
+    </div>
+
+    <table class="print-container">
+        <tbody>
+            <tr>
+                <td class="bh-left bh-top bh-right bh-bottom">
+                    <div class="page">
+                        <div class="w-100">
+                            <h5  style="text-align: center; font-weight: bold;">DAFTAR JARINGAN UTILITAS TELEKOMUNIKASI (TIANG) KOTA TEGAL</h5>
+                            <h5 style="text-align: center; font-weight: bold;">
+                               PROVIDER <span id="PROVIDER"></span>
+                            </h5>
+                            <!-- <h5  style="text-align: center; font-weight: bold;">PROVIDER <span id="nama_provider"></span></h5> -->
+                            <!-- <h5 style="text-align: center; font-weight: normal;">
+                                Kode Ruas : <span id="kode_ruas">-</span>
+                                &nbsp;||&nbsp;
+                                Nama Ruas : <span id="nama_ruas">-</span>
+                            </h5> -->
+                        </div>
+
+                        <div class="w-100" style="margin-top: 2.5mm;">
+                            <table border="1" cellpadding="5" cellspacing="0"
+                                   style="border-collapse: collapse; width: 100%;">
+                                <thead>
+                                    <tr>
+                                        <th>No.</th>
+                                        <th style="width: 5mm;">Nama Ruas</th>
+                                        <th style="width: 5mm;">GPS</th>
+                                        <th style="width: 5mm;">Latitude</th>
+                                        <th style="width: 5mm;">Longtitude</th>
+                                        <th style="width: 30mm;">Foto 1</th>
+                                        <th style="width: 5mm;">Jumlah</th>
+                                        <th>Kondisi</th>
+                                        <th>Keterangan</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-data">
+                                    <tr><td colspan="12" style="text-align:center;">Memuat data…</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <script>
+        // ====== Ambil id dari URL (route sudah /ruas_jalan/cetak_tiang_provider/:id) ======
+        var pathParts = window.location.pathname.split('/').filter(Boolean);
+        var masterId  = pathParts[pathParts.length - 1];
+
+        function escapeHtml(s) {
+            if (s === null || s === undefined) return '';
+            return String(s).replace(/[&<>"']/g, function (c) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+            });
+        }
+
+        function fotoUrl(name) {
+            if (!name) return 'https://placehold.co/130x200?text=No+Foto';
+            if (/^https?:\/\//i.test(name) || name.indexOf('/') === 0) return name;
+            return 'https://storage.googleapis.com/jut-tegal/' + encodeURIComponent(name);
+        }
+
+        function val(v) {
+            return (v === null || v === undefined || v === '') ? '-' : escapeHtml(v);
+        }
+
+        $(function () {
+// ====== Ambil id dari URL (route sudah /ruas_jalan/cetak_tiang_provider/:id) ======
+var pathParts = window.location.pathname.split('/').filter(Boolean);
+var masterId  = pathParts[pathParts.length - 1];
+
+// ✅ Ambil query string (id_kec) dari URL
+var urlParams = new URLSearchParams(window.location.search);
+var idKec     = urlParams.get('id_kec');
+                          var ajaxUrl = '/manajemen_laporan/provider/tiang_provider_detail/' + masterId;
+    if (idKec) {
+        ajaxUrl += '?id_kec=' + encodeURIComponent(idKec);
+    }
+            $.getJSON(ajaxUrl)
+                .done(function (res) {
+                    $('#PROVIDER').html(res.groups[0].providers[0].nama.toUpperCase())
+                    var m = res.master || {};
+                    var kec = (m.kecamatan || '').toUpperCase();
+                    var kel = (m.kelurahan || '').toUpperCase();
+
+                    // $('#judul').text(
+                    //     'DAFTAR PROVIDER TIANG DAN JALAN DI KECAMATAN ' + kec +
+                    //     ' KELURAHAN ' + kel
+                    // );
+                    // $('#kode_ruas').text(m.no || '-');
+                    // $('#nama_ruas').text(m.nm_ruas || '-');
+                    // $('#nama_provider').text(m.providers || '-');
+
+                    var html = '';
+                    var groups = res.groups || [];
+
+                    groups.forEach(function (g, gi) {
+                        var provs    = g.providers || [];
+                        var rowSpan  = provs.length || 1;
+                        var noTxt    = (gi + 1) + '.';
+                        var kodeGps  = val(g.kode_gps);
+                        var lat      = (g.lat !== null && g.lat !== undefined) ? g.lat : '-';
+                        var lng      = (g.lng !== null && g.lng !== undefined) ? g.lng : '-';
+                        var f1 = fotoUrl(g.foto_1);
+
+                        if (!provs.length) {
+                            // Tidak ada provider, tampilkan baris kosong
+                            html += '<tr>' +
+                                '<td style="text-align:center;">' + noTxt + '</td>' +
+                                '<td style="text-align:center;">' + g.nm_ruas  + '</td>' +
+                                '<td style="text-align:center">' + kodeGps + '</td>' +
+                                '<td>' + lat.toFixed(9) + '</td>' +
+                                '<td>' + lng.toFixed(9) + '</td>' +
+                                '<td style="vertical-align:middle"><img src="' + f1 + '" style="width:100%;display:block;"></td>' +
+                                '<td colspan="5" style="text-align:center;color:#999;">-</td>' +
+                            '</tr>';
+                            return;
+                        }
+
+                        provs.forEach(function (p, pi) {
+                            var abjad = String.fromCharCode(97 + pi) + '.'; // a., b., c., ...
+                            html += '<tr>';
+
+                            if (pi === 0) {
+                                html += '<td rowspan="' + rowSpan + '" style="vertical-align:middle;text-align:center">' + noTxt + '</td>';
+                                html += '<td rowspan="' + rowSpan + '" style="vertical-align:middle;text-align:center">' +  g.nm_ruas  + '</td>';
+                                html += '<td rowspan="' + rowSpan + '" style="vertical-align:middle;text-align:center">' + kodeGps + '</td>';
+                                html += '<td rowspan="' + rowSpan + '" style="vertical-align:middle;">' + lat.toFixed(9) + '</td>';
+                                html += '<td rowspan="' + rowSpan + '" style="vertical-align:middle;">' + lng.toFixed(9) + '</td>';
+                                html += '<td rowspan="' + rowSpan + '" style="vertical-align:middle;"><img src="' + f1 + '" style="width:100%;display:block;"></td>';
+                            }
+
+                            // html += '<td style="vertical-align:middle;text-align:center">' + abjad + '</td>';
+                            // html += '<td style="vertical-align:middle;">' + val(p.nama) + '</td>';
+                            html += '<td style="vertical-align:middle;text-align:center">' + val(p.jumlah) + '</td>';
+                            html += '<td style="vertical-align:middle;">' + val(p.kondisi) + '</td>';
+                            html += '<td style="vertical-align:middle;">' + val(p.keterangan) + '</td>';
+                            html += '</tr>';
+                        });
+                    });
+
+                    if (!html) {
+                        html = '<tr><td colspan="12" style="text-align:center;">' +
+                               'Tidak ada data tiang untuk ruas ini</td></tr>';
+                    }
+                    $('#tbody-data').html(html);
+                })
+                .fail(function (xhr) {
+                    console.log(xhr);
+                    $('#tbody-data').html(
+                        '<tr><td colspan="12" style="text-align:center;color:red;">' +
+                        'Gagal memuat data (' + xhr.status + ')</td></tr>'
+                    );
+                });
+        });
+
+        // Pastikan gambar selesai load dulu sebelum print
+        window.addEventListener('beforeprint', function () {});
+    </script>
+</body>
+
+</html>

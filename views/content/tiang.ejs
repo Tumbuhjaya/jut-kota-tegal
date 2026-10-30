@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<% let rooturl = ''; %>
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="shortcut icon" href="<%= rooturl %>/images/template/shortcut_icon.ico">
+    <title>Database Jaringan Utilitas Telekomunikasi Kota Tegal</title>
+
+    <link href="<%= rooturl %>/stylesheets/template/css/bootstrap.css" rel="stylesheet">
+    <link href="<%= rooturl %>/stylesheets/template/css/style.css" rel="stylesheet">
+
+
+    <!-- Plugin This Page --> 
+    <link rel="stylesheet" href="<%= rooturl %>/plugins/fontawesome-5/css/all.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@x.x.x/dist/select2-bootstrap4.min.css">
+    <link href="https://cdn.datatables.net/1.10.22/css/dataTables.bootstrap4.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/1.1.3/sweetalert.min.css">
+    <link href="<%= rooturl %>/plugins/slick/slick.css" rel="stylesheet">
+    <link href="<%= rooturl %>/plugins/slick/slick-theme.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Blinker:wght@100;200;300;400;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css" />
+    
+    <script src="<%= rooturl %>/javascripts/template/jquery.min.js"></script>
+
+    <!-- End Plugins This Page -->
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    <style type="text/css">
+        :root {
+            --navy: #0d4aa2;
+            --royal: #0f44be;
+            --blue: #1256d7;
+            --bright: #1581ee;
+            --cyan: #17c3ff;
+            --dark: #0c1e35;
+            --gray: #64748b;
+
+            /* ✅ GRADIENT BARU — Royal Blue → Cyan, 135deg */
+            --gradient-main: linear-gradient(135deg,
+            #0d4aa2 0.000%,
+            #0f44be 25.000%,
+            #1256d7 50.000%,
+            #1581ee 75.000%,
+            #17c3ff 100.000%);
+        }
+
+        * { font-family: "Blinker", sans-serif; }
+
+        /* ================================================================
+            BODY — Gradient + Perspective Grid Tech
+            ================================================================ */
+        body {
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            /* padding: 20px 15px; */
+            background: var(--gradient-main);
+            background-size: 200% 200%;
+            animation: gradientShift 15s ease infinite;
+            background-attachment: fixed;
+            font-size: 16px;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        /* ============================================================
+            LAYER 1: PERSPECTIVE GRID (Tron Style)
+            ============================================================ */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; right: 0; bottom: 0; left: 0;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.4;
+            background-image:
+            repeating-linear-gradient(
+                0deg,
+                rgba(255, 255, 255, 0.55) 0px,
+                rgba(255, 255, 255, 0.55) 1px,
+                transparent 1px,
+                transparent 60px
+            ),
+            repeating-linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0.45) 0px,
+                rgba(255, 255, 255, 0.45) 1px,
+                transparent 1px,
+                transparent 60px
+            );
+            background-size: 60px 60px, 60px 60px;
+            background-position: center center;
+            transform: perspective(500px) rotateX(45deg);
+            transform-origin: center 70%;
+            animation: gridPerspective 20s linear infinite;
+            -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+            mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+        }
+
+        @keyframes gridPerspective {
+            from { background-position: center 0, center center; }
+            to { background-position: center 60px, center center; }
+        }
+
+        
+
+        /* ============================================================
+            LAYER 4: PULSE NETWORK ORBS
+            ============================================================ */
+        .pulse-node {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(100px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .pulse-node-1 {
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, #17c3ff 0%, transparent 70%);
+            top: -180px; left: -180px;
+            opacity: 0.5;
+            animation: pulse 8s ease-in-out infinite;
+        }
+
+        .pulse-node-2 {
+            width: 450px; height: 450px;
+            background: radial-gradient(circle, #0d4aa2 0%, transparent 70%);
+            bottom: -150px; right: -150px;
+            opacity: 0.45;
+            animation: pulse 8s ease-in-out infinite;
+            animation-delay: 4s;
+        }
+
+        .pulse-node-3 {
+            width: 320px; height: 320px;
+            background: radial-gradient(circle, #1581ee 0%, transparent 70%);
+            top: 40%; right: 15%;
+            opacity: 0.3;
+            animation: pulse 10s ease-in-out infinite;
+            animation-delay: 2s;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.45; }
+            50% { transform: scale(1.35); opacity: 0.7; }
+        }
+        /* ============================================================
+            SHORTCUT CARD
+            ============================================================ */
+        .shortcut-card-menu {
+            display: flex;
+            align-items: center;
+            height: fit-content;
+            width: fit-content;
+            background: rgba(255, 255, 255, 0.12);
+            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
+            border: 1.5px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            padding: 10px 15px;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            color: #fff;
+            box-shadow:
+            0 10px 30px -10px rgba(13, 74, 162, 0.5),
+            inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+            /* min-height: 100px; */
+        }
+
+        .shortcut-card-menu::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .shortcut-card-menu:hover::before { left: 100%; }
+
+        .shortcut-card-menu:hover {
+            transform: translateY(-6px);
+            background: rgba(255, 255, 255, 0.22);
+            border-color: rgba(255, 255, 255, 0.55);
+            color: #fff;
+            text-decoration: none;
+            box-shadow:
+            0 25px 45px -12px rgba(13, 74, 162, 0.7),
+            0 0 40px -5px rgba(23, 195, 255, 0.7),
+            inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+        }
+
+        .shortcut-card-menu:focus {
+            outline: none;
+            color: #fff;
+            text-decoration: none;
+            box-shadow:
+            0 0 0 4px rgba(23, 195, 255, 0.35),
+            0 25px 45px -12px rgba(13, 74, 162, 0.7);
+        }
+
+        .shortcut-card-menu:hover{
+            transform: scale(1.12) rotate(-6deg);
+            background: rgba(255, 255, 255, 0.38);
+            box-shadow: 0 10px 26px rgba(23, 195, 255, 0.7);
+        }
+
+        .shortcut-content-menu { flex: 1; min-width: 0; }
+
+        .shortcut-title-menu {
+            font-size: 16px;
+            font-weight: bold;
+            /* margin-bottom: 4px; */
+            letter-spacing: -0.01em;
+            color: #fff;
+            line-height: 1.2;
+        }
+
+        .shortcut-card-menu:hover {
+            color: #fff;
+            transform: translateX(5px);
+        }
+
+        /* ============================================================
+            SHORTCUT CARD
+            ============================================================ */
+        .shortcut-card {
+            display: flex;
+            align-items: center;
+            /* height: 100%; */
+            /* width: 100%; */
+            background: rgba(255, 255, 255, 0.12);
+            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
+            border: 1.5px solid rgba(255, 255, 255, 0.3);
+            border-radius: 18px;
+            padding: 30px ;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            color: #fff;
+            box-shadow:
+            0 10px 30px -10px rgba(13, 74, 162, 0.5),
+            inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+            /* min-height: 100px; */
+        }
+
+        .shortcut-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .shortcut-card:hover::before { left: 100%; }
+
+        .shortcut-card:hover {
+            transform: translateY(-6px);
+            background: rgba(255, 255, 255, 0.22);
+            border-color: rgba(255, 255, 255, 0.55);
+            color: #fff;
+            text-decoration: none;
+            box-shadow:
+            0 25px 45px -12px rgba(13, 74, 162, 0.7),
+            0 0 40px -5px rgba(23, 195, 255, 0.7),
+            inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+        }
+
+        .shortcut-card:focus {
+            outline: none;
+            color: #fff;
+            text-decoration: none;
+            box-shadow:
+            0 0 0 4px rgba(23, 195, 255, 0.35),
+            0 25px 45px -12px rgba(13, 74, 162, 0.7);
+        }
+
+        .shortcut-icon {
+            width: 56px;
+            height: 56px;
+            background: rgba(255, 255, 255, 0.22);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            border: 1.5px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 8px 20px rgba(23, 195, 255, 0.4);
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-right: 18px;
+        }
+
+        .shortcut-card:hover .shortcut-icon {
+            transform: scale(1.12) rotate(-6deg);
+            background: rgba(255, 255, 255, 0.38);
+            box-shadow: 0 10px 26px rgba(23, 195, 255, 0.7);
+        }
+
+        .shortcut-content { flex: 1; min-width: 0; }
+
+        .shortcut-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+            letter-spacing: -0.01em;
+            color: #fff;
+            line-height: 1.2;
+        }
+
+        .shortcut-desc {
+            font-size: 0.85rem;
+            opacity: 0.85;
+            line-height: 1.4;
+            margin-bottom: 0;
+            color: #fff;
+        }
+
+        .shortcut-arrow {
+            color: rgba(255, 255, 255, 0.7);
+            flex-shrink: 0;
+            margin-left: 10px;
+            transition: all 0.3s;
+        }
+
+        .shortcut-card:hover .shortcut-arrow {
+            color: #fff;
+            transform: translateX(5px);
+        }
+
+        .select2-container--bootstrap4 .select2-results__option{
+            color: #000;
+        }
+    </style>
+</head>
+
+<body>
+    <% include ../template/header.ejs %>
+            <div class="fiber-glow"></div>
+            <div class="pulse-node pulse-node-1"></div>
+            <div class="pulse-node pulse-node-2"></div>
+            <div class="pulse-node pulse-node-3"></div>
+
+        <header style="background-color:rgba(255, 255, 255, 0.12);">
+            <div class="container">
+                <div class="row">
+                    <div class="col-12 col-lg-4">
+                        
+                        <div style="width: 100%;display: flex;height: 80px;justify-content: flex-start;align-items: center;background-color: ;">
+                            <span class="shortcut-card-menu">
+                                <div class="shortcut-content-menu">
+                                    <div class="shortcut-title-menu"><span style="color: #f7ca18;">Jaringan Utilitas Telekomunikasi</span> Kota Tegal</div>
+                                </div>
+                            </span>
+                                
+                        </div>
+                    </div>
+                    <div class="col-12 col-lg-8">
+                        <div style="width: 100%;display: flex;height: 80px;justify-content: flex-end;align-items: center;background-color: ;">
+                            <a href="/shortcut" class="shortcut-card-menu">
+                                <div class="shortcut-content-menu">
+                                    <div class="shortcut-title-menu"><i class="fas fa-home" style="color: #f7ca18;"></i>&nbsp;&nbsp;Beranda</div>
+                                </div>
+                            </a>
+                            <a href="/tiang" class="shortcut-card-menu ml-3">
+                                <div class="shortcut-content-menu">
+                                    <div class="shortcut-title-menu"><i class="fas fa-map-pin" style="color: #f7ca18;"></i>&nbsp;&nbsp;Tiang</div>
+                                </div>
+                            </a>
+                            <a href="/kabel" class="shortcut-card-menu ml-3">
+                                <div class="shortcut-content-menu">
+                                    <div class="shortcut-title-menu"><i class="fas fa-vector-square" style="color: #f7ca18;"></i>&nbsp;&nbsp;Kabel</div>
+                                </div>
+                            </a>
+                            <a href="/tidak_teridentifikasi" class="shortcut-card-menu ml-3">
+                                <div class="shortcut-content-menu">
+                                    <div class="shortcut-title-menu"><i class="fas fa-times" style="color: #f7ca18;"></i>&nbsp;&nbsp;Tidak Teridentifikasi</div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <section class="mt-5 mb-5">
+            <div class="container">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="shortcut-card">
+                            <div class="shortcut-content">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h6 style="font-size: 24px"><strong>Data <span style="color: #f7ca18;">Utilitas Tiang</span></strong></h6>
+                                        <hr>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div style="background: rgba(255, 255, 255, 0.12);padding: 15px;border-radius: 10px;">
+                                            <div class="row">
+                                                <div class="col-lg-4">
+                                                    <div class="form-group">
+                                                        <label for="">Kecamatan</label>
+                                                        <select id="filter-kecamatan" class="form-control autocomplete">
+                                                            <option value="">-- Pilih --</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4">
+                                                    <div class="form-group">
+                                                        <label for="">Kelurahan</label>
+                                                        <select id="filter-kelurahan" class="form-control autocomplete">
+                                                            <option value="">-- Pilih --</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4">
+                                                    <div class="form-group">
+                                                        <label for="">Kondisi</label>
+                                                        <select id="filter-kondisi" class="form-control autocomplete">
+                                                            <option value="">-- Pilih --</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+<div class="row mb-3">
+  <div class="col-12">
+    <div class="form-group mb-0">
+      <label for="filter-search">Pencarian</label>
+      <div class="input-group">
+        <div class="input-group-prepend">
+          <span class="input-group-text"><i class="fas fa-search"></i></span>
+        </div>
+        <input type="text" id="filter-search" class="form-control"
+               placeholder="Cari ruas / kecamatan / kelurahan ...">
+      </div>
+    </div>
+  </div>
+</div>
+                                            <div class="row">
+                                                <div class="col-12">
+                                                    <button class="btn btn-warning" id="btn-filter">
+                                                        <i class="fas fa-filter"></i> Filter Data
+                                                    </button>
+                                                    <button class="btn btn-secondary" id="btn-reset">
+                                                        <i class="fas fa-sync"></i> Reset
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                
+                                </div>
+
+                            
+
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-striped table-hover table-primary" id="list-data">
+                                               <thead>
+    <tr>
+        <th rowspan="2">No.</th>
+                <th rowspan="2">kode Gps</th>
+
+        <th rowspan="2">Ruas Jalan</th>
+        <th rowspan="2">Kecamatan</th>
+        <th rowspan="2">Kelurahan</th>
+        <!-- <th rowspan="2">Provider</th>    -->
+        <th rowspan="2">Jumlah</th>
+        <th rowspan="2">Kondisi</th>
+        <th rowspan="2">Keterangan</th>
+        <th colspan="3">Foto Dokumentasi</th>
+        <th rowspan="2">Option</th>
+    </tr>
+    <tr>
+        <th>Foto 1</th>
+        <th>Foto 2</th>
+        <th>Foto 3</th>
+    </tr>
+</thead>
+<tbody id="tbody-tiang"></tbody>
+                                                <!-- <tbody>
+                                                    <tr>
+                                                        <td>1.</td>
+                                                        <td>Ruas Jalan A</td>
+                                                        <td>Kec A</td>
+                                                        <td>Kel A</td>
+                                                        <td>00</td>
+                                                        <td>Value Kondisi</td>
+                                                        <td>Value Keterangan</td>
+                                                        <td>
+                                                            <a href="https://picsum.photos/id/1016/1200/800" data-fancybox="galeri-foto" data-caption="Pemandangan Alam 2">
+                                                                <img src="https://picsum.photos/id/1016/300/200" alt="Thumbnail 2" style="width: 150px;height:200px;object-fit: cover;">
+                                                            </a>
+                                                        </td>
+                                                        <td>
+                                                            <a href="https://picsum.photos/id/1016/1200/800" data-fancybox="galeri-foto" data-caption="Pemandangan Alam 2">
+                                                                <img src="https://picsum.photos/id/1016/300/200" alt="Thumbnail 2" style="width: 150px;height:200px;object-fit: cover;">
+                                                            </a>
+                                                        </td>
+                                                        <td>
+                                                            <a href="https://picsum.photos/id/1016/1200/800" data-fancybox="galeri-foto" data-caption="Pemandangan Alam 2">
+                                                                <img src="https://picsum.photos/id/1016/300/200" alt="Thumbnail 2" style="width: 150px;height:200px;object-fit: cover;">
+                                                            </a>
+                                                        </td>
+                                                        <td>
+                                                            <div style="width:100%;display:flex;justify-content: center;">
+                                                                <a href="#" target="_blank" class="btn btn-primary"><i class="fas fa-location-arrow"></i></a>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                </tbody> -->
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+     <!-- MODAL EDIT PENGAKU -->
+<div class="modal fade" id="modalPengaku" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" style="color: #000;"><i class="fas fa-edit"></i> Verifikasi Pemilik Utilitas</h5>
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+      </div>
+      <div class="modal-body">
+      <input type="hidden" id="pengaku-id">
+        <div class="form-group">
+          <label style="color: #000;">Provider</label>
+          <select id="pengaku-value" class="form-control">
+            <option value="">-- Pilih Provider --</option>
+            <% (providers || []).forEach(function(p) { %>
+              <option value="<%= p.provider_id %>"><%= p.provider %></option>
+            <% }); %>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-primary" id="btn-save-pengaku">
+          <i class="fas fa-save"></i> Simpan
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+    <% include ../template/footer.ejs %>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <script src="<%= rooturl %>/javascripts/template/bootstrap.bundle.js"></script>
+    <!-- Plugins This Page -->
+    <script src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.22/js/dataTables.bootstrap4.min.js"></script>
+    <script src="<%= rooturl %>/plugins/slick/slick.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+    <!-- End Plugins This Page -->
+    <script type="text/javascript">
+       var rooturl = '';
+
+$(document).ready(function () {
+    // Init Select2
+    $('.autocomplete').select2({ theme: 'bootstrap4' });
+
+    // Load filter dari API
+    loadKecamatan();
+    loadKondisi();
+    loadTiang(); // load awal
+
+    // Event: kecamatan berubah → load kelurahan
+    $('#filter-kecamatan').on('change', function () {
+        loadKelurahan($(this).val());
+    });
+
+    // Event: tombol filter
+    $('#btn-filter').on('click', function (e) {
+        e.preventDefault();
+        data_table.ajax.reload();
+    });
+
+    // Event: tombol reset
+    $('#btn-reset').on('click', function (e) {
+        e.preventDefault();
+        $('#filter-kecamatan').val('').trigger('change');
+        $('#filter-kondisi').val('').trigger('change');
+        $('#filter-kelurahan').html('<option value="">-- Pilih --</option>')
+            .trigger('change.select2');
+        data_table.ajax.reload();
+    });
+});
+
+/* =========================================================
+   LOAD FILTER DARI API
+   ========================================================= */
+
+function loadKecamatan() {
+    $.get('/get_kec', function (res) {
+        let opts = '<option value="">-- Pilih --</option>';
+        (res.data || []).forEach(function (k) {
+            opts += `<option value="${k.id_kec}" data-kecid="${k.kec_id}">${k.kecamatan}</option>`;
+        });
+        $('#filter-kecamatan').html(opts).trigger('change.select2');
+    });
+}
+
+function loadKelurahan(kecId) {
+    let opts = '<option value="">-- Pilih --</option>';
+    if (!kecId) {
+        $('#filter-kelurahan').html(opts).trigger('change.select2');
+        return;
+    }
+    // /get_kel/:id → id = kec_id (lihat route di express)
+    $.get('/get_kel/' + kecId, function (res) {
+        (res.data || []).forEach(function (k) {
+            opts += `<option value="${k.id}">${k.desa}</option>`;
+        });
+        $('#filter-kelurahan').html(opts).trigger('change.select2');
+    });
+}
+
+function loadKondisi() {
+    // sesuai permintaan: /dis/:d/:t → d = kondisi, t = tiang
+    $.get('/dis/kondisi/tiang', function (res) {
+        let opts = '<option value="">-- Pilih --</option>';
+        (res.data || []).forEach(function (d) {
+            let v = d.kondisi;
+            if (v) opts += `<option value="${v}">${v}</option>`;
+        });
+        $('#filter-kondisi').html(opts).trigger('change.select2');
+    });
+}
+
+/* =========================================================
+   DATATABLE — LOAD TIANG BERDASARKAN FILTER
+   ========================================================= */
+
+function renderFoto(kode, type, row) {
+    if (!kode) return '-';
+    let url = 'https://storage.googleapis.com/jut-tegal/' + kode;
+    return `<a href="${url}" data-fancybox="galeri-${row.id}">
+                <img src="${url}" alt="foto" style="width:150px;height:200px;object-fit:cover;">
+            </a>`;
+}
+function googleMapsUrl(row) {
+    // Prioritas 1: koordinat dari SHAPE
+    if (row.lat && row.lng) {
+        return 'https://www.google.com/maps?q=' + row.lat + ',' + row.lng;
+    }
+    // Prioritas 2: fallback cari berdasarkan alamat (ruas + kelurahan + kecamatan)
+    let q = [row.nm_ruas, row.desa, row.kecamatan, 'Tegal']
+        .filter(Boolean).join(', ');
+    if (q) {
+        return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q);
+    }
+    return null;
+}
+let data_table = $('#list-data').DataTable({
+    "processing": true,
+    "language": {
+        "sProcessing":   "Sedang memproses...",
+        "sLengthMenu":   "_MENU_",
+        "sZeroRecords":  "Tidak ditemukan data yang sesuai",
+        "sInfo":         "Menampilkan _START_ sampai _END_ dari _TOTAL_ entri",
+        "sInfoEmpty":    "Menampilkan 0 sampai 0 dari 0 entri",
+        "sInfoFiltered": "(disaring dari _MAX_ entri keseluruhan)",
+        "oPaginate": {
+            "sFirst":    "Pertama",
+            "sPrevious": "Sebelumnya",
+            "sNext":     "Selanjutnya",
+            "sLast":     "Terakhir"
+        }
+    },
+    "ajax": {
+        "url": "/api/list_tiang",
+        "type": "POST",
+        "data": function (d) {
+            d.kd_kec  = $('#filter-kecamatan').val() || '';
+            d.kd_kel  = $('#filter-kelurahan').val() || '';
+            d.kondisi = $('#filter-kondisi').val()   || '';
+              d.search  = $('#filter-search').val()    || '';   
+
+            d.shape=1
+        },
+        "dataSrc": function (json) {
+            return (json && json.data) ? json.data : [];
+        }
+    },
+    "columns": [
+    { "data": null, "orderable": false, "className": "text-center" },
+        { "data": "kode_gps",   "defaultContent": "-" },   
+    { "data": "nm_ruas",    "defaultContent": "-" },
+    { "data": "kecamatan",  "defaultContent": "-" },
+    { "data": "desa",       "defaultContent": "-" },
+    { "data": "jumlah_tia", "defaultContent": "0" },
+    { "data": "kondisi",    "defaultContent": "-" },
+    { "data": "ciri_tiang", "defaultContent": "-" },
+    { "data": "kd_foto_1",  "orderable": false, "render": renderFoto },
+    { "data": "kd_foto_2",  "orderable": false, "render": renderFoto },
+    { "data": "kd_foto_3",  "orderable": false, "render": renderFoto },
+    {
+        "data": null, "orderable": false, "className": "text-center",
+        "render": function (data, type, row) {
+            // Tombol Maps
+            let url = googleMapsUrl(row);
+            let mapsBtn = url
+                ? `<a href="${url}" target="_blank" rel="noopener"
+                      class="btn btn-primary btn-sm" title="Buka di Google Maps">
+                      <i class="fas fa-location-arrow"></i>
+                   </a>`
+                : `<button class="btn btn-secondary btn-sm" disabled title="Koordinat tidak tersedia">
+                      <i class="fas fa-location-arrow"></i>
+                   </button>`;
+
+            // ✅ Tombol Edit hanya untuk provider 'Tidak Teridentifikasi'
+            let editBtn = '';
+            if (row.provider === 'Tidak Teridentifikasi') {
+                editBtn = `<button class="btn btn-warning btn-sm ml-1 btn-edit-pengaku"
+                            data-id="${row.id}"
+                            data-pengaku="${row.pengaku ?? ''}"
+                            data-no="${row.no ?? ''}"
+                            title="Edit Pengaku (Assign Provider)">
+                            <i class="fas fa-edit"></i>
+                           </button>`;
+            }
+
+            return `<div style="width:100%;display:flex;justify-content:center;">
+                        ${mapsBtn}${editBtn}
+                    </div>`;
+        }
+    }
+],
+"columnDefs": [
+        { "width": "40px", "targets": 0 }
+    ],
+    "drawCallback": function () {
+        // Renumber baris sesuai page
+        let info = this.api().page.info();
+        this.api().column(0, { page: 'current' }).nodes().each(function (cell, i) {
+            cell.innerHTML = (i + 1 + info.start) + '.';
+        });
+        // Rebind Fancybox untuk foto yang baru dimuat
+        Fancybox.bind("[data-fancybox]", {});
+    }
+});
+
+function loadTiang() {
+    data_table.ajax.reload();
+}
+
+/* ---------- Utility lain (tidak berubah) ---------- */
+function togglePassword() {
+    var input = document.getElementById('password');
+    var icon  = document.getElementById('eye-icon');
+    if (!input || !icon) return;
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+    } else {
+        input.type = 'password';
+        icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+    }
+}
+// Buka modal edit pengaku
+$(document).on('click', '.btn-edit-pengaku', function () {
+    let id       = $(this).data('id');
+    let pengaku  = $(this).data('pengaku');   // berisi provider_id
+    let no       = $(this).data('no');
+
+    $('#pengaku-id').val(id);
+    $('#pengaku-no').val(no);
+
+    // Set dropdown ke provider_id yang tersimpan
+    $('#pengaku-value').val(pengaku != null ? String(pengaku) : '');
+
+    $('#modalPengaku').modal('show');
+});
+
+// Simpan pengaku (provider_id)
+$('#btn-save-pengaku').on('click', function () {
+    let id      = $('#pengaku-id').val();
+    let pengaku = $('#pengaku-value').val();   // <-- provider_id
+
+    if (!id) return;
+
+    let $btn = $(this);
+    $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
+
+    $.ajax({
+        url: '/api/update_pengaku',
+        type: 'POST',
+        dataType: 'json',
+        data: { id: id, pengaku: pengaku },
+        success: function (res) {
+            if (res.status === 200) {
+                swal('Berhasil', 'Pengaku berhasil diperbarui', 'success');
+                $('#modalPengaku').modal('hide');
+                data_table.ajax.reload(null, false);
+            } else {
+                swal('Gagal', res.message || 'Terjadi kesalahan', 'error');
+            }
+        },
+        error: function () {
+            swal('Gagal', 'Tidak dapat menghubungi server', 'error');
+        },
+        complete: function () {
+            $btn.prop('disabled', false).html('<i class="fas fa-save"></i> Simpan');
+        }
+    });
+});
+    </script>
+</body>
+</html>

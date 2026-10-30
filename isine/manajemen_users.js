@@ -197,4 +197,20 @@ router.get('/edit/:id', cek_login, function(req, res) {
       res.json({res:500,message:'Invalid Data Input Please Cek Again!!!'})
     }
   })
+
+  router.get('/perusahaan/:id', cek_login, function(req, res) {
+      res.render('content-backoffice/manajemen_user/perusahaan',{user:req.user[0],id:req.params.id});
+  });
+
+  router.get('/vendor/:id', cek_login, function(req, res) {
+      res.render('content-backoffice/manajemen_user/vendor',{user:req.user[0],id:req.params.id});
+  });
+
+  router.get('/provider/:id', cek_login, function(req, res) {
+      res.render('content-backoffice/manajemen_user/provider',{user:req.user[0],id:req.params.id});
+  });
+    router.get('/perusahaan_provider/:id', cek_login, function(req, res) {
+      res.render('content-backoffice/manajemen_user/perusahaan_provider',{user:req.user[0],id:req.params.id});
+  });
+
 module.exports = router;

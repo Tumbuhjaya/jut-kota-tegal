@@ -11,5 +11,5 @@ module.exports.connection = mysql.createPool({
   user     : 'root',
   port	   : '3306',
   password : 'Grafika9',
-  database : '2026_basic_sql'
+  database : '2026_jut_tegal'
 });

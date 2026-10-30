@@ -1,0 +1,302 @@
+<% include ../../template-backoffice/header.ejs %>
+
+<div class="main-content">
+  <section class="section">
+    <div class="w-100" style="padding: 0 30px;">
+      <div class="section-header" style="border-radius: 0.25rem;">
+        <h1>Tambah Data Vendor</h1>
+        <div class="section-header-breadcrumb">
+          <div class="breadcrumb-item active"><a href="/backoffice">Dashboard</a></div>
+          <div class="breadcrumb-item active"><a href="/manajemen_users/">Data</a></div>
+          <div class="breadcrumb-item active"><a href="/manajemen_users/perusahaan/<%=id%>">Data Perusahaan</a></div>
+          <div class="breadcrumb-item">Tambah Data</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-body">
+      <div class="row">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body">
+
+              <form id="form-vendor">
+                <input type="hidden" id="vendor_id" name="vendor_id">
+                <input type="hidden" id="perusahaan_id" name="perusahaan_id" value="<%= id %>">
+
+                <div class="form-group row mb-0">
+                  <label class="col-sm-2 col-form-label">Vendor ?</label>
+                  <div class="col-sm-10">
+                    <select id="id_user" name="id_user" class="form-control" required>
+                      <option value="">-- Pilih --</option>
+                      <option value="0">Vendor Perusahaan</option>
+                    </select>
+                  </div>
+                </div>
+
+                <hr>
+
+                <div class="form-group row">
+                  <div class="col-sm-10 offset-sm-2">
+                    <button type="submit" class="btn btn-primary" id="btn-submit">Tambahkan</button>
+                    <button type="button" class="btn btn-secondary" onclick="resetForm()">Batal</button>
+                  </div>
+                </div>
+              </form>
+
+              <hr>
+
+              <div class="table-responsive">
+                <table class="table table-bordered table-striped" id="list-data">
+                  <thead>
+                    <tr>
+                      <th>No.</th>
+                      <th>Vendor</th>
+                      <th>Option</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<footer class="main-footer">
+  <div class="footer-left">
+    <% include ../../template-backoffice/copyright-left.ejs %>
+  </div>
+  <div class="footer-right">
+    <% include ../../template-backoffice/copyright-right.ejs %>
+  </div>
+</footer>
+
+<% include ../../template-backoffice/footer.ejs %>
+
+<script type="text/javascript">
+  var rooturl = '';
+  var PERUSAHAAN_ID = '<%= id %>';
+
+  // ====== Load dropdown user is_admin=3 ======
+  function loadVendorOptions(callback) {
+    $.get(`${rooturl}/vendor/list_users`, function (res) {
+      const users = (res && res.data) ? res.data : [];
+      const $sel = $('#id_user');
+
+      // Simpan value sekarang untuk restore setelah rebuild
+      const currentVal = $sel.val();
+
+      // Reset: opsi "-- Pilih --" + "Vendor Perusahaan"
+      $sel.html(`
+        <option value="">-- Pilih --</option>
+        <option value="0">Vendor Perusahaan</option>
+      `);
+
+      users.forEach(function (u) {
+        const label = u.fullname ? `${u.fullname}${u.username ? ' (' + u.username + ')' : ''}` : (u.username || ('User #' + u.id_user));
+        $sel.append(`<option value="${u.id_user}">${label}</option>`);
+      });
+
+      if (currentVal) $sel.val(currentVal);
+
+      if (typeof callback === 'function') callback();
+    }).fail(function () {
+      if (typeof callback === 'function') callback();
+    });
+  }
+
+  $(function () {
+    if ($.fn.DataTable.isDataTable('#list-data')) {
+      $('#list-data').DataTable().destroy();
+    }
+
+    let data_table = $('#list-data').DataTable({
+      processing: true,
+      serverSide: true,
+      searching: true,
+      ordering: true,
+      ajax: {
+        url: rooturl + '/vendor/list',
+        type: 'POST',
+        data: function (d) {
+          d.perusahaan_id = PERUSAHAAN_ID;
+          return d;
+        },
+        dataSrc: function (json) {
+          return json.data || [];
+        }
+      },
+      columns: [
+        { data: null, width: '30px', orderable: false, searchable: false },
+        { data: 'vendor_name' },
+        {
+          data: null,
+          width: '170px',
+          orderable: false,
+          searchable: false,
+          render: function (data, type, row) {
+            return `
+              <div style="display:flex;justify-content:center;">
+                <button onclick="editData(${row.vendor_id})" class="btn btn-warning mr-2">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <a href="/manajemen_users/perusahaan_provider/${row.perusahaan_id}" class="btn btn-success mr-2">
+                  <i class="fas fa-vector-square"></i>
+                </a>
+                <button onclick="hapus(${row.vendor_id})" class="btn btn-danger">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            `;
+          }
+        }
+      ],
+      columnDefs: [
+        { width: '30px', targets: 0 },
+        { width: '170px', targets: 0 }
+      ],
+      language: {
+        "sProcessing": "Sedang memproses...",
+        "sLengthMenu": "_MENU_",
+        "sZeroRecords": "Tidak ditemukan data yang sesuai",
+        "sInfo": "Menampilkan _START_ sampai _END_ dari _TOTAL_ entri",
+        "sInfoEmpty": "Menampilkan 0 sampai 0 dari 0 entri",
+        "sInfoFiltered": "(disaring dari _MAX_ entri keseluruhan)",
+        "sInfoPostFix": "",
+        "sUrl": "",
+        "oPaginate": {
+          "sFirst": "Pertama",
+          "sPrevious": "Sebelumnya",
+          "sNext": "Selanjutnya",
+          "sLast": "Terakhir"
+        }
+      }
+    });
+
+    data_table.on('draw.dt', function () {
+      let PageInfo = data_table.page.info();
+      data_table.column(0, { page: 'current' }).nodes().each(function (cell, i) {
+        cell.innerHTML = i + 1 + PageInfo.start;
+      });
+    });
+
+    // Muat dropdown
+    loadVendorOptions();
+
+    // ====== Submit (insert / edit) ======
+    $('#form-vendor').on('submit', function (e) {
+      e.preventDefault();
+
+      const id = $('#vendor_id').val();
+      const url = id
+        ? `${rooturl}/vendor/edit`
+        : `${rooturl}/vendor/insert`;
+
+      $.ajax({
+        url: url,
+        method: 'POST',
+        data: $(this).serialize(),
+        dataType: 'json'
+      })
+      .done(function (res) {
+        if (res.status === 200) {
+          swal({ title: 'Berhasil', text: res.message, icon: 'success' });
+          resetForm();
+          data_table.ajax.reload(null, false);
+        } else {
+          swal({ title: 'Gagal', text: res.message || 'Terjadi kesalahan', icon: 'error' });
+        }
+      })
+      .fail(function (xhr) {
+        swal({
+          title: 'Gagal',
+          text: (xhr.responseJSON && xhr.responseJSON.message) || 'Terjadi kesalahan',
+          icon: 'error'
+        });
+      });
+    });
+
+    window.data_table = data_table;
+  });
+
+  function resetForm() {
+    $('#vendor_id').val('');
+    $('#id_user').val('');
+    $('#btn-submit').text('Tambahkan');
+  }
+
+  function editData(id) {
+    $.post(`${rooturl}/vendor/list`, {
+      draw: 1,
+      start: 0,
+      length: 1,
+      perusahaan_id: PERUSAHAAN_ID,
+      search: { value: '' }
+    }, function (res) {
+      // Cari vendor berdasarkan id di result
+      let row = null;
+      if (res.data && res.data.length) {
+        // Endpoint di atas tidak support filter by vendor_id, jadi kita perlu
+        // panggil ulang dengan cara lain. Simpelnya: ambil dari data table yang sudah ada.
+      }
+    });
+
+    // Cara paling simpel & cepat: ambil dari DataTable yang sedang tampil
+    // Kalau row tidak ada di halaman ini, pakai endpoint tambahan.
+    $.get(`${rooturl}/vendor/list_users`, function () {
+      // Ambil detail vendor via query langsung (buat endpoint khusus kalau perlu)
+      // Di sini kita fallback: ambil dari DataTable
+      let found = null;
+      window.data_table.rows().every(function () {
+        const d = this.data();
+        if (d && String(d.vendor_id) === String(id)) { found = d; return false; }
+      });
+
+      if (!found) {
+        swal({ title: 'Info', text: 'Data ada di halaman lain. Buka halaman yang memuat data ini atau tambahkan endpoint detail.', icon: 'info' });
+        return;
+      }
+
+      $('#vendor_id').val(found.vendor_id);
+      $('#perusahaan_id').val(found.perusahaan_id);
+      // Kalau id_user null → pakai value 0 (Vendor Perusahaan)
+      $('#id_user').val(found.id_user ? String(found.id_user) : '0');
+      $('#btn-submit').text('Update');
+
+      $('html, body').animate({ scrollTop: 0 }, 'fast');
+    });
+  }
+
+  async function hapus(id) {
+    const willDelete = await swal({
+      title: "Hapus Data",
+      text: "Apakah anda akan menghapus data ini?",
+      icon: "warning",
+      dangerMode: true,
+      buttons: ["Tidak", "Ya"],
+    });
+
+    if (willDelete) {
+      $.get(`${rooturl}/vendor/hapus/${id}`, function (res) {
+        if (res.status === 200) {
+          swal({ title: 'Berhasil', text: res.message, icon: 'success' });
+          window.data_table.ajax.reload(null, false);
+        } else {
+          swal({ title: 'Gagal', text: res.message || 'Terjadi kesalahan', icon: 'error' });
+        }
+      })
+      .fail(function (xhr) {
+        swal({
+          title: 'Gagal',
+          text: (xhr.responseJSON && xhr.responseJSON.message) || 'Terjadi kesalahan',
+          icon: 'error'
+        });
+      });
+    }
+  }
+</script>

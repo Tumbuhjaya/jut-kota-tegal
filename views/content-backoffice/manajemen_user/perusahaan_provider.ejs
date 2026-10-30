@@ -1,0 +1,287 @@
+<% include ../../template-backoffice/header.ejs %>
+
+<div class="main-content">
+  <section class="section">
+    <div class="w-100" style="padding: 0 30px;">
+      <div class="section-header" style="border-radius: 0.25rem;">
+        <h1>Data Perusahaan Provider</h1>
+        <div class="section-header-breadcrumb">
+          <div class="breadcrumb-item active"><a href="/backoffice">Dashboard</a></div>
+          <div class="breadcrumb-item active"><a href="/manajemen_users/perusahaan">Data Perusahaan</a></div>
+          <div class="breadcrumb-item">Data Perusahaan Provider</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-body">
+      <div class="row">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body">
+
+              <form id="form-perusahaan-provider">
+                <input type="hidden" id="perusahaan_provider_id" name="perusahaan_provider_id">
+
+                <div class="form-group row mb-0">
+                  <label class="col-sm-2 col-form-label">Vendor</label>
+                  <div class="col-sm-10">
+                    <select class="form-control" id="vendor_id" name="vendor_id" required>
+                      <option value="">-- Pilih Vendor --</option>
+                      <!-- Opsi vendor diisi via JS -->
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-group row mb-0">
+                  <label class="col-sm-2 col-form-label">Provider</label>
+                  <div class="col-sm-10">
+                    <select class="form-control" id="provider_id_input" name="provider_id" required>
+                      <option value="">-- Pilih Provider --</option>
+                      <!-- Opsi provider diisi via JS -->
+                    </select>
+                  </div>
+                </div>
+
+                <hr>
+
+                <div class="form-group row">
+                  <div class="col-sm-10 offset-sm-2">
+                    <button type="submit" class="btn btn-primary" id="btn-submit">Tambahkan</button>
+                    <button type="button" class="btn btn-secondary" onclick="resetForm()">Batal</button>
+                  </div>
+                </div>
+              </form>
+
+              <hr>
+
+              <div class="table-responsive">
+                <table class="table table-bordered table-striped" id="list-data">
+                  <thead>
+                    <tr>
+                      <th>No.</th>
+                      <th>Vendor</th>
+                      <th>Provider</th>
+                      <th>Option</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<footer class="main-footer">
+  <div class="footer-left">
+    <% include ../../template-backoffice/copyright-left.ejs %>
+  </div>
+  <div class="footer-right">
+    <% include ../../template-backoffice/copyright-right.ejs %>
+  </div>
+</footer>
+
+<% include ../../template-backoffice/footer.ejs %>
+
+<script type="text/javascript">
+  var rooturl = '';
+
+  $(function () {
+    loadVendorOptions();
+    loadProviderOptions();
+
+    if ($.fn.DataTable.isDataTable('#list-data')) {
+      $('#list-data').DataTable().destroy();
+    }
+
+    let data_table = $('#list-data').DataTable({
+      processing: true,
+      serverSide: true,
+      searching: true,
+      ordering: true,
+      ajax: {
+        url: rooturl + '/perusahaan_provider/list',
+        type: 'POST',
+        data: function (d) {
+          return d;
+        },
+        dataSrc: function (json) {
+          return json.data || [];
+        }
+      },
+      columns: [
+        { data: null, width: '30px', orderable: false, searchable: false },
+        { data: 'nama_vendor' },
+        { data: 'nama_provider' },
+        {
+          data: null,
+          width: '170px',
+          orderable: false,
+          searchable: false,
+          render: function (data, type, row) {
+            return `
+              <div style="display:flex;justify-content:center;">
+                <button onclick="editData(${row.perusahaan_provider_id})" class="btn btn-warning mr-2">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button onclick="hapus(${row.perusahaan_provider_id})" class="btn btn-danger">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            `;
+          }
+        }
+      ],
+      columnDefs: [
+        { width: '30px', targets: 0 },
+        { width: '170px', targets: 3 }
+      ],
+      language: {
+        "sProcessing": "Sedang memproses...",
+        "sLengthMenu": "_MENU_",
+        "sZeroRecords": "Tidak ditemukan data yang sesuai",
+        "sInfo": "Menampilkan _START_ sampai _END_ dari _TOTAL_ entri",
+        "sInfoEmpty": "Menampilkan 0 sampai 0 dari 0 entri",
+        "sInfoFiltered": "(disaring dari _MAX_ entri keseluruhan)",
+        "sInfoPostFix": "",
+        "sUrl": "",
+        "oPaginate": {
+          "sFirst": "Pertama",
+          "sPrevious": "Sebelumnya",
+          "sNext": "Selanjutnya",
+          "sLast": "Terakhir"
+        }
+      }
+    });
+
+    data_table.on('draw.dt', function () {
+      let PageInfo = data_table.page.info();
+      data_table.column(0, { page: 'current' }).nodes().each(function (cell, i) {
+        cell.innerHTML = i + 1 + PageInfo.start;
+      });
+    });
+
+    $('#form-perusahaan-provider').on('submit', function (e) {
+      e.preventDefault();
+
+      const id = $('#perusahaan_provider_id').val();
+      const url = id
+        ? `${rooturl}/perusahaan_provider/edit`
+        : `${rooturl}/perusahaan_provider/insert`;
+
+      $.ajax({
+        url: url,
+        method: 'POST',
+        data: $(this).serialize(),
+        dataType: 'json'
+      })
+      .done(function (res) {
+        if (res.status === 200) {
+          swal({ title: 'Berhasil', text: res.message, icon: 'success' });
+          resetForm();
+          data_table.ajax.reload(null, false);
+        } else {
+          swal({ title: 'Gagal', text: res.message || 'Terjadi kesalahan', icon: 'error' });
+        }
+      })
+      .fail(function (xhr) {
+        swal({
+          title: 'Gagal',
+          text: (xhr.responseJSON && xhr.responseJSON.message) || 'Terjadi kesalahan',
+          icon: 'error'
+        });
+      });
+    });
+
+    window.data_table = data_table;
+  });
+
+  function loadVendorOptions() {
+    $.post(`${rooturl}/vendor/list`, {
+      draw: 1, start: 0, length: 1000
+    }, function (res) {
+      let opts = '<option value="">-- Pilih Vendor --</option>';
+      (res.data || []).forEach(function (row) {
+        opts += `<option value="${row.vendor_id}">${row.vendor}</option>`;
+      });
+      $('#vendor_id').html(opts);
+    });
+  }
+
+  function loadProviderOptions() {
+    $.post(`${rooturl}/provider/list`, {
+      draw: 1, start: 0, length: 1000
+    }, function (res) {
+      let opts = '<option value="">-- Pilih Provider --</option>';
+      (res.data || []).forEach(function (row) {
+        opts += `<option value="${row.provider_id}">${row.provider}</option>`;
+      });
+      $('#provider_id_input').html(opts);
+    });
+  }
+
+  function resetForm() {
+    $('#perusahaan_provider_id').val('');
+    if ($('#form-perusahaan-provider').length) $('#form-perusahaan-provider')[0].reset();
+    $('#btn-submit').text('Tambahkan');
+  }
+
+  function editData(id) {
+    $.post(`${rooturl}/perusahaan_provider/list`, {
+      draw: 1,
+      start: 0,
+      length: 1,
+      perusahaan_provider_id: id
+    }, function (res) {
+      const row = (res.data && res.data[0]) ? res.data[0] : null;
+      if (!row) {
+        return swal({ title: 'Gagal', text: 'Data tidak ditemukan', icon: 'error' });
+      }
+
+      $('#perusahaan_provider_id').val(row.perusahaan_provider_id);
+      $('#vendor_id').val(row.vendor_id);
+      $('#provider_id_input').val(row.provider_id);
+      $('#btn-submit').text('Update');
+      $('html, body').animate({ scrollTop: 0 }, 'fast');
+    })
+    .fail(function (xhr) {
+      swal({
+        title: 'Gagal',
+        text: (xhr.responseJSON && xhr.responseJSON.message) || 'Data tidak ditemukan',
+        icon: 'error'
+      });
+    });
+  }
+
+  async function hapus(id) {
+    const willDelete = await swal({
+      title: "Hapus Data",
+      text: "Apakah anda akan menghapus data ini?",
+      icon: "warning",
+      dangerMode: true,
+      buttons: ["Tidak", "Ya"],
+    });
+
+    if (willDelete) {
+      $.get(`${rooturl}/perusahaan_provider/hapus/${id}`, function (res) {
+        if (res.status === 200) {
+          swal({ title: 'Berhasil', text: res.message, icon: 'success' });
+          window.data_table.ajax.reload(null, false);
+        } else {
+          swal({ title: 'Gagal', text: res.message || 'Terjadi kesalahan', icon: 'error' });
+        }
+      })
+      .fail(function (xhr) {
+        swal({
+          title: 'Gagal',
+          text: (xhr.responseJSON && xhr.responseJSON.message) || 'Terjadi kesalahan',
+          icon: 'error'
+        });
+      });
+    }
+  }
+</script>

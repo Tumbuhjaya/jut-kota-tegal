@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="shortcut icon" href="#" type="image/png">
+
+    <title>Cetak Ruas Jalan</title>
+
+    <link href="/resources-maps/stylesheets/leaflet-routing-machine.css" rel="stylesheet"/>
+    <link href="/resources-maps/stylesheets/L.Control.Locate.min.css" rel="stylesheet"/>
+    <link href="/resources-maps/stylesheets/leaflet.extra-markers.css" rel="stylesheet"/>
+    <link href="/resources-maps/stylesheets/leaflet.label.css" rel="stylesheet"/>
+    <link href="/resources-maps/stylesheets/groupedlayercontrol.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="/resources-maps/stylesheets/leaflet.draw.css" />
+    <link href="https://unpkg.com/leaflet@1.3.4/dist/leaflet.css" rel="stylesheet">
+    <link href="/resources-maps/stylesheets/Control.FullScreen.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="/resources-maps/stylesheets/MarkerCluster.css" />
+    <link rel="stylesheet" href="/resources-maps/stylesheets/MarkerCluster.Default.css" />
+
+    <script src="https://unpkg.com/leaflet@1.3.4/dist/leaflet-src.js"></script>
+    <script src="https://unpkg.com/esri-leaflet@2.1.1/dist/esri-leaflet.js"
+       integrity="sha512-ECQqaYZke9cSdqlFG08zSkudgrdF6I1d8ViSa7I3VIszJyVqw4ng1G8sehEXlumdMnFYfzY0tMgdQa4WCs9IUw=="
+       crossorigin=""></script>
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+
+    <script src="/resources-maps/javascripts/leaflet-routing-machine.js"></script>
+    <script src="/resources-maps/javascripts/leaflet.label.js"></script>
+    <script src="/resources-maps/panah-asmara.js"></script>
+    <script src="https://maps.google.com/maps/api/js?v=3.2&key=AIzaSyBy8irzccEOp7ezf5nQ2UPaLGcte_AEsOQ"></script>
+    <script src="https://unpkg.com/leaflet.gridlayer.googlemutant@latest/dist/Leaflet.GoogleMutant.js"></script>
+    <script src="/resources-maps/javascripts/L.Control.Locate.js" ></script>
+    <script src="/resources-maps/javascripts/leaflet.extra-markers.js"></script>
+    <script src="/resources-maps/javascripts/leaflet-image.js"></script>
+    <script src="https://d3js.org/topojson.v1.min.js"></script>
+    <script src="/resources-maps/javascripts/Control.FullScreen.js"></script>
+    <script src="/resources-maps/javascripts/groupedlayercontrol.js"></script>
+    <script src="/resources-maps/javascripts/wicket.js"></script>
+    <script src="/resources-maps/javascripts/wicket-leaflet.js"></script>
+    <script src="/resources-maps/javascripts/leaflet-omnivore.min.js"></script>
+    <script src="/resources-maps/javascripts/leaflet.markercluster-src.js"></script>
+    <!-- drawing -->
+    <script src="/resources-maps/draw/Leaflet.draw.js"></script>
+    <script src="/resources-maps/draw/Leaflet.Draw.Event.js"></script>
+    <script src="/resources-maps/draw/Toolbar.js"></script>
+    <script src="/resources-maps/draw/Tooltip.js"></script>
+    <script src="/resources-maps/draw/ext/GeometryUtil.js"></script>
+    <script src="/resources-maps/draw/ext/LatLngUtil.js"></script>
+    <script src="/resources-maps/draw/ext/LineUtil.Intersect.js"></script>
+    <script src="/resources-maps/draw/ext/Polygon.Intersect.js"></script>
+    <script src="/resources-maps/draw/ext/Polyline.Intersect.js"></script>
+    <script src="/resources-maps/draw/ext/TouchEvents.js"></script>
+    <script src="/resources-maps/draw/draw/DrawToolbar.js"></script>
+    <script src="/resources-maps/draw/draw/handler/Draw.Feature.js"></script>
+    <script src="/resources-maps/draw/draw/handler/Draw.SimpleShape.js"></script>
+    <script src="/resources-maps/draw/draw/handler/Draw.Polyline.js"></script>
+    <script src="/resources-maps/draw/draw/handler/Draw.Marker.js"></script>
+    <script src="/resources-maps/draw/draw/handler/Draw.Polygon.js"></script>
+    <script src="/resources-maps/draw/draw/handler/Draw.Rectangle.js"></script>
+    <script src="/resources-maps/draw/edit/EditToolbar.js"></script>
+    <script src="/resources-maps/draw/edit/handler/EditToolbar.Edit.js"></script>
+    <script src="/resources-maps/draw/edit/handler/EditToolbar.Delete.js"></script>
+    <script src="/resources-maps/draw/Control.Draw.js"></script>
+    <script src="/resources-maps/draw/edit/handler/Edit.Poly.js"></script>
+    <script src="/resources-maps/draw/edit/handler/Edit.SimpleShape.js"></script>
+    <script src="/resources-maps/draw/edit/handler/Edit.Rectangle.js"></script>
+    <script src="/resources-maps/draw/edit/handler/Edit.Marker.js"></script>
+    <script src="/resources-maps/main.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style type="text/css">
+        /* Legenda Peta */
+.info.legend {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 8px 10px;
+    border-radius: 6px;
+    box-shadow: 0 0 8px rgba(0,0,0,0.3);
+    font-size: 11px;
+    line-height: 1.4;
+    max-height: 300px;
+    overflow-y: auto;
+    max-width: 220px;
+}
+.info.legend h6 {
+    margin: 0 0 6px 0;
+    font-weight: bold;
+    font-size: 12px;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 4px;
+}
+.info.legend .legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px;
+}
+.info.legend .legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    margin-right: 6px;
+    border: 1px solid #333;
+    flex-shrink: 0;
+}
+.info.legend .legend-label {
+    font-size: 11px;
+    word-break: break-word;
+}
+        .leaflet-container .leaflet-control-attribution{
+            display: none;
+        }
+        /* Aturan Dasar */
+        body {
+            font-family: 'Arial', sans-serif !important;
+            font-size: 12pt;
+            line-height: 1.25em;
+            margin: 0;
+            padding: 30mm 60mm;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            margin: 0;
+            font-weight: normal;
+            font-size: 12pt;
+            line-height: 1.25em;
+            text-align: justify;
+        }
+
+        .w-100 { width: 100%; }
+        .w-100-flex { width: 100%; display: flex; }
+        .custom-border-table { width: 100%; border-collapse: collapse; }
+
+        th{
+            /* padding:1.5mm 1.5mm; */
+            vertical-align: middle;
+            border:1px solid #333 ;
+            -webkit-print-color-adjust: exact;
+        }
+
+        td{
+            /* padding:1.5mm 1.5mm; */
+            vertical-align: top;
+            border:1px solid #333 ;
+            -webkit-print-color-adjust: exact;
+        }
+        
+        .bh-top{
+            border-top: hidden;
+        }
+
+        .bh-bottom{
+            border-bottom: hidden;
+        }
+
+        .bh-left{
+            border-left: hidden;
+        }
+
+        .bh-right{
+            border-right: hidden;
+        }
+
+        /* Container foto agar rapi */
+        .foto-box {
+            width: 100%;
+            height: 50mm;
+            overflow: hidden;
+            background-color: #f3f4f6;
+            border: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .foto-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .foto-box .empty-text {
+            color: #999;
+            font-size: 9pt;
+        }
+
+        /* --- KONFIGURASI CETAK --- */
+        @media print {
+            @page {
+                size: A4 Landscape;
+                margin: 10mm;
+            }
+
+            body {
+                background-color: white;
+                font-size: 12pt;
+                line-height: 1.25em;
+                margin: 0;
+                padding: 0;
+            }
+
+            th{
+                /* padding:1.5mm 1.5mm; */
+                vertical-align: middle;
+                border:1px solid #333 ;
+                -webkit-print-color-adjust: exact;
+            }
+            
+            td{
+                /* padding:1.5mm 1.5mm; */
+                vertical-align: top;
+                border:1px solid #333 ;
+                -webkit-print-color-adjust: exact;
+            }
+
+            .bh-top{
+                border-top: hidden;
+            }
+
+            .bh-bottom{
+                border-bottom: hidden;
+            }
+
+            .bh-left{
+                border-left: hidden;
+            }
+
+            .bh-right{
+                border-right: hidden;
+            }
+
+            .no-print { display: none; }
+            .print-container { width: 100%; border-collapse: collapse; }
+
+            .header-content {
+                position: fixed; top: 0; left: 0; right: 0; height: 100px;
+            }
+            .footer-content {
+                position: fixed; bottom: 0; left: 0; right: 0; height: 60px;
+                text-align: center; font-size: 10pt; color: #555;
+            }
+            .header-space { height: 0; background-color: pink; }
+            .footer-space { height: 18mm; }
+
+            * {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .page {
+                width: 297mm;
+                height: 198mm;
+                padding: 0;
+                /* margin: 0 auto 20px auto; */
+                background: white;
+                /* box-shadow: 0 0 10px rgba(0,0,0,0.1); */
+                /* box-sizing: border-box; */
+                /* border: 1px solid black; */
+            }
+        }
+
+        /* Styling Tambahan (Visual) */
+        .line-bold {
+            border: none;
+            border-top: 3px solid black;
+            margin-top: 5px;
+        }
+
+        button {
+            padding: 10px 20px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            position: absolute;
+            top: 30px;
+            right: 30px;
+        }
+
+        .custom-capital { display: inline-block; text-transform: lowercase; }
+        .custom-capital::first-letter { text-transform: uppercase; }
+
+        @media screen {
+            body { background-color: #f0f0f0; padding: 20px; }
+            .page {
+                width: 297mm;
+                height: 210mm;
+                /* padding: 2.5mm; */
+                /* margin: 0 auto 20px auto; */
+                background: white;
+                /* box-shadow: 0 0 10px rgba(0,0,0,0.1); */
+                /* box-sizing: border-box; */
+                /* border: 1px solid black; */
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="no-print actions">
+        <button onclick="window.print()">Cetak Dokumen / Save PDF</button>
+    </div>
+
+    <table class="print-container">
+        <tbody>
+            <tr>
+                <td class="bh-left bh-top bh-right bh-bottom">
+                    <div class="page">
+                        <div class="w-100">
+                            <h5 style="text-align: center;font-weight: bold;">PETA INFORMASI GELARAN JARINGAN UTILITAS DI KOTA TEGAL</h5>
+                        </div>
+
+                        <!-- PETA + FOTO -->
+                        <div class="w-100" style="margin-top: 2.5mm;">
+                            <table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse;width: 100%;">
+                                <tbody>
+                                    <tr>
+                                        <td style="width: 70%;">
+                                            <div style="width: 100%;height: 125mm;background-color: whitesmoke;" id="map"></div>
+                                            <table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse;width: 100%;">
+                                                <tbody>
+                                                    <tr>
+                                                        <!-- Kolom 1 -->
+                                                        <td style="width: 25%;" class="bh-left bh-top bh-right bh-bottom">
+                                                            <table border="0" cellpadding="5" cellspacing="0" style="border-collapse: collapse;width: 100%;">
+                                                                <tbody>
+                                                                    <tr>
+                                                                        <td class="bh-left bh-top bh-right bh-bottom">
+                                                                            <h6 style="font-weight: bold;font-size: 11pt;">Kecamatan</h6>
+                                                                            <h6 style="font-size: 10pt;" id="val_kecamatan">-</h6>
+                                                                        </td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td class="bh-left bh-top bh-right bh-bottom">
+                                                                            <h6 style="font-weight: bold;font-size: 11pt;">Kelurahan</h6>
+                                                                            <h6 style="font-size: 10pt;" id="val_kelurahan">-</h6>
+                                                                        </td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td class="bh-left bh-top bh-right bh-bottom">
+                                                                            <h6 style="font-weight: bold;font-size: 11pt;">Kode Ruas</h6>
+                                                                            <h6 style="font-size: 10pt;" id="val_kode_ruas">-</h6>
+                                                                        </td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td class="bh-left bh-top bh-right bh-bottom">
+                                                                            <h6 style="font-weight: bold;font-size: 11pt;">Nama Ruas</h6>
+                                                                            <h6 style="font-size: 10pt;" id="val_nama_ruas">-</h6>
+                                                                        </td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </td>
+
+                                                        <!-- Kolom 2 -->
+                                                        <td style="width: 25%;" class="bh-top bh-right bh-bottom">
+                                                            <table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse;width: 100%;">
+                                                                <tbody>
+                                                                    <tr>
+                                                                        <td class="bh-left bh-top bh-right bh-bottom">
+                                                                            <h6 style="font-weight: bold;font-size: 11pt;">Pangkal Ruas</h6>
+                                                                            <h6 style="font-size: 10pt;" id="val_pangkal">-</h6>
+                                                                        </td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td class="bh-left bh-top bh-right bh-bottom">
+                                                                            <h6 style="font-weight: bold;font-size: 11pt;">Ujung Ruas</h6>
+                                                                            <h6 style="font-size: 10pt;" id="val_ujung">-</h6>
+                                                                        </td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td class="bh-left bh-top bh-right bh-bottom">
+                                                                            <h6 style="font-weight: bold;font-size: 11pt;">Panjang Ruas</h6>
+                                                                            <h6 style="font-size: 10pt;" id="val_panjang">-</h6>
+                                                                        </td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </td>
+
+                                                        <!-- Kolom 3 -->
+                                                        <td style="width: 25%;" class="bh-top bh-right bh-bottom">
+                                                            <table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse;width: 100%;">
+                                                                <tbody>
+                                                                    <tr>
+                                                                        <td class="bh-left bh-top bh-right bh-bottom">
+                                                                            <h6 style="font-weight: bold;font-size: 11pt;">Jumlah Provider</h6>
+                                                                            <h6 style="font-size: 10pt;" id="val_jml_provider">-</h6>
+                                                                        </td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td class="bh-left bh-top bh-right bh-bottom">
+                                                                            <h6 style="font-weight: bold;font-size: 11pt;">Jumlah Tiang</h6>
+                                                                            <h6 style="font-size: 10pt;" id="val_jml_tiang">-</h6>
+                                                                        </td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td class="bh-left bh-top bh-right bh-bottom">
+                                                                            <h6 style="font-weight: bold;font-size: 11pt;">Jumlah Kabel</h6>
+                                                                            <h6 style="font-size: 10pt;" id="val_jml_kabel">-</h6>
+                                                                        </td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td class="bh-left bh-top bh-right bh-bottom">
+                                                                            <h6 style="font-weight: bold;font-size: 11pt;">Total Panjang Kabel</h6>
+                                                                            <h6 style="font-size: 10pt;" id="val_ttl_p_kabel">-</h6>
+                                                                        </td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </td>
+
+                                                        <!-- Kolom 4 -->
+                                                        <td style="width: 25%;" class="bh-top bh-right bh-bottom">
+                                                            <table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse;width: 100%;">
+                                                                <tbody>
+                                                                    <tr>
+                                                                        <td class="bh-left bh-top bh-right bh-bottom">
+                                                                            <h6 style="font-weight: bold;text-align: left;font-size: 11pt;">Potensi Retribusi Tiang</h6>
+                                                                            <h6 style="font-size: 10pt;" id="val_potensi_tiang">-</h6>
+                                                                        </td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td class="bh-left bh-top bh-right bh-bottom">
+                                                                            <h6 style="font-weight: bold;text-align: left;font-size: 11pt;">Potensi Retribusi Kabel</h6>
+                                                                            <h6 style="font-size: 10pt;" id="val_potensi_kabel">-</h6>
+                                                                        </td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td class="bh-left bh-top bh-right bh-bottom">
+                                                                            <h6 style="font-weight: bold;text-align: left;font-size: 11pt;">Total Potensi Retribusi</h6>
+                                                                            <h6 style="font-size: 10pt;" id="val_total_potensi">-</h6>
+                                                                        </td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </td>
+                                        <td style="width: 30%;vertical-align: middle;">
+                                            <table border="0" cellpadding="3" cellspacing="0" style="border-collapse: collapse;width: 100%;">
+                                                <tbody>
+                                                    <tr>
+                                                        <td >
+                                                            <div class="foto-box" id="foto_box_1">
+                                                                <span class="empty-text">Foto 1 tidak tersedia</span>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td >
+                                                            <div class="foto-box" id="foto_box_2">
+                                                                <span class="empty-text">Foto 2 tidak tersedia</span>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>
+                                                            <div class="foto-box" id="foto_box_3" style="height: 75mm;">
+                                                                <span class="empty-text">Foto 3 tidak tersedia</span>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- TABEL INFO -->
+                        <div class="w-100">
+                            
+                        </div>
+
+                    </div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <script type="text/javascript">
+        /* =====================================================
+         * MASTER_ID di-inject dari server (EJS)
+         * ===================================================== */
+        var MASTER_ID = "<%= id %>";
+
+        /* Path dasar foto. Sesuaikan kalau bukan "/foto/" */
+        var FOTO_BASE_URL = "https://storage.googleapis.com/jut-tegal/";
+    </script>
+
+    <script type="text/javascript">
+        // Skala linear jumlah → ukuran
+function scaleSize(value, minVal, maxVal, minOut, maxOut) {
+    value = Number(value) || 0;
+    if (maxVal <= minVal) return minOut;
+    var t = (value - minVal) / (maxVal - minVal);
+    t = Math.max(0, Math.min(1, t)); // clamp 0..1
+    return minOut + t * (maxOut - minOut);
+}
+        /* =====================================================
+         * MAP INIT
+         * ===================================================== */
+        var popupOptions = {
+            maxWidth: '450',
+            minWidth: '250',
+            className: 'custom',
+            closeOnClick: true
+        };
+
+        var map = L.map('map', {
+            center: [-7.653612465060216, 111.32634662536874],
+            zoom: 17,
+            minZoom: 2,
+            maxZoom: 22,
+            fullscreenControl: true,
+            fullscreenControlOptions: { position: 'topleft' }
+        });
+
+        var google_hybrid = L.gridLayer.googleMutant({ type: 'hybrid' });
+        var google_satelit = L.gridLayer.googleMutant({ type: 'satellite' });
+        var google_roadmap = L.gridLayer.googleMutant({ type: 'roadmap' });
+        var osm = L.tileLayer('https://{s}.tile.osm.org/{z}/{x}/{y}.png', {});
+        var Esri_WorldImagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}');
+
+        map.addLayer(google_hybrid);
+
+        L.control.scale({
+            position: 'bottomright',
+            metric: true,
+            imperial: false
+        }).addTo(map);
+
+        var baseLayers = {
+            "Google Roadmap": google_roadmap,
+            "Google Hybrid": google_hybrid,
+            "Google Satellite": google_satelit,
+            "Open Street Map": osm,
+            "ESRI World Imagery": Esri_WorldImagery
+        };
+
+        /* =====================================================
+         * UTIL
+         * ===================================================== */
+        var colorPalette = {};
+
+        function randomColor() {
+            return '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+        }
+
+        function getColorByProvider(provider) {
+            var providerColors = {
+                "My Republik": '#e74c3c'
+            };
+            if (!providerColors[provider]) {
+                if (!colorPalette[provider]) {
+                    colorPalette[provider] = randomColor();
+                }
+                return colorPalette[provider];
+            }
+            return providerColors[provider];
+        }
+
+        function formatRp(v) {
+            v = Number(v) || 0;
+            return 'Rp ' + v.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',-';
+        }
+
+        /* =====================================================
+         * 3 LAYER UTILITAS (untuk 1 ID master retribusi)
+         * ===================================================== */
+        var masterJoinLayer = L.geoJSON(null, {
+            style: function () {
+                return { color: '#ff8800', weight: 3, opacity: 0.9, fillOpacity: 0.15 };
+            },
+            pointToLayer: function (f, latlng) {
+                return L.circleMarker(latlng, {
+                    radius: 6, color: '#ff8800', fillColor: '#ffcc66',
+                    fillOpacity: 0.9, weight: 2
+                });
+            },
+            onEachFeature: function (f, layer) {
+                var p = f.properties || {};
+                layer.bindPopup(
+                    '<div style="font-size:12px;">' +
+                    '<b>No Ruas:</b> ' + (p.no || '-') + '<br>' +
+                    '<b>Nama Ruas:</b> ' + (p.nm_ruas || '-') + '<br>' +
+                    '<b>Pangkal:</b> ' + (p.tk_ruas_aw || '-') + '<br>' +
+                    '<b>Ujung:</b> ' + (p.tk_ruas_ak || '-') + '<br>' +
+                    '<b>Panjang:</b> ' + (p.panjang || '-') + ' m' +
+                    '</div>', popupOptions
+                );
+            }
+        });
+function scaleOpacity(value, minVal, maxVal, minOut, maxOut) {
+    value = Number(value) || 0;
+    if (maxVal <= minVal) return minOut;
+    var t = (value - minVal) / (maxVal - minVal);
+    t = Math.max(0, Math.min(1, t));
+    return minOut + t * (maxOut - minOut);
+}
+
+// Kabel
+var kabelJoinLayer = L.geoJSON(null, {
+    style: function (f) {
+        var jml = Number((f.properties || {}).jumlah) || 1;
+        var op = scaleOpacity(jml, 1, 30, 0.3, 1.0); // 0.3 → 1.0
+        var c = getColorByProvider((f.properties || {}).provider || 'unknown');
+        return { color: c, weight: 4, opacity: op, fillOpacity: op * 0.4 };
+    }
+});
+       var kabelJoinLayer = L.geoJSON(null, {
+      style: function (f) {
+        var jml = Number((f.properties || {}).jumlah) || 1;
+        var op = scaleOpacity(jml, 1, 30, 0.3, 1.0); // 0.3 → 1.0
+        var c = getColorByProvider((f.properties || {}).provider || 'unknown');
+        return { color: c, weight: 4, opacity: op, fillOpacity: op * 0.4 };
+    },
+    pointToLayer: function (f, latlng) {
+        var jml = Number((f.properties || {}).jumlah) || 1;
+        var r = scaleSize(jml, 1, 30, 4, 12);
+        var c = getColorByProvider((f.properties || {}).provider || 'unknown');
+        return L.circleMarker(latlng, {
+            radius: r, color: c, fillColor: c,
+            fillOpacity: 0.9, weight: 2
+        });
+    }
+});
+  var tiangJoinLayer = L.geoJSON(null, {
+    pointToLayer: function (f, latlng) {
+        var p = f.properties || {};
+        var jml = Number(p.jumlah_tia) || 1;
+
+        // Ambil warna dari kolom rgb, contoh "(255, 252, 79)"
+        var rgbColor = p.rgb ? 'rgb(' + p.rgb.replace(/[()]/g, '') + ')' : '#3388ff'; // fallback biru
+
+        // Buat divIcon dengan background color dan icon tiang listrik (fa-bolt)
+        var iconHtml = '<div style="background-color: ' + rgbColor + '; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #333; box-shadow: 0 0 5px rgba(0,0,0,0.5);">' +
+                       '<i class="fa fa-bolt" style="color: white; font-size: 16px;"></i></div>';
+        var icon = L.divIcon({
+            html: iconHtml,
+            className: 'custom-tiang-icon',
+            iconSize: [30, 30],
+            iconAnchor: [15, 15],
+            popupAnchor: [0, -15]
+        });
+
+        var marker = L.marker(latlng, {
+            icon: icon,
+            riseOnHover: true
+        });
+
+        marker._jumlahTiang = jml;
+        return marker;
+    },
+    onEachFeature: function (f, layer) {
+        var p = f.properties || {};
+
+        // Foto dari kolom kd_foto_1 / kd_foto_2 / kd_foto_3 (opsional)
+        var foto1 = p.kd_foto_1 ? FOTO_BASE_URL + p.kd_foto_1 : '';
+        var foto2 = p.kd_foto_2 ? FOTO_BASE_URL + p.kd_foto_2 : '';
+        var foto3 = p.kd_foto_3 ? FOTO_BASE_URL + p.kd_foto_3 : '';
+
+        var fotoHtml = '';
+        if (foto1) fotoHtml += '<img src="'+foto1+'" style="max-width:120px;max-height:90px;border-radius:4px;margin:2px;" onerror="this.style.display=\'none\'">';
+        if (foto2) fotoHtml += '<img src="'+foto2+'" style="max-width:120px;max-height:90px;border-radius:4px;margin:2px;" onerror="this.style.display=\'none\'">';
+        if (foto3) fotoHtml += '<img src="'+foto3+'" style="max-width:120px;max-height:90px;border-radius:4px;margin:2px;" onerror="this.style.display=\'none\'">';
+
+        layer.bindPopup(
+            '<div style="font-size:12px;max-width:280px;">' +
+                '<b>Kode GPS:</b> ' + (p.kode_gps || '-') + '<br>' +
+                '<b>Kode Ruas:</b> ' + (p.kode_ruas || '-') + '<br>' +
+                '<b>Jumlah Tiang:</b> ' + (p.jumlah_tia || '-') + '<br>' +
+                '<b>Provider:</b> ' + (p.provider || '-') + '<br>' +
+                '<b>Kondisi:</b> ' + (p.kondisi || '-') + '<br>' +
+                '<b>Ciri Tiang:</b> ' + (p.ciri_tiang || '-') + '<br>' +
+                '<b>Retribusi:</b> ' + formatRp(p.t_k30cm || p.t_l30cm || 0) +
+                (fotoHtml ? '<hr style="margin:6px 0;"><div>'+fotoHtml+'</div>' : '') +
+            '</div>',
+            popupOptions
+        );
+
+        // Tooltip nama provider saat hover
+        layer.bindTooltip(
+            (p.provider || '-') + ' • ' + (p.jumlah_tia || 0) + ' tiang',
+            { direction: 'top', offset: [0, -12] }
+        );
+    }
+});
+/* =====================================================
+ * LEGENDA TIANG (berdasarkan kolom rgb + provider)
+ * ===================================================== */
+var legendTiang = L.control({ position: 'bottomleft' });
+
+legendTiang.onAdd = function (map) {
+    this._div = L.DomUtil.create('div', 'info legend');
+    this._div.innerHTML = '<h6>Legenda Tiang</h6><div id="legend-items"><i style="color:#888;">Memuat data...</i></div>';
+    return this._div;
+};
+
+// Simpan referensi agar bisa di-update
+var legendTiangControl = legendTiang.addTo(map);
+
+/**
+ * Update legenda berdasarkan data tiang (array row dari backend).
+ * Setiap entri unik dikelompokkan berdasarkan pasangan provider + rgb.
+ */
+function updateLegendTiang(tiangRows) {
+    var items = {};
+
+    (tiangRows || []).forEach(function (t) {
+        var provider = (t.provider || 'Tidak diketahui').toString().trim();
+        var rgbRaw = t.rgb ? String(t.rgb).replace(/[()\s]/g, '') : null;
+
+        // Skip jika rgb kosong → tetap tampilkan dengan warna abu-abu
+        var key = provider + '||' + (rgbRaw || 'default');
+
+        if (!items[key]) {
+            items[key] = {
+                provider: provider,
+                color: rgbRaw ? 'rgb(' + rgbRaw + ')' : '#888888'
+            };
+        }
+    });
+
+    var html = '';
+    var keys = Object.keys(items);
+
+    if (keys.length === 0) {
+        html = '<i style="color:#888;">Tidak ada data tiang</i>';
+    } else {
+        keys.forEach(function (k) {
+            var it = items[k];
+            html +=
+                '<div class="legend-item">' +
+                    '<span class="legend-color" style="background-color:' + it.color + ';"></span>' +
+                    '<span class="legend-label">' + it.provider + '</span>' +
+                '</div>';
+        });
+    }
+
+    var container = document.getElementById('legend-items');
+    if (container) container.innerHTML = html;
+}
+/* =====================================================
+         * FOTO (dari table tiang)
+         * ===================================================== */
+        function isFilled(v) {
+            return v !== null && v !== undefined && String(v).trim() !== '';
+        }
+
+        function setFoto(boxId, filename) {
+            var $box = $('#' + boxId);
+            $box.empty();
+            console.log( FOTO_BASE_URL + filename);
+            
+            if (isFilled(filename)) {
+                $('<img>')
+                    .attr('src', FOTO_BASE_URL + filename)
+                    .attr('alt', 'Foto')
+                    .on('error', function () {
+                        // Ganti ke placeholder kalau file tidak ada
+                        $box.empty().append('<span class="empty-text">Foto tidak ditemukan</span>');
+                    })
+                    .appendTo($box);
+            } else {
+                $box.append('<span class="empty-text">Foto tidak tersedia</span>');
+            }
+        }
+
+        function isiFotoTiang(tiangRows) {
+            // Ambil tiang pertama yang punya minimal 1 foto
+            var picked = [];
+                        
+
+            let kdrs = 0
+            for (var i = 0; i < (tiangRows || []).length; i++) {
+                var t = tiangRows[i];
+                if (t.kode_ruas!=kdrs) {
+                    picked.push(t)
+                }
+                if (kdrs.length==3) {
+                    break;
+                }
+                // if (isFilled(t.kd_foto_1) || isFilled(t.kd_foto_2) || isFilled(t.kd_foto_3)) {
+                //     picked = t;
+                //     break;
+                // }
+            }
+            // Kalau tidak ada yang punya foto, pakai baris pertama (biar tetap kosong)
+            if (!picked && tiangRows && tiangRows.length > 0) {
+                picked = tiangRows[tiangRows.length-Math.ceil(Math.random()*10)];
+            }
+
+            if (!picked) {
+                setFoto('foto_box_1', null);
+                setFoto('foto_box_2', null);
+                setFoto('foto_box_3', null);
+                return;
+            }
+            
+            setFoto('foto_box_1', picked[0].kd_foto_1);
+            setFoto('foto_box_2', picked[1].kd_foto_2);
+            setFoto('foto_box_3', picked[2].kd_foto_3);
+        }
+
+        /* =====================================================
+         * ISI TABEL INFO DARI RESPONSE BACKEND
+         * ===================================================== */
+        function isiTabelMaster(m, stats) {
+            $('#val_kecamatan').text(m.kecamatan || '-');
+            $('#val_kelurahan').text(m.kelurahan || '-');
+            $('#val_kode_ruas').text(m.no || '-');
+            $('#val_nama_ruas').text(m.nm_ruas || '-');
+
+            $('#val_pangkal').text(m.tk_ruas_aw || '-');
+            $('#val_ujung').text(m.tk_ruas_ak || '-');
+            // $('#val_panjang').text((Math.ceil(m.panjang) || '-') + (Math.ceil(m.panjang) ? ' m' : ''));
+            $('#val_panjang').text(m.panjang ? Math.ceil(m.panjang).toLocaleString('id-ID') + ' m' : '-');
+
+            $('#val_jml_provider').text(stats.jumlah_provider);
+            $('#val_jml_tiang').text(stats.jumlah_tiang);
+            $('#val_jml_kabel').text(stats.jumlah_kabel);
+            $('#val_ttl_p_kabel').text(Math.ceil(stats.total_panjang_kabel).toLocaleString('id-ID') +' m');
+
+
+            
+            $('#val_potensi_tiang').text(formatRp(Math.ceil(stats.potensi_retribusi_tiang)));
+            $('#val_potensi_kabel').text(formatRp(Math.ceil(stats.potensi_retribusi_kabel)));
+            $('#val_total_potensi').text(formatRp(Math.ceil(stats.total_potensi_retribusi)));
+        }
+
+        /* =====================================================
+         * KONVERSI ARRAY ROW (WKT) → GeoJSON FeatureCollection
+         * ===================================================== */
+        function rowsToFC(arr) {
+            var features = [];
+            arr.forEach(function (row) {
+                if (!row.geometry) return;
+                var layer;
+                try {
+                    layer = omnivore.wkt.parse(row.geometry);
+                } catch (e) {
+                    console.warn('WKT invalid:', row.geometry, e);
+                    return;
+                }
+                layer.eachLayer(function (l) {
+                    if (l.feature) {
+                        var props = {};
+                        for (var k in row) {
+                            if (k !== 'geometry') props[k] = row[k];
+                        }
+                        features.push({
+                            type: 'Feature',
+                            properties: props,
+                            geometry: l.feature.geometry
+                        });
+                    }
+                });
+            });
+            return { type: 'FeatureCollection', features: features };
+        }
+
+        /* =====================================================
+         * LOAD DETAIL 1 ID
+         * ===================================================== */
+        function loadDetailById(id) {
+            $.getJSON(root + 'manajemen_laporan/ruas_jalan_detail/' + encodeURIComponent(id), function (resp) {
+                if (!resp || !resp.master) {
+                    console.warn('Data master kosong untuk id=' + id);
+                    return;
+                }
+console.log(resp);
+
+                // 1) Isi tabel
+                isiTabelMaster(resp.master, resp.stats);
+
+                // 2) Isi foto dari tiang
+                isiFotoTiang(resp.tiang || []);
+
+                // 3) Layer Master
+                masterJoinLayer.clearLayers();
+                masterJoinLayer.addData(rowsToFC([resp.master]));
+                masterJoinLayer.addTo(map);
+
+                // 4) Layer Tiang
+                tiangJoinLayer.clearLayers();
+                tiangJoinLayer.addData(rowsToFC(resp.tiang || []));
+                tiangJoinLayer.addTo(map);
+updateLegendTiang(resp.tiang || []);
+
+                // 5) Layer Kabel
+                kabelJoinLayer.clearLayers();
+                kabelJoinLayer.addData(rowsToFC(resp.kabel || []));
+                kabelJoinLayer.addTo(map);
+
+                // 6) Zoom ke semua layer
+                var all = L.featureGroup([masterJoinLayer, tiangJoinLayer, kabelJoinLayer]);
+                if (all.getLayers().length > 0) {
+                    map.fitBounds(all.getBounds(), { padding: [30, 30], maxZoom: 17 });
+                }
+            }).fail(function (xhr) {
+                console.warn('Gagal load detail id=' + id, xhr.status, xhr.responseText);
+            });
+        }
+
+        /* =====================================================
+         * LAYER CONTROL
+         * ===================================================== */
+        var groupedOverlays = {
+            "Jaringan Utilitas": {
+                "&nbsp;&nbsp;Master Retribusi": masterJoinLayer,
+                "&nbsp;&nbsp;Tiang":            tiangJoinLayer,
+                "&nbsp;&nbsp;Kabel":            kabelJoinLayer
+            }
+        };
+
+        L.control.groupedLayers(baseLayers, groupedOverlays, {
+            collapsed: true,
+            groupCheckboxes: false
+        }).addTo(map);
+
+        /* =====================================================
+         * RUN
+         * ===================================================== */
+        $(document).ready(function () {
+            if (typeof MASTER_ID !== 'undefined' && MASTER_ID) {
+                loadDetailById(MASTER_ID);
+            } else {
+                console.warn('MASTER_ID tidak terdefinisi');
+            }
+        });
+    </script>
+</body>
+
+</html>

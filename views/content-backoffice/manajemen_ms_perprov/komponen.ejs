@@ -1,0 +1,61 @@
+<!-- komponen.ejs -->
+<div class="section-body">
+  <div class="row">
+    <div class="col-12 col-lg-12 col-xl-12">
+      <div class="card">
+        <div class="card-body">
+
+          <div class="form-group row mb-0">
+            <label class="col-sm-2 col-form-label">Perusahaan</label>
+            <div class="col-sm-10">
+              <select name="perusahaan_id" id="perusahaan_id" class="form-control select2">
+                <option value="">-- Pilih --</option>
+              </select>
+            </div>
+          </div>
+
+          <hr>
+
+          <div class="form-group row mb-0">
+            <label class="col-sm-2 col-form-label">Provider</label>
+            <div class="col-sm-10">
+              <select name="provider_id" id="provider_id" class="form-control select2">
+                <option value="">-- Pilih --</option>
+              </select>
+            </div>
+          </div>
+
+          <hr>
+
+          <div class="form-group row mb-0">
+            <div class="col-sm-10 offset-sm-2" id="button_submit">
+              <button class="btn btn-primary mb-0 btn-lg" onclick="submit()">Submit</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Load data dropdown: Perusahaan & Provider
+  async function load_perusahaan() {
+    let data = await $.get('/perusahaan/list')
+    let list = data.data
+    for (let i = 0; i < list.length; i++) {
+      $('#perusahaan_id').append(`<option value="${list[i].perusahaan_id}">${list[i].nama_perusahaan}</option>`)
+    }
+  }
+
+  async function load_provider() {
+    let data = await $.post('/provider/list')
+    let list = data.data
+    console.log(list);
+    
+    for (let i = 0; i < list.length; i++) {
+      $('#provider_id').append(`<option value="${list[i].provider_id}">${list[i].provider}</option>`)
+    }
+  }
+</script>
