@@ -1,0 +1,26 @@
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <script src="/javascripts/template/bootstrap.bundle.js"></script>
+    <script src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.22/js/dataTables.bootstrap4.min.js"></script>
+    <script type="text/javascript">
+        var bahasaTabel = {
+            sProcessing: 'Sedang memproses...',
+            sLengthMenu: '_MENU_',
+            sSearch: 'Cari:',
+            sZeroRecords: 'Tidak ditemukan data yang sesuai',
+            sInfo: 'Menampilkan _START_ sampai _END_ dari _TOTAL_ entri',
+            sInfoEmpty: 'Menampilkan 0 sampai 0 dari 0 entri',
+            sInfoFiltered: '(disaring dari _MAX_ entri keseluruhan)',
+            oPaginate: { sFirst: 'Pertama', sPrevious: 'Sebelumnya', sNext: 'Selanjutnya', sLast: 'Terakhir' }
+        };
+
+        function esc(s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+            });
+        }
+
+        function pesanGagal(xhr) {
+            swal({ title: 'Gagal', text: (xhr.responseJSON && xhr.responseJSON.message) || 'Terjadi kesalahan', icon: 'error' });
+        }
+    </script>

@@ -56,6 +56,8 @@ var perusahaan = require('./isine/perusahaan.js');
 var perusahaan_provider = require('./isine/perusahaan_provider.js');
 
 var vendor = require('./isine/vendor.js');
+var dashboard_perusahaan = require('./isine/dashboard_perusahaan.js');
+var dashboard_vendor = require('./isine/dashboard_vendor.js');
 
 var app = express();
 var connection = require('./database/index.js').connection;
@@ -140,15 +142,20 @@ app.use('/provider', provider);
 app.use('/perusahaan', perusahaan);
 app.use('/perusahaan_provider', perusahaan_provider);
 app.use('/vendor', vendor);
+app.use('/dashboard_perusahaan', dashboard_perusahaan);
+app.use('/dashboard_vendor', dashboard_vendor);
 
 
 app.get('/backoffice', cek_login_all,async function (req, res) {
+  if (req.user && req.user[0] && Number(req.user[0].is_admin) === 2) {
+    return res.redirect('/dashboard_perusahaan');
+  }
   res.render('content-backoffice/index',{user:req.user[0], });
 });
 app.get('/', function (req, res) {
    var captcha = svgCaptcha.createMathExpr({mathMin:1,mathMax:9,mathOperator:'+'});
     req.session.captcha = captcha.text;
-  res.render('content/login_user', {captcha})
+  res.render('content/login_user', {captcha, pesan: req.flash('pesan')})
 });
 
 app.get('/beranda', function (req, res) {

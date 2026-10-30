@@ -37,6 +37,38 @@ router.use(function timeLog(req, res, next) {
   console.log('Time: ', Date.now());
   next();
 });
+// Validasi tambahan sesuai role. Mengembalikan pesan error, atau null jika lolos.
+// Halaman login depan (/) hanya untuk perusahaan & vendor; admin login lewat /autentifikasi.
+// Vendor (is_admin = 3) wajib login dengan memilih perusahaan dan masih bermitra dengannya.
+async function cekRoleLogin(req, user) {
+  const isVendor = Number(user.is_admin) === 3;
+  const loginVendor = req.body.login_sebagai === 'vendor';
+
+  if (req.body.login_sebagai === 'perusahaan' && Number(user.is_admin) !== 2) {
+    return isVendor ? 'Akun vendor harus login melalui tab Vendor dengan memilih perusahaan' : 'Akun ini bukan akun perusahaan';
+  }
+  if (loginVendor && !isVendor) return 'Akun ini bukan akun vendor';
+  if (!loginVendor && isVendor) return 'Akun vendor harus login melalui tab Vendor dengan memilih perusahaan';
+  if (!isVendor) return null;
+
+  if (!req.body.perusahaan_id) return 'Pilih perusahaan terlebih dahulu';
+  const [mitra] = await sql_enak.raw(
+    `SELECT v.vendor_id, p.perusahaan_id, p.nama_perusahaan
+       FROM vendor v
+       JOIN perusahaan p ON p.perusahaan_id = v.perusahaan_id AND p.deletedAt IS NULL
+      WHERE v.id_user = ? AND v.perusahaan_id = ? AND v.deletedAt IS NULL
+      LIMIT 1`,
+    [user.id_user, req.body.perusahaan_id]
+  );
+  if (!mitra.length) return 'Anda tidak bermitra dengan perusahaan tersebut';
+
+  // disimpan di session, dipakai dashboard vendor & filter data
+  user.login_vendor_id = mitra[0].vendor_id;
+  user.login_perusahaan_id = mitra[0].perusahaan_id;
+  user.login_nama_perusahaan = mitra[0].nama_perusahaan;
+  return null;
+}
+
 passport.use(new LocalStrategy({
   passReqToCallback : true
 },
@@ -98,11 +130,19 @@ if (req.body.target =='penghuni') {
       if (rows[0][0].pwd != sha1(password)&&rows[0][0].password != sha1(password)) {
         return done(null, false, req.flash('pesan','Password salah'), req.flash('tujuan',req.body.tujuan));
       }else{
-        return done(null, rows[0]);
+        return cekRoleLogin(req, rows[0][0]).then(function (pesan) {
+          if (pesan) {
+            return done(null, false, req.flash('pesan',pesan), req.flash('tujuan',req.body.tujuan));
+          }
+          return done(null, rows[0]);
+        });
       }
     }else{
       return done(null, false, req.flash('pesan','Username tidak ditemukan'), req.flash('tujuan',req.body.tujuan));
     }
+  }).catch(function (err) {
+    console.log(err);
+    return done(null, false, req.flash('pesan','Terjadi kesalahan, silakan coba lagi'), req.flash('tujuan',req.body.tujuan));
   });
 }else{
   return done(null, false, req.flash('pesan','pemberian password perlu kombinasi huruf besar ,huruf  kecil ,angka dan karakter\nSilahkan ulang kembali'), req.flash('tujuan',req.body.tujuan));
@@ -173,8 +213,27 @@ router.post('/login',
   passport.authenticate('local', { 
                                    failureRedirect: rooturl+'/',
                                    failureFlash: true }), function(req, res) {
+    // akun perusahaan langsung ke dashboard perusahaan
+    if (Number(req.user[0].is_admin) === 2) {
+      return res.redirect(rooturl+'/dashboard_perusahaan')
+    }
+    // akun vendor ke jaringan utilitas (kemitraan sudah dicek saat login)
+    if (Number(req.user[0].is_admin) === 3) {
+      return res.redirect(rooturl+'/perizinan/jaringan_utilitas')
+    }
     res.redirect(req.user[0].tujuan)}
 );
+// daftar perusahaan untuk pilihan login vendor
+router.get('/list_perusahaan', async function(req, res) {
+  try {
+    const [data] = await sql_enak.raw(
+      `SELECT perusahaan_id, nama_perusahaan FROM perusahaan WHERE deletedAt IS NULL ORDER BY nama_perusahaan ASC`)
+    res.json({ status: 200, message: 'sukses', data: data })
+  } catch (err) {
+    console.log(err)
+    res.status(500).json({ status: 500, message: 'gagal', data: [] })
+  }
+});
 router.post('/login_user',
   passport.authenticate('local', { 
                                    failureRedirect: rooturl+'/',

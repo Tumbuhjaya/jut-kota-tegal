@@ -93,12 +93,13 @@ function buildUserFilter(req, alias, val) {
 
     if (!vendorId) return ' AND 1=0 '
 
-    val.push(vendorId)
+    val.push(vendorId, user.login_vendor_id || 0)
 
     return ` AND ${alias}.provider_id IN (
       SELECT pp.provider_id
       FROM perusahaan_provider pp
-      WHERE pp.vendor_id = ?
+      JOIN vendor v ON v.vendor_id = pp.vendor_id AND v.deletedAt IS NULL
+        WHERE v.id_user = ? AND v.vendor_id = ?
         AND pp.deletedAt IS NULL
     )`
   }

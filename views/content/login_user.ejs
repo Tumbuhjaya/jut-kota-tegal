@@ -677,6 +677,29 @@
             .login-card { border-radius: 18px; }
             .form-side, .brand-side { padding: 1.75rem 1.25rem; }
         }
+
+        /* Tab jenis login */
+        .login-tab {
+            display: flex;
+            background: #eef3fb;
+            border-radius: 12px;
+            padding: 4px;
+        }
+        .login-tab button {
+            flex: 1;
+            border: 0;
+            background: transparent;
+            border-radius: 10px;
+            padding: 9px 10px;
+            font-weight: 600;
+            color: #0d4aa2;
+            transition: all .2s;
+        }
+        .login-tab button.active {
+            background: linear-gradient(135deg, #0d4aa2 0%, #1256d7 50%, #17c3ff 100%);
+            color: #fff;
+            box-shadow: 0 6px 16px -6px rgba(13, 74, 162, 0.6);
+        }
     </style>
 </head>
 
@@ -759,6 +782,16 @@
 
                     <form method="POST" action="<%= rooturl %>/autentifikasi/login" class="needs-validation" novalidate="">
 
+                                <% if (typeof pesan !== 'undefined' && pesan && pesan.length) { %>
+                                <div class="alert alert-danger small" role="alert"><%= pesan %></div>
+                                <% } %>
+
+                                <div class="login-tab mb-4" role="tablist">
+                                    <button type="button" class="active" data-login="perusahaan" onclick="pilihLogin('perusahaan')">Perusahaan</button>
+                                    <button type="button" data-login="vendor" onclick="pilihLogin('vendor')">Vendor</button>
+                                </div>
+                                <input type="hidden" name="login_sebagai" id="login_sebagai" value="perusahaan"/>
+
                                 <div class="form-group mb-3">
                                 <label for="email" class="form-label-custom">Username</label>
                                 <div class="input-icon-wrapper">
@@ -770,6 +803,13 @@
                                 </div>
                                 </div>
                                                             <input type="hidden" name="tujuan" class="form-control" value="/shortcut"/>
+
+                                <div class="form-group mb-3" id="wrap_perusahaan" style="display:none;">
+                                <label for="perusahaan_id" class="form-label-custom">Perusahaan</label>
+                                <select class="form-control" id="perusahaan_id" name="perusahaan_id">
+                                    <option value="">-- Pilih perusahaan mitra --</option>
+                                </select>
+                                </div>
 
                                 <div class="form-group mb-3">
                                 <label for="password" class="form-label-custom">Password</label>
@@ -833,6 +873,28 @@
     <!-- End Plugins This Page -->
     <script type="text/javascript">
         var rooturl = ''
+        var perusahaanTermuat = false
+
+        // Perusahaan: username + password. Vendor: username + perusahaan + password.
+        function pilihLogin(jenis) {
+            $('.login-tab button').removeClass('active')
+            $('.login-tab button[data-login=' + jenis + ']').addClass('active')
+            $('#login_sebagai').val(jenis)
+            var vendor = jenis === 'vendor'
+            $('#wrap_perusahaan').toggle(vendor)
+            $('#perusahaan_id').prop('required', vendor)
+            try { localStorage.setItem('login_sebagai', jenis) } catch (e) {}
+            if (vendor && !perusahaanTermuat) {
+                $.get(rooturl + '/autentifikasi/list_perusahaan', function (res) {
+                    perusahaanTermuat = true
+                    ;(res.data || []).forEach(function (p) {
+                        $('#perusahaan_id').append($('<option>').val(p.perusahaan_id).text(p.nama_perusahaan))
+                    })
+                })
+            }
+        }
+        try { if (localStorage.getItem('login_sebagai') === 'vendor') pilihLogin('vendor') } catch (e) {}
+
          function togglePassword() {
             var input = document.getElementById('password');
             var icon = document.getElementById('eye-icon');

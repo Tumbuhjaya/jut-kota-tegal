@@ -86,7 +86,10 @@ router.get('/', cek_login, async function (req, res) {
         providers = await sql_enak('perusahaan_provider as pp')
           .join('provider as p', 'p.provider_id', 'pp.provider_id')
           .select('p.provider_id', 'p.provider')
-          .where('pp.vendor_id', user.id_user)
+          .join('vendor as v', 'v.vendor_id', 'pp.vendor_id')
+          .where('v.id_user', user.id_user)
+          .where('v.vendor_id', user.login_vendor_id || 0)
+          .whereNull('v.deletedAt')
           .whereNull('pp.deletedAt')
           .whereNull('p.deletedAt')
         isFiltered = true

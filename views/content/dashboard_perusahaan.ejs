@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <title>Dashboard Perusahaan - Database Jaringan Utilitas Telekomunikasi Kota Tegal</title>
+    <% include ../template/dashboard_head.ejs %>
+</head>
+
+<body>
+    <div class="dash-wrapper">
+
+        <div class="dash-topbar">
+            <div class="dash-brand">
+                <small>DASHBOARD PERUSAHAAN</small>
+                <h1>Manajemen Vendor</h1>
+            </div>
+            <div class="dash-user">
+                <span class="nama"><i class="far fa-user-circle"></i> <%= user.fullname || user.username %></span>
+                <a href="/shortcut" class="btn-glass"><i class="fas fa-th-large"></i> Data Utilitas</a>
+                <a href="/autentifikasi/logout" class="btn-glass"><i class="fas fa-sign-out-alt"></i> Keluar</a>
+            </div>
+        </div>
+
+        <% if (!perusahaan.length) { %>
+            <div class="dash-panel">
+                <p class="mb-0 text-danger">Akun Anda belum terhubung ke perusahaan mana pun. Hubungi administrator.</p>
+            </div>
+        <% } else { %>
+
+        <div class="dash-panel mb-4">
+            <div class="form-row align-items-center">
+                <label class="col-sm-2 col-form-label font-weight-bold" for="pilih_perusahaan">Perusahaan</label>
+                <div class="col-sm-10">
+                    <select id="pilih_perusahaan" class="form-control">
+                        <% perusahaan.forEach(function (p) { %>
+                            <option value="<%= p.perusahaan_id %>"><%= p.nama_perusahaan %></option>
+                        <% }) %>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-12 col-md-4 mb-3 mb-md-0">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-handshake"></i></div>
+                    <div><div class="stat-label">Vendor Mitra</div><div class="stat-value" id="stat_mitra">0</div></div>
+                </div>
+            </div>
+            <div class="col-12 col-md-4 mb-3 mb-md-0">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="far fa-building"></i></div>
+                    <div><div class="stat-label">Vendor Internal</div><div class="stat-value" id="stat_internal">0</div></div>
+                </div>
+            </div>
+            <div class="col-12 col-md-4">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-people-carry"></i></div>
+                    <div><div class="stat-label">Vendor Outsource</div><div class="stat-value" id="stat_outsource">0</div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dash-panel">
+            <div class="dash-panel-title">
+                <h2>Daftar Vendor</h2>
+                <button class="btn btn-gradient" onclick="bukaForm()"><i class="fas fa-plus"></i> Tambah Vendor</button>
+            </div>
+
+            <div class="filter-pills mb-2" id="filter_group">
+                <button type="button" class="btn btn-sm btn-outline-primary active" data-filter="">Semua</button>
+                <button type="button" class="btn btn-sm btn-outline-primary" data-filter="mitra">Mitra</button>
+                <button type="button" class="btn btn-sm btn-outline-primary" data-filter="bukan_mitra">Belum Mitra</button>
+                <button type="button" class="btn btn-sm btn-outline-primary" data-filter="internal">Internal</button>
+                <button type="button" class="btn btn-sm btn-outline-primary" data-filter="outsource">Outsource</button>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-striped" id="list-data" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>No.</th>
+                            <th>Nama Vendor</th>
+                            <th>Username</th>
+                            <th>Kontak</th>
+                            <th>Jenis</th>
+                            <th class="text-center">Mitra</th>
+                            <th class="text-center">Option</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <% } %>
+    </div>
+
+    <!-- Modal tambah / edit vendor -->
+    <div class="modal fade" id="modal-vendor" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <form id="form-vendor" autocomplete="off">
+                    <div class="modal-header">
+                        <h5 class="modal-title font-weight-bold" id="modal-title">Tambah Vendor</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="id_user" id="f_id_user">
+                        <input type="hidden" name="perusahaan_id" id="f_perusahaan_id">
+
+                        <div class="form-group">
+                            <label class="font-weight-bold">Asal Vendor</label>
+                            <div class="custom-control custom-radio">
+                                <input type="radio" id="jenis_internal" name="jenis_vendor" value="internal" class="custom-control-input" checked>
+                                <label class="custom-control-label" for="jenis_internal">Dari perusahaan sendiri (<span class="nama-perusahaan"></span>)</label>
+                            </div>
+                            <div class="custom-control custom-radio">
+                                <input type="radio" id="jenis_outsource" name="jenis_vendor" value="outsource" class="custom-control-input">
+                                <label class="custom-control-label" for="jenis_outsource">Outsource (luar perusahaan)</label>
+                            </div>
+                            <small class="form-text text-muted" id="info_jenis"></small>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label>Nama Vendor</label>
+                                <input type="text" class="form-control" name="fullname" id="f_fullname" required>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label>Username</label>
+                                <input type="text" class="form-control" name="username" id="f_username" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label>Email</label>
+                                <input type="email" class="form-control" name="email" id="f_email">
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label>No. Telepon</label>
+                                <input type="text" class="form-control" name="telp" id="f_telp">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Password <small class="text-muted" id="pwd_hint"></small></label>
+                            <div style="position: relative;">
+                                <input type="password" class="form-control" name="pwd" id="f_pwd">
+                                <i class="fa fa-eye-slash" id="icon_pwd" style="position:absolute;right:12px;top:12px;cursor:pointer;" onclick="togglePwd()"></i>
+                            </div>
+                            <small class="form-text text-muted">Wajib kombinasi huruf besar, huruf kecil, angka, dan karakter (contoh: Vendor1*).</small>
+                        </div>
+
+                        <div class="custom-control custom-checkbox" id="wrap_mitra">
+                            <input type="checkbox" class="custom-control-input" id="f_jadikan_mitra" name="jadikan_mitra" value="1" checked>
+                            <label class="custom-control-label" for="f_jadikan_mitra">Langsung jadikan mitra perusahaan</label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-gradient" id="btn-submit">Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <% include ../template/dashboard_script.ejs %>
+    <script type="text/javascript">
+        var rooturl = '/dashboard_perusahaan';
+        var filterAktif = '';
+        var data_table = null;
+
+        function perusahaanId() { return $('#pilih_perusahaan').val(); }
+        function namaPerusahaan() { return $('#pilih_perusahaan option:selected').text(); }
+
+        function loadRingkasan() {
+            $.get(`${rooturl}/ringkasan/${perusahaanId()}`, function (res) {
+                if (res && res.data) {
+                    $('#stat_mitra').text(res.data.mitra);
+                    $('#stat_internal').text(res.data.internal);
+                    $('#stat_outsource').text(res.data.outsource);
+                }
+            });
+        }
+
+        function reloadSemua() {
+            if (data_table) data_table.ajax.reload(null, false);
+            loadRingkasan();
+        }
+
+        $(function () {
+            if (!$('#list-data').length) return;
+
+            data_table = $('#list-data').DataTable({
+                processing: true,
+                serverSide: true,
+                ordering: true,
+                order: [],
+                ajax: {
+                    url: rooturl + '/vendor/list',
+                    type: 'POST',
+                    data: function (d) {
+                        d.perusahaan_id = perusahaanId();
+                        d.filter = filterAktif;
+                        return d;
+                    }
+                },
+                columns: [
+                    { data: null, orderable: false, searchable: false, width: '30px' },
+                    { data: 'fullname', render: function (d) { return esc(d); } },
+                    { data: 'username', render: function (d) { return esc(d); } },
+                    { data: null, orderable: false, render: function (row) {
+                        return [row.email, row.telp].filter(Boolean).map(esc).join('<br>') || '-';
+                    } },
+                    { data: 'jenis_vendor', render: function (d) {
+                        return d === 'internal'
+                            ? '<span class="badge badge-success badge-jenis">Internal</span>'
+                            : '<span class="badge badge-warning badge-jenis">Outsource</span>';
+                    } },
+                    { data: 'is_mitra', className: 'text-center', render: function (d, t, row) {
+                        var cek = Number(d) === 1 ? 'checked' : '';
+                        return `<label class="switch" title="Jadikan / lepas mitra">
+                                    <input type="checkbox" class="toggle-mitra" data-id="${row.id_user}" ${cek}>
+                                    <span class="slider"></span>
+                                </label>`;
+                    } },
+                    { data: null, orderable: false, searchable: false, className: 'text-center', width: '110px', render: function (row) {
+                        if (Number(row.bisa_edit) !== 1) return '<span class="text-muted small">Vendor luar</span>';
+                        return `<button class="btn btn-warning btn-sm mr-1 btn-edit" title="Edit"><i class="fas fa-edit"></i></button>
+                                <button class="btn btn-danger btn-sm" title="Hapus" onclick="hapus(${row.id_user})"><i class="fas fa-trash"></i></button>`;
+                    } }
+                ],
+                language: bahasaTabel
+            });
+
+            data_table.on('draw.dt', function () {
+                var info = data_table.page.info();
+                data_table.column(0, { page: 'current' }).nodes().each(function (cell, i) {
+                    cell.innerHTML = i + 1 + info.start;
+                });
+            });
+
+            $('#pilih_perusahaan').on('change', function () {
+                $('.nama-perusahaan').text(namaPerusahaan());
+                reloadSemua();
+            });
+            $('.nama-perusahaan').text(namaPerusahaan());
+            loadRingkasan();
+
+            $('#filter_group').on('click', 'button', function () {
+                $('#filter_group button').removeClass('active');
+                $(this).addClass('active');
+                filterAktif = $(this).data('filter');
+                data_table.ajax.reload();
+            });
+
+            // Pilih / lepas mitra
+            $('#list-data').on('change', '.toggle-mitra', function () {
+                var $cb = $(this);
+                var jadiMitra = $cb.is(':checked');
+                $.post(`${rooturl}/mitra/${jadiMitra ? 'tambah' : 'hapus'}`, {
+                    perusahaan_id: perusahaanId(),
+                    id_user: $cb.data('id')
+                }).done(function () {
+                    reloadSemua();
+                }).fail(function (xhr) {
+                    $cb.prop('checked', !jadiMitra);
+                    pesanGagal(xhr);
+                });
+            });
+
+            $('#list-data').on('click', '.btn-edit', function () {
+                bukaForm(data_table.row($(this).closest('tr')).data());
+            });
+
+            $('input[name=jenis_vendor]').on('change', infoJenis);
+
+            $('#form-vendor').on('submit', function (e) {
+                e.preventDefault();
+                var isEdit = !!$('#f_id_user').val();
+                $('#btn-submit').prop('disabled', true);
+                $.ajax({
+                    url: `${rooturl}/vendor/${isEdit ? 'edit' : 'insert'}`,
+                    method: 'POST',
+                    data: $(this).serialize(),
+                    dataType: 'json'
+                }).done(function (res) {
+                    $('#modal-vendor').modal('hide');
+                    swal({ title: 'Berhasil', text: res.message, icon: 'success' });
+                    reloadSemua();
+                }).fail(pesanGagal)
+                  .always(function () { $('#btn-submit').prop('disabled', false); });
+            });
+        });
+
+        function infoJenis() {
+            var internal = $('input[name=jenis_vendor]:checked').val() === 'internal';
+            $('#info_jenis').text(internal
+                ? 'Vendor internal hanya terlihat oleh ' + namaPerusahaan() + '.'
+                : 'Vendor outsource dapat dilihat dan dijadikan mitra oleh perusahaan lain.');
+        }
+
+        function bukaForm(row) {
+            $('#form-vendor')[0].reset();
+            $('#f_perusahaan_id').val(perusahaanId());
+            if (row) {
+                $('#modal-title').text('Edit Vendor');
+                $('#f_id_user').val(row.id_user);
+                $('#f_fullname').val(row.fullname);
+                $('#f_username').val(row.username);
+                $('#f_email').val(row.email);
+                $('#f_telp').val(row.telp);
+                $('#jenis_' + row.jenis_vendor).prop('checked', true);
+                $('#f_pwd').prop('required', false);
+                $('#pwd_hint').text('(kosongkan jika tidak diubah)');
+                $('#wrap_mitra').hide();
+            } else {
+                $('#modal-title').text('Tambah Vendor');
+                $('#f_id_user').val('');
+                $('#jenis_internal').prop('checked', true);
+                $('#f_pwd').prop('required', true);
+                $('#pwd_hint').text('');
+                $('#wrap_mitra').show();
+            }
+            infoJenis();
+            $('#modal-vendor').modal('show');
+        }
+
+        function togglePwd() {
+            $('#icon_pwd').toggleClass('fa-eye-slash fa-eye');
+            var x = document.getElementById('f_pwd');
+            x.type = x.type === 'password' ? 'text' : 'password';
+        }
+
+        async function hapus(id) {
+            const ok = await swal({
+                title: 'Hapus Vendor',
+                text: 'Akun vendor akan dinonaktifkan dan kemitraannya dilepas. Lanjutkan?',
+                icon: 'warning',
+                dangerMode: true,
+                buttons: ['Tidak', 'Ya']
+            });
+            if (!ok) return;
+            $.get(`${rooturl}/vendor/hapus/${id}`).done(function (res) {
+                swal({ title: 'Berhasil', text: res.message, icon: 'success' });
+                reloadSemua();
+            }).fail(pesanGagal);
+        }
+    </script>
+</body>
+</html>
