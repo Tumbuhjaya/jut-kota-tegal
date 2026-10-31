@@ -62,20 +62,6 @@ router.get('/', async function (req, res) {
           .orderBy('provider')
         isFiltered = true
       }
-      // is_admin = 3 → user vendor
-      else if (isAdmin === 3 && user.id_user) {
-        providers = await sql_enak('perusahaan_provider as pp')
-          .join('provider as p', 'p.provider_id', 'pp.provider_id')
-          .select('p.provider_id', 'p.provider')
-          .join('vendor as v', 'v.vendor_id', 'pp.vendor_id')
-          .where('v.id_user', user.id_user)
-          .where('v.vendor_id', user.login_vendor_id || 0)
-          .whereNull('v.deletedAt')
-          .whereNull('pp.deletedAt')
-          .whereNull('p.deletedAt')
-          .orderBy('p.provider')
-        isFiltered = true
-      }
       // is_admin = 1 (admin) → semua provider
       else {
         providers = await sql_enak('provider')

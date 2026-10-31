@@ -873,25 +873,12 @@
     <!-- End Plugins This Page -->
     <script type="text/javascript">
         var rooturl = ''
-        var perusahaanTermuat = false
-
-        // Perusahaan: username + password. Vendor: username + perusahaan + password.
+        // Perusahaan & vendor sama-sama login dengan username + password.
         function pilihLogin(jenis) {
             $('.login-tab button').removeClass('active')
             $('.login-tab button[data-login=' + jenis + ']').addClass('active')
             $('#login_sebagai').val(jenis)
-            var vendor = jenis === 'vendor'
-            $('#wrap_perusahaan').toggle(vendor)
-            $('#perusahaan_id').prop('required', vendor)
             try { localStorage.setItem('login_sebagai', jenis) } catch (e) {}
-            if (vendor && !perusahaanTermuat) {
-                $.get(rooturl + '/autentifikasi/list_perusahaan', function (res) {
-                    perusahaanTermuat = true
-                    ;(res.data || []).forEach(function (p) {
-                        $('#perusahaan_id').append($('<option>').val(p.perusahaan_id).text(p.nama_perusahaan))
-                    })
-                })
-            }
         }
         try { if (localStorage.getItem('login_sebagai') === 'vendor') pilihLogin('vendor') } catch (e) {}
 

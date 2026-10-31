@@ -1,0 +1,156 @@
+<%
+  var BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+  function tanggal(t) {
+    if (!t) return '-';
+    var d = new Date(t);
+    return d.getDate() + ' ' + BULAN[d.getMonth()] + ' ' + d.getFullYear();
+  }
+  function angka(n, desimal) {
+    var x = Number(n || 0).toFixed(desimal || 0).split('.');
+    return x[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.') + (x[1] && Number(x[1]) ? ',' + x[1] : '');
+  }
+  function rp(n) { return 'Rp ' + angka(n); }
+  var p = permohonan, k = konfig;
+%>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SK <%= p.no_sk %></title>
+  <style>
+    @page { size: A4; margin: 15mm 15mm 20mm 20mm; }
+    * { box-sizing: border-box; }
+    body { font-family: "Times New Roman", Times, serif; font-size: 12pt; color: #000; margin: 0; background: #e5e5e5; }
+    .kertas { width: 210mm; min-height: 297mm; margin: 10mm auto; padding: 15mm 15mm 20mm 20mm; background: #fff; box-shadow: 0 0 6px rgba(0,0,0,.2); }
+    .kop { display: flex; align-items: center; border-bottom: 3px double #000; padding-bottom: 6px; }
+    .kop img { width: 75px; height: auto; margin-right: 12px; }
+    .kop .teks { flex: 1; text-align: center; line-height: 1.25; }
+    .kop .pemerintah { font-size: 14pt; font-weight: bold; }
+    .kop .instansi { font-size: 16pt; font-weight: bold; }
+    .kop .alamat { font-size: 10pt; }
+    .judul { text-align: center; margin: 18px 0 14px; line-height: 1.4; }
+    .judul .utama { font-weight: bold; text-decoration: underline; font-size: 13pt; }
+    p { margin: 6px 0; text-align: justify; line-height: 1.5; }
+    table.data td { padding: 2px 4px; vertical-align: top; }
+    table.data td:first-child { width: 190px; }
+    table.ruas { width: 100%; border-collapse: collapse; font-size: 10pt; margin: 8px 0; }
+    table.ruas th, table.ruas td { border: 1px solid #000; padding: 4px 5px; }
+    table.ruas th { background: #f0f0f0; text-align: center; }
+    .c { text-align: center; } .r { text-align: right; }
+    ol { margin: 4px 0 4px 18px; padding: 0; line-height: 1.5; text-align: justify; }
+    .ttd { width: 320px; margin-left: auto; margin-top: 24px; text-align: center; line-height: 1.4; }
+    .ttd .nama { margin-top: 70px; font-weight: bold; text-decoration: underline; }
+    .aksi { text-align: center; margin: 10px 0 0; }
+    .aksi button { font-size: 12pt; padding: 8px 24px; cursor: pointer; }
+    @media print {
+      body { background: #fff; }
+      .kertas { width: auto; min-height: 0; margin: 0; padding: 0; box-shadow: none; }
+      .aksi { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="aksi">
+    <button type="button" onclick="window.print()">Cetak / Simpan PDF</button>
+  </div>
+
+  <div class="kertas">
+    <div class="kop">
+      <img src="<%= k.logo %>" alt="" onerror="this.style.display='none'">
+      <div class="teks">
+        <div class="pemerintah"><%= k.pemerintah %></div>
+        <div class="instansi"><%= k.instansi %></div>
+        <div class="alamat"><%= k.alamat %></div>
+        <div class="alamat"><%= k.kontak %></div>
+      </div>
+    </div>
+
+    <div class="judul">
+      <div class="utama">SURAT KEPUTUSAN IZIN PEMANFAATAN RUANG MILIK JALAN</div>
+      <div><strong>UNTUK PENEMPATAN JARINGAN UTILITAS</strong></div>
+      <div>Nomor : <%= p.no_sk %></div>
+    </div>
+
+    <p>Berdasarkan permohonan izin pemanfaatan ruang milik jalan yang diajukan oleh:</p>
+    <table class="data">
+      <tr><td>Nama Pemohon</td><td>:</td><td><%= p.nama_pemohon || '-' %></td></tr>
+      <tr><td>Jabatan</td><td>:</td><td><%= p.jabatan_pemohon || '-' %></td></tr>
+      <tr><td>Vendor / Pelaksana</td><td>:</td><td><%= p.vendor ? (p.vendor.fullname || p.vendor.username) : '-' %></td></tr>
+      <tr><td>Pemilik Jaringan (Provider)</td><td>:</td><td><%= p.provider || '-' %></td></tr>
+      <tr><td>No. Telepon</td><td>:</td><td><%= p.telp_pemohon || '-' %></td></tr>
+      <tr><td>Email</td><td>:</td><td><%= p.email_pemohon || '-' %></td></tr>
+      <tr><td>Tanggal Permohonan</td><td>:</td><td><%= tanggal(p.diajukanAt) %></td></tr>
+    </table>
+
+    <p>dan setelah dilakukan verifikasi terhadap persyaratan administrasi dan teknis, dengan ini diberikan
+      <strong>IZIN</strong> untuk penempatan jaringan utilitas pada lokasi sebagai berikut:</p>
+
+    <table class="ruas">
+      <thead>
+        <tr>
+          <th rowspan="2">No.</th>
+          <th rowspan="2">Ruas Jalan</th>
+          <th rowspan="2">No. Ruas</th>
+          <th colspan="2">Komponen</th>
+          <th colspan="3">Retribusi per Tahun (Rp)</th>
+        </tr>
+        <tr>
+          <th>Tiang (Unit)</th>
+          <th>Kabel (m)</th>
+          <th>Tiang</th>
+          <th>Kabel</th>
+          <th>Jumlah</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% ruas.forEach(function (r, i) { %>
+        <tr>
+          <td class="c"><%= i + 1 %></td>
+          <td><%= r.luar_ruas ? 'Di luar ruas SK jalan' : (r.nm_ruas || '-') %></td>
+          <td class="c"><%= r.no || '-' %></td>
+          <td class="c"><%= angka(r.jumlah_tiang) %></td>
+          <td class="c"><%= angka(r.panjang_kabel, 2) %></td>
+          <td class="r"><%= angka(r.retribusi_tiang) %></td>
+          <td class="r"><%= angka(r.retribusi_kabel) %></td>
+          <td class="r"><%= angka(r.retribusi_total) %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+      <tfoot>
+        <tr>
+          <th colspan="3" class="r">Total</th>
+          <th><%= angka(total.tiang) %></th>
+          <th><%= angka(total.kabel, 2) %></th>
+          <th class="r"><%= angka(total.retribusi_tiang) %></th>
+          <th class="r"><%= angka(total.retribusi_kabel) %></th>
+          <th class="r"><%= angka(total.retribusi) %></th>
+        </tr>
+      </tfoot>
+    </table>
+
+    <p>Besarnya retribusi pemanfaatan ruang milik jalan adalah <strong><%= rp(total.retribusi) %></strong>
+      (<em><%= total.terbilang %></em>) per tahun.</p>
+
+    <p>Dengan ketentuan:</p>
+    <ol>
+      <li>Pemegang izin wajib membayar retribusi sesuai ketentuan peraturan daerah yang berlaku.</li>
+      <li>Penempatan jaringan utilitas wajib sesuai dengan lokasi, jumlah dan rencana teknis yang diajukan.</li>
+      <li>Pemegang izin wajib menjaga keamanan, ketertiban dan kelancaran lalu lintas, serta mengembalikan kondisi jalan seperti semula.</li>
+      <li>Izin ini dapat dicabut apabila pemegang izin tidak memenuhi ketentuan di atas.</li>
+    </ol>
+    <% if (p.keterangan) { %>
+    <p>Catatan: <%= p.keterangan %></p>
+    <% } %>
+
+    <div class="ttd">
+      <div>Ditetapkan di <%= k.tempat %></div>
+      <div>pada tanggal <%= tanggal(p.tanggal_sk || p.diprosesAt) %></div>
+      <div style="margin-top: 8px;"><%= k.jabatan_ttd %></div>
+      <div class="nama"><%= k.nama_ttd %></div>
+      <div><%= k.pangkat_ttd %></div>
+      <div>NIP. <%= k.nip_ttd %></div>
+    </div>
+  </div>
+</body>
+</html>

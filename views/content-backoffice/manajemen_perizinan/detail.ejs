@@ -1,0 +1,312 @@
+<% include ../../template-backoffice/header.ejs %>
+  <!-- Main Content -->
+  <div class="main-content">
+    <section class="section">
+      <div class="w-100" style="padding: 0 30px;">
+        <div class="section-header">
+          <h1>Detail Permohonan Izin</h1>
+          <div class="section-header-breadcrumb">
+            <div class="breadcrumb-item active"><a href="/backoffice">Dashboard</a></div>
+            <div class="breadcrumb-item"><a href="/manajemen_perizinan">Permohonan Izin</a></div>
+            <div class="breadcrumb-item">Detail</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-body">
+        <div class="row">
+          <div class="col-lg-6">
+            <div class="card">
+              <div class="card-header">
+                <h4>Informasi Permohonan</h4>
+                <div class="card-header-action">
+                  <a href="#" id="btn_edit" class="btn btn-warning" style="display: none;"><i class="fas fa-edit"></i> Edit Data</a>
+                  <a href="#" id="btn_cetak" target="_blank" class="btn btn-success" style="display: none;"><i class="fas fa-print"></i> Cetak SK</a>
+                </div>
+              </div>
+              <div class="card-body">
+                <table class="table table-sm table-borderless mb-0">
+                  <tbody>
+                    <tr><td style="width: 170px;">Status</td><td>:</td><td id="d_status"></td></tr>
+                    <tr><td>Tanggal Diajukan</td><td>:</td><td id="d_diajukan"></td></tr>
+                    <tr><td>Vendor</td><td>:</td><td id="d_vendor"></td></tr>
+                    <tr><td>Provider</td><td>:</td><td id="d_provider"></td></tr>
+                    <tr><td>Nama Pemohon</td><td>:</td><td id="d_nama"></td></tr>
+                    <tr><td>Jabatan</td><td>:</td><td id="d_jabatan"></td></tr>
+                    <tr><td>No. Telepon (WA)</td><td>:</td><td id="d_telp"></td></tr>
+                    <tr><td>Email</td><td>:</td><td id="d_email"></td></tr>
+                    <tr><td>No. SK</td><td>:</td><td id="d_sk"></td></tr>
+                    <tr><td>Keterangan</td><td>:</td><td id="d_keterangan"></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="card">
+              <div class="card-header"><h4>Dokumen Persyaratan</h4></div>
+              <div class="card-body">
+                <ul class="list-group" id="d_dokumen"></ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header"><h4>Ruas Jalan & Retribusi</h4></div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table class="table table-bordered table-sm" id="tabel_ruas">
+                    <thead>
+                      <tr>
+                        <th class="text-center">No.</th>
+                        <th class="text-center">Ruas Jalan</th>
+                        <th class="text-center">No. Ruas</th>
+                        <th class="text-center">Panjang SK (Km)</th>
+                        <th class="text-center">Tiang (Unit)</th>
+                        <th class="text-center">Kabel (m)</th>
+                        <th class="text-center">Tarif Tiang (Rp)</th>
+                        <th class="text-center">Tarif Kabel (Rp)</th>
+                        <th class="text-center">Retribusi Tiang</th>
+                        <th class="text-center">Retribusi Kabel</th>
+                        <th class="text-center">Total Retribusi</th>
+                        <th class="text-center">Peta</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                    <tfoot></tfoot>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header">
+                <h4>Peta Digitasi</h4>
+                <div class="card-header-action">
+                  <span class="badge" style="background:#f7ca18;">Ruas</span>
+                  <span class="badge badge-primary">Tiang</span>
+                  <span class="badge badge-danger">Kabel</span>
+                </div>
+              </div>
+              <div class="card-body">
+                <div id="map" style="width: 100%; height: 500px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row" id="wrap_proses" style="display: none;">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header"><h4>Proses Permohonan</h4></div>
+              <div class="card-body">
+                <form id="form-proses" autocomplete="off">
+                  <div class="row">
+                    <div class="col-md-4 form-group">
+                      <label for="no_sk">No. SK <small class="text-muted">(wajib jika disetujui)</small></label>
+                      <input type="text" class="form-control" id="no_sk" name="no_sk">
+                    </div>
+                    <div class="col-md-4 form-group">
+                      <label for="tanggal_sk">Tanggal SK</label>
+                      <input type="text" class="form-control tgl1" id="tanggal_sk" name="tanggal_sk">
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="keterangan">Keterangan <small class="text-muted">(wajib jika revisi / ditolak)</small></label>
+                    <textarea class="form-control" id="keterangan" name="keterangan" rows="3" style="height: auto;"></textarea>
+                  </div>
+                  <div class="text-right">
+                    <button type="button" class="btn btn-warning" onclick="proses('revisi')"><i class="fas fa-undo"></i> Kembalikan untuk Revisi</button>
+                    <button type="button" class="btn btn-danger" onclick="proses('tolak')"><i class="fas fa-times"></i> Tolak</button>
+                    <button type="button" class="btn btn-success" onclick="proses('setujui')"><i class="fas fa-check"></i> Setujui</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <footer class="main-footer">
+    <div class="footer-left">
+      <% include ../../template-backoffice/copyright-left.ejs %>
+    </div>
+    <div class="footer-right">
+      <% include ../../template-backoffice/copyright-right.ejs %>
+    </div>
+  </footer>
+<% include ../../template-backoffice/footer.ejs %>
+
+<script type="text/javascript">
+  var rooturl = ''
+  var ID_PERMOHONAN = <%= permohonan_id %>;
+  var STATUS = {
+    diajukan:  { label: 'Menunggu Verifikasi', badge: 'info' },
+    revisi:    { label: 'Perlu Revisi', badge: 'warning' },
+    disetujui: { label: 'Disetujui', badge: 'success' },
+    ditolak:   { label: 'Ditolak', badge: 'danger' }
+  };
+
+  function rupiah(n) {
+    return 'Rp ' + Number(n || 0).toLocaleString('id-ID', { maximumFractionDigits: 0 }) + ',-';
+  }
+  function angka(n) {
+    return Number(n || 0).toLocaleString('id-ID', { maximumFractionDigits: 2 });
+  }
+  function esc(t) {
+    return $('<div>').text(t == null || t === '' ? '-' : t).html();
+  }
+
+  // ---------------- peta ----------------
+  var map = L.map('map', { center: [-6.8694, 109.1402], zoom: 13, maxZoom: 22 });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 22, maxNativeZoom: 19 }).addTo(map);
+  var ruasLayer = L.featureGroup().addTo(map);
+  var digitasiLayer = L.featureGroup().addTo(map);
+  var layerPerRuas = {}; // permohonan_ruas_id -> [layer]
+
+  function petaDigitasi(digitasi) {
+    digitasi.tiang.forEach(function (f) {
+      var c = f.geojson.coordinates;
+      var m = L.circleMarker([c[1], c[0]], { radius: 6, color: '#fff', weight: 2, fillColor: '#6777ef', fillOpacity: 1 })
+        .bindPopup('<b>Tiang</b><br/>Ruas: ' + esc(f.nm_ruas || 'Di luar ruas') + '<br/>Jumlah: ' + f.jumlah + '<br/>Ket: ' + esc(f.keterangan))
+        .addTo(digitasiLayer);
+      (layerPerRuas[f.permohonan_ruas_id] = layerPerRuas[f.permohonan_ruas_id] || []).push(m);
+    });
+    digitasi.kabel.forEach(function (f) {
+      var l = L.polyline(f.geojson.coordinates.map(function (p) { return [p[1], p[0]]; }), { color: '#fc544b', weight: 4 })
+        .bindPopup('<b>Kabel</b><br/>Ruas: ' + esc(f.nm_ruas || 'Di luar ruas') + '<br/>Panjang: ' + angka(f.panjang) + ' m<br/>Jumlah: ' + f.jumlah + '<br/>Ket: ' + esc(f.keterangan))
+        .addTo(digitasiLayer);
+      (layerPerRuas[f.permohonan_ruas_id] = layerPerRuas[f.permohonan_ruas_id] || []).push(l);
+    });
+  }
+
+  // Garis ruas jalan dari master_retribusi (topojson /peta/sk_jalan)
+  function petaRuas(ruasIds) {
+    if (!ruasIds.length) return $.Deferred().resolve();
+    return $.getJSON(rooturl + '/peta/sk_jalan').then(function (topo) {
+      Object.keys(topo.objects).forEach(function (k) {
+        L.geoJSON(topojson.feature(topo, topo.objects[k]), {
+          filter: function (f) { return ruasIds.indexOf(Number(f.properties.id)) !== -1; },
+          style: { color: '#f7ca18', weight: 7, opacity: 0.9 },
+          onEachFeature: function (f, layer) { layer.bindTooltip(f.properties.nm_ruas || ''); }
+        }).eachLayer(function (l) { ruasLayer.addLayer(l); });
+      });
+      ruasLayer.bringToBack();
+    });
+  }
+
+  function zoomRuas(id) {
+    var g = L.featureGroup(layerPerRuas[id] || []);
+    if (g.getLayers().length) map.fitBounds(g.getBounds(), { padding: [30, 30], maxZoom: 19 });
+    $('html, body').animate({ scrollTop: $('#map').offset().top - 100 }, 300);
+  }
+
+  function zoomSemua() {
+    var g = L.featureGroup(ruasLayer.getLayers().concat(digitasiLayer.getLayers()));
+    if (g.getLayers().length) map.fitBounds(g.getBounds(), { padding: [30, 30], maxZoom: 19 });
+  }
+
+  // ---------------- detail ----------------
+  function tampil(data) {
+    var p = data.permohonan;
+    var s = STATUS[p.status] || { label: p.status, badge: 'light' };
+    $('#d_status').html('<span class="badge badge-' + s.badge + '">' + s.label + '</span>');
+    $('#d_diajukan').text(p.diajukanAt ? moment(p.diajukanAt).format('DD/MM/YYYY HH:mm') : '-');
+    $('#d_vendor').html(esc(p.vendor ? (p.vendor.fullname || p.vendor.username) : '-'));
+    $('#d_provider').html(esc(p.provider));
+    $('#d_nama').html(esc(p.nama_pemohon));
+    $('#d_jabatan').html(esc(p.jabatan_pemohon));
+    $('#d_telp').html(esc(p.telp_pemohon));
+    $('#d_email').html(esc(p.email_pemohon));
+    $('#d_sk').html(esc(p.no_sk ? p.no_sk + (p.tanggal_sk ? ' (' + moment(p.tanggal_sk).format('DD/MM/YYYY') + ')' : '') : ''));
+    $('#d_keterangan').html(esc(p.keterangan));
+
+    $('#d_dokumen').empty();
+    if (!data.dokumen.length) $('#d_dokumen').append('<li class="list-group-item"><i>Belum ada dokumen</i></li>');
+    data.dokumen.forEach(function (d) {
+      $('#d_dokumen').append('<li class="list-group-item d-flex justify-content-between align-items-center">' + esc(d.label) +
+        '<a class="btn btn-sm btn-primary" target="_blank" href="' + rooturl + '/manajemen_perizinan/dokumen/' + d.permohonan_dokumen_id + '"><i class="fas fa-download"></i></a></li>');
+    });
+
+    var t = { tiang: 0, kabel: 0, rt: 0, rk: 0 };
+    var $tb = $('#tabel_ruas tbody').empty();
+    data.ruas.forEach(function (r, i) {
+      t.tiang += Number(r.jumlah_tiang); t.kabel += Number(r.panjang_kabel);
+      t.rt += Number(r.retribusi_tiang); t.rk += Number(r.retribusi_kabel);
+      $tb.append('<tr>' +
+        '<td class="text-center">' + (i + 1) + '.</td>' +
+        '<td>' + esc(Number(r.luar_ruas) ? 'Di luar ruas (Jalan Lain)' : r.nm_ruas) + '</td>' +
+        '<td class="text-center">' + esc(r.no) + '</td>' +
+        '<td class="text-center">' + (r.panjang != null ? angka(r.panjang) : '-') + '</td>' +
+        '<td class="text-center">' + r.jumlah_tiang + ' <small class="text-muted">(' + r.digitasi_tiang + ' titik)</small></td>' +
+        '<td class="text-center">' + angka(r.panjang_kabel) + ' <small class="text-muted">(' + r.digitasi_kabel + ' garis)</small></td>' +
+        '<td class="text-right">' + rupiah(r.tarif_tiang) + '</td>' +
+        '<td class="text-right">' + rupiah(r.tarif_kabel) + '</td>' +
+        '<td class="text-right">' + rupiah(r.retribusi_tiang) + '</td>' +
+        '<td class="text-right">' + rupiah(r.retribusi_kabel) + '</td>' +
+        '<td class="text-right">' + rupiah(r.retribusi_total) + '</td>' +
+        '<td class="text-center"><button type="button" class="btn btn-sm btn-info" onclick="zoomRuas(' + r.permohonan_ruas_id + ')"><i class="fas fa-search-location"></i></button></td>' +
+        '</tr>');
+    });
+    $('#tabel_ruas tfoot').html('<tr><th colspan="4" class="text-right">Total</th>' +
+      '<th class="text-center">' + t.tiang + '</th><th class="text-center">' + angka(t.kabel) + '</th><th colspan="2"></th>' +
+      '<th class="text-right">' + rupiah(t.rt) + '</th><th class="text-right">' + rupiah(t.rk) + '</th>' +
+      '<th class="text-right">' + rupiah(t.rt + t.rk) + '</th><th></th></tr>');
+
+    $('#btn_cetak').attr('href', rooturl + '/manajemen_perizinan/cetak_sk/' + ID_PERMOHONAN).toggle(p.status === 'disetujui');
+    $('#btn_edit').attr('href', rooturl + '/perizinan/jaringan_utilitas/ruas_jalan/' + ID_PERMOHONAN).toggle(p.status === 'revisi');
+    $('#wrap_proses').toggle(['diajukan', 'disetujui', 'ditolak'].indexOf(p.status) !== -1);
+    $('#no_sk').val(p.no_sk || '');
+    $('#tanggal_sk').val(p.tanggal_sk ? moment(p.tanggal_sk).format('YYYY-MM-DD') : '');
+    $('#keterangan').val(p.keterangan || '');
+  }
+
+  function muat() {
+    return $.get(rooturl + '/manajemen_perizinan/data/' + ID_PERMOHONAN).done(function (res) {
+      tampil(res.data);
+      ruasLayer.clearLayers(); digitasiLayer.clearLayers(); layerPerRuas = {};
+      petaDigitasi(res.data.digitasi);
+      var ruasIds = res.data.ruas.filter(function (r) { return r.ruas_id && !Number(r.luar_ruas); }).map(function (r) { return Number(r.ruas_id); });
+      petaRuas(ruasIds).always(zoomSemua);
+    }).fail(function () {
+      swal('Gagal', 'Gagal memuat data permohonan', 'error');
+    });
+  }
+
+  var LABEL_AKSI = { setujui: 'menyetujui', tolak: 'menolak', revisi: 'mengembalikan untuk revisi' };
+  async function proses(aksi) {
+    var yakin = await swal({
+      title: 'Proses Permohonan',
+      text: 'Anda akan ' + LABEL_AKSI[aksi] + ' permohonan ini.' +
+        (aksi === 'setujui' ? ' Tiang & kabel hasil digitasi akan dimasukkan ke data utama.' : '') + ' Lanjutkan?',
+      icon: aksi === 'setujui' ? 'info' : 'warning',
+      dangerMode: aksi !== 'setujui',
+      buttons: ['Batal', 'Ya']
+    });
+    if (!yakin) return;
+    $.post(rooturl + '/manajemen_perizinan/proses/' + ID_PERMOHONAN, {
+      aksi: aksi,
+      no_sk: $('#no_sk').val(),
+      tanggal_sk: $('#tanggal_sk').val(),
+      keterangan: $('#keterangan').val()
+    }).done(function (res) {
+      var m = res.data && res.data.masuk_data_utama;
+      swal('Berhasil', m
+        ? 'Permohonan disetujui. ' + m.tiang + ' tiang dan ' + m.kabel + ' kabel masuk ke data utama.'
+        : 'Permohonan berhasil diproses', 'success');
+      muat();
+    }).fail(function (xhr) {
+      swal('Gagal', (xhr.responseJSON && xhr.responseJSON.message) || 'Gagal memproses permohonan', 'error');
+    });
+  }
+
+  muat();
+</script>

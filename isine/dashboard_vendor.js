@@ -15,35 +15,20 @@ function getUser(req) {
   return (req.user && req.user[0]) ? req.user[0] : null;
 }
 
-// Kemitraan aktif vendor dengan perusahaan yang dipilih saat login
-async function cekKemitraan(user) {
-  if (!user || !user.login_vendor_id) return null;
-  const [rows] = await sql_enak.raw(
-    `SELECT v.vendor_id, p.perusahaan_id, p.nama_perusahaan, p.alamat, p.no_telepon, p.email
-       FROM vendor v
-       JOIN perusahaan p ON p.perusahaan_id = v.perusahaan_id AND p.deletedAt IS NULL
-       JOIN user u ON u.id_user = v.id_user AND u.deleted = 0
-      WHERE v.vendor_id = ? AND v.id_user = ? AND v.deletedAt IS NULL
-      LIMIT 1`,
-    [user.login_vendor_id, user.id_user]
-  );
-  return rows[0] || null;
-}
-
-// Hanya vendor (is_admin = 3) yang masih bermitra dengan perusahaan saat login
+// Hanya vendor (is_admin = 3) yang akunnya masih aktif.
+// Vendor tidak lagi terikat ke perusahaan, jadi tidak ada cek kemitraan.
 async function cek_vendor(req, res, next) {
   const user = getUser(req);
   if (!req.isAuthenticated() || !user || Number(user.is_admin) !== 3) {
     return req.xhr ? res.status(403).json({ status: 403, message: 'Khusus akun vendor', data: null }) : res.redirect('/');
   }
   try {
-    const mitra = await cekKemitraan(user);
-    if (!mitra) {
+    const [rows] = await sql_enak.raw(`SELECT id_user FROM user WHERE id_user = ? AND deleted = 0 LIMIT 1`, [user.id_user]);
+    if (!rows.length) {
       req.logout();
-      req.flash('pesan', 'Kemitraan dengan perusahaan sudah berakhir. Silakan hubungi perusahaan terkait.');
-      return req.xhr ? res.status(403).json({ status: 403, message: 'Kemitraan sudah berakhir', data: null }) : res.redirect('/');
+      req.flash('pesan', 'Akun vendor sudah tidak aktif.');
+      return req.xhr ? res.status(403).json({ status: 403, message: 'Akun tidak aktif', data: null }) : res.redirect('/');
     }
-    req.mitra = mitra;
     next();
   } catch (err) {
     console.log(err);
@@ -54,22 +39,17 @@ async function cek_vendor(req, res, next) {
 // ---------------------------------------------
 // VIEW
 // ---------------------------------------------
-router.get('/', cek_vendor, async function (req, res) {
-  res.render('content/dashboard_vendor', { user: getUser(req), mitra: req.mitra });
+router.get('/', cek_vendor, function (req, res) {
+  res.redirect('/perizinan/jaringan_utilitas');
 });
 
 // ---------------------------------------------
-// Provider yang ditugaskan perusahaan ke kemitraan ini
+// Semua provider aktif (vendor bebas memilih provider)
 // ---------------------------------------------
 router.get('/provider', cek_vendor, async function (req, res) {
   try {
     const [data] = await sql_enak.raw(
-      `SELECT pr.provider_id, pr.provider, pr.warna
-         FROM perusahaan_provider pp
-         JOIN provider pr ON pr.provider_id = pp.provider_id AND pr.deletedAt IS NULL
-        WHERE pp.vendor_id = ? AND pp.deletedAt IS NULL
-        ORDER BY pr.provider ASC`,
-      [req.mitra.vendor_id]
+      `SELECT provider_id, provider, warna FROM provider WHERE deletedAt IS NULL ORDER BY provider ASC`
     );
     res.status(200).json({ status: 200, message: 'sukses', data: data });
   } catch (err) {

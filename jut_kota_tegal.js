@@ -47,6 +47,7 @@ var manajemen_kabel = require('./isine/manajemen_kabel.js');
 var manajemen_laporan = require('./isine/manajemen_laporan.js');
 var manajemen_tidak_teridentifikasi = require('./isine/manajemen_tidak_teridentifikasi.js');
 var manajemen_users = require('./isine/manajemen_users.js');
+var manajemen_perizinan = require('./isine/manajemen_perizinan.js');
 
 // API
 var api = require('./isine/api.js');
@@ -134,6 +135,7 @@ app.use('/manajemen_kabel', manajemen_kabel);
 app.use('/manajemen_laporan', manajemen_laporan);
 app.use('/manajemen_tidak_teridentifikasi', manajemen_tidak_teridentifikasi);
 app.use('/manajemen_users', manajemen_users);
+app.use('/manajemen_perizinan', manajemen_perizinan);
 
 // API
 app.use('/user', user);
