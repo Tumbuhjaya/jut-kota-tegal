@@ -83,28 +83,8 @@ function buildUserFilter(req, alias, val) {
     
   }
 
-  // ============================================================
-  // is_admin = 3 => user terhubung ke vendor
-  // Filter provider lewat tabel perusahaan_provider (kolom vendor_id)
-  // ============================================================
-  if (isAdmin === 3) {
-    // Sesuaikan jika vendor_id mengacu ke user_uuid → ganti ke user.user_uuid
-    const vendorId = user.id_user
-
-    if (!vendorId) return ' AND 1=0 '
-
-    val.push(vendorId, user.login_vendor_id || 0)
-
-    return ` AND ${alias}.provider_id IN (
-      SELECT pp.provider_id
-      FROM perusahaan_provider pp
-      JOIN vendor v ON v.vendor_id = pp.vendor_id AND v.deletedAt IS NULL
-        WHERE v.id_user = ? AND v.vendor_id = ?
-        AND pp.deletedAt IS NULL
-    )`
-  }
-
-  // Admin (is_admin = 1) atau role lain: tidak difilter
+  // Admin (is_admin = 1), vendor (is_admin = 3, tidak lagi terikat perusahaan)
+  // atau role lain: tidak difilter
   return ''
 }
 function buildMultiSearch(searchValue, columns, val) {

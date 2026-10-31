@@ -503,7 +503,7 @@
                         <div style="width: 100%;display: flex;height: 80px;justify-content: flex-end;align-items: center;background-color: ;">
                             <a href="/shortcut" class="shortcut-card-menu">
                                 <div class="shortcut-content-menu">
-                                    <div class="shortcut-title-menu"><i class="fas fa-user" style="color: #f7ca18;"></i>&nbsp;&nbsp;Hi, Username</div>
+                                    <div class="shortcut-title-menu"><i class="fas fa-user" style="color: #f7ca18;"></i>&nbsp;&nbsp;Hi, <%= (user && (user.fullname || user.username)) || 'Vendor' %></div>
                                 </div>
                             </a>
                             
@@ -525,7 +525,7 @@
                                         <ul class="list-inline mb-0">
                                             <li class="list-inline-item"><a href="/perizinan/shortcut" style="color: #0c1e35;font-weight: 300;">Beranda</a></li>
                                             <li class="list-inline-item"><i class="fas fa-chevron-right" style="color: #0c1e35;"></i></li>
-                                            <li class="list-inline-item"><a href="/perizinan/jaringan_utilitas" style="color: #0c1e35;font-weight: 300;">Data Permohonan Izin</a></li>
+                                            <li class="list-inline-item"><a href="<%= url_kembali %>" style="color: #0c1e35;font-weight: 300;">Data Permohonan Izin</a></li>
                                             <li class="list-inline-item"><i class="fas fa-chevron-right" style="color: #0c1e35;"></i></li>
 
                                             <li class="list-inline-item"><span style="color: #0c1e35;">Ruas Jalan</span></li>
@@ -534,12 +534,41 @@
                                     </div>
                                 </div>
 
+                                <% if (atas_nama) { %>
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <div class="alert alert-primary mb-0" role="alert">
+                                            <i class="fas fa-user-shield"></i>&nbsp; Anda mengisi sebagai <strong>admin</strong> atas nama vendor <strong><%= atas_nama %></strong>.
+                                        </div>
+                                    </div>
+                                </div>
+                                <% } %>
+                                <% if (!bisa_ubah) { %>
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <div class="alert alert-info mb-0" role="alert">
+                                            Permohonan berstatus <strong><%= permohonan.status %></strong> dan tidak bisa diubah.
+                                            <% if (permohonan.no_sk) { %><br/>No. SK: <strong><%= permohonan.no_sk %></strong><% } %>
+                                            <% if (permohonan.keterangan) { %><br/>Keterangan: <%= permohonan.keterangan %><% } %>
+                                        </div>
+                                    </div>
+                                </div>
+                                <% } else if (permohonan.status === 'revisi') { %>
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <div class="alert alert-warning mb-0" role="alert">
+                                            <strong>Perlu revisi:</strong> <%= permohonan.keterangan %>
+                                        </div>
+                                    </div>
+                                </div>
+                                <% } %>
+
                                 <div class="row mt-3">
                                     <div class="col-12 col-lg-12 col-xl-12">
                                         <div class="alert alert-success" role="alert">
                                             <div class="form-group">
-                                                <label for="">Provider</label>
-                                                <select name="" id="" class="form-control autocomplete">
+                                                <label for="provider_id">Provider</label>
+                                                <select name="provider_id" id="provider_id" class="form-control autocomplete" <%= bisa_ubah ? '' : 'disabled' %>>
                                                     <option value="">-- Pilih Provider --</option>
                                                 </select>
                                             </div>
@@ -549,10 +578,11 @@
                                             <div class="form-group">
                                                 <label for="">Persyaratan Teknis</label><br/>
                                                 <button type="button" class="btn btn-success btn-sm" data-toggle="modal" data-target="#modalSyarat">
-                                                <i class="fas fa-plus"></i>&nbsp;&nbsp;Upload 
-                                                </button>   
+                                                <i class="fas <%= bisa_ubah ? 'fa-plus' : 'fa-eye' %>"></i>&nbsp;&nbsp;<%= bisa_ubah ? 'Upload' : 'Lihat' %>
+                                                </button>
+                                                <span id="info_dokumen" class="ml-2"></span>
                                             </div>
-                                        </div>  
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="row mt-3">
@@ -590,44 +620,25 @@
                                                         <th class="text-center" style="min-width: 120px;">Meter/Tahun</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody>
+                                                <tbody id="tbody_ruas"></tbody>
+                                                <tfoot>
                                                     <tr>
-                                                        <td>1.</td>
-                                                        <td>
-                                                            <div class="w-100-flex" style="justify-content: center;flex-wrap: wrap;align-items: center;gap: 5px;">
-                                                                <a href="/perizinan/jaringan_utilitas/ruas_jalan/tiang/1/1" class="btn btn-info" title="Digitasi Tiang"><i class="fas fa-map-pin"></i></a>
-                                                                
-                                                                <a href="/perizinan/jaringan_utilitas/ruas_jalan/kabel/1/1" class="btn btn-dark"  title="Digitasi Kabel"><i class="fas fa-grip-lines"></i> </a>
-                                                                <a href="#" class="btn btn-danger"><i class="fas fa-trash"></i></a>
-                                                            </div>
-                                                        </td>
-                                                        <td>
-                                                            <select name="" id="" class="form-control autocomplete">
-                                                                <option value="">-- Pilih --</option>
-                                                            </select>
-                                                        </td>
-                                                        
-                                                        <td class="text-center">0</td>
-                                                        <td class="text-center">0</td>
-                                                        <td class="text-center">0</td>
-                                                        <td class="text-center">00</td>
-                                                        <td>
-                                                            <input type="text" class="form-control">
-                                                        </td>
-                                                        <td>
-                                                            <input type="text" class="form-control">
-                                                        </td>
-                                                        <td class="text-right">Rp 00.000,-</td>
-                                                        <td class="text-right">Rp 00.000,-</td>
-                                                        <td class="text-right">Rp 00.000,-</td>
-                                                        <td class="text-right">Rp 00.000,-</td>
-                                                        <td class="text-right">Rp 00.000,-</td>
+                                                        <th colspan="7" class="text-right">Total</th>
+                                                        <th class="text-center" id="total_tiang">0</th>
+                                                        <th class="text-center" id="total_kabel">0</th>
+                                                        <th colspan="2"></th>
+                                                        <th class="text-right" id="total_ret_tiang">Rp 0,-</th>
+                                                        <th class="text-right" id="total_ret_kabel">Rp 0,-</th>
+                                                        <th class="text-right" id="total_ret">Rp 0,-</th>
                                                     </tr>
-                                                </tbody>
+                                                </tfoot>
                                             </table>
+                                            <% if (bisa_ubah) { %>
                                             <div class="w-100-flex" style="justify-content: flex-start;flex-wrap: wrap;align-items: flex-start;margin-bottom: 15px;">
-                                                <a href="/perizinan/jaringan_utilitas/edit/1" class="btn btn-gradient-yellow btn-sm"><i class="fas fa-plus"></i> &nbsp;&nbsp;Tambah Baris Tabel</a>
+                                                <button type="button" class="btn btn-gradient-yellow btn-sm" onclick="tambahBaris()"><i class="fas fa-plus"></i> &nbsp;&nbsp;Tambah Baris Tabel</button>
                                             </div>
+                                            <small class="text-muted"><i>Ruas jalan yang dikosongkan dianggap <b>di luar ruas</b>. Jumlah tiang / kabel otomatis mengikuti hasil digitasi jika sudah didigitasi.</i></small>
+                                            <% } %>
                                         </div>
                                     </div>
                                 </div>
@@ -635,8 +646,12 @@
                                 <div class="row mt-3">
                                     <div class="col-12">
                                         <hr>
-                                        <div class="w-100-flex" style="justify-content: center;">
-                                            <button type="submit" class="btn btn-gradient" style="padding-left: 90px;padding-right: 90px;"><i class="fas fa-save"></i>&nbsp;&nbsp;Simpan</button>
+                                        <div class="w-100-flex" style="justify-content: center;flex-wrap: wrap;gap: 10px;">
+                                            <a href="<%= url_kembali %>" class="btn btn-secondary" style="padding: 0.85rem 40px;border-radius: 12px;"><i class="fas fa-arrow-left"></i>&nbsp;&nbsp;Kembali</a>
+                                            <% if (bisa_ubah) { %>
+                                            <button type="button" class="btn btn-gradient" style="padding-left: 90px;padding-right: 90px;" onclick="simpan(true)"><i class="fas fa-save"></i>&nbsp;&nbsp;Simpan</button>
+                                            <button type="button" class="btn btn-gradient-yellow" style="padding-left: 40px;padding-right: 40px;" onclick="ajukan()"><i class="fas fa-paper-plane"></i>&nbsp;&nbsp;Ajukan Permohonan</button>
+                                            <% } %>
                                         </div>
                                     </div>
                                 </div>
@@ -650,8 +665,8 @@
 
     <!-- Modal -->
     <div class="modal fade" id="modalSyarat" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
+        <div class="modal-dialog modal-lg">
+            <form class="modal-content" id="form-syarat" enctype="multipart/form-data">
             <div class="modal-header">
                 <h5 class="modal-title" id="exampleModalLabel">Syarat Administratif & Teknis</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -659,8 +674,39 @@
                 </button>
             </div>
             <div class="modal-body">
+                <fieldset <%= bisa_ubah ? '' : 'disabled' %>>
                 <div class="row">
                     <div class="col-12">
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <div class="w-100-flex"  style="justify-content: center;padding: 10px 15px;align-items: center;border-top-left-radius: 15px;border-top-right-radius: 15px;background-color: #f7ca18;">
+                                            <h6 style="font-size: 20px;font-weight: 600;">Informasi Pemohon/Penanggung Jawab (Vendor)</h6>
+                                            <hr>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <div class="form-group">
+                                            <label for="nama_pemohon">Nama</label>
+                                            <input type="text" name="nama_pemohon" id="nama_pemohon" class="form-control" value="<%= permohonan.nama_pemohon || '' %>">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="jabatan_pemohon">Jabatan</label>
+                                            <input type="text" name="jabatan_pemohon" id="jabatan_pemohon" class="form-control" value="<%= permohonan.jabatan_pemohon || '' %>">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="telp_pemohon">No. Telepon (WhatsApp)</label>
+                                            <input type="text" name="telp_pemohon" id="telp_pemohon" class="form-control" value="<%= permohonan.telp_pemohon || '' %>">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="email_pemohon">Email</label>
+                                            <input type="email" name="email_pemohon" id="email_pemohon" class="form-control" value="<%= permohonan.email_pemohon || '' %>">
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div class="row mt-3">
                                     <div class="col-12">
                                         <div class="w-100-flex"  style="justify-content: center;padding: 10px 15px;align-items: center;border-top-left-radius: 15px;border-top-right-radius: 15px;background-color: #f7ca18;">
@@ -673,56 +719,58 @@
                                 <div class="row mt-3">
                                     <div class="col-12">
                                         <div class="form-group">
-                                            <label for="">Foto copy Kartu Tanda Penduduk (KTP) Pemohon</label>
+                                            <label for="ktp">Foto copy Kartu Tanda Penduduk (KTP) Pemohon</label>
                                             <div class="custom-file">
-                                                <input type="file" class="custom-file-input" id="customFile">
-                                                <label class="custom-file-label" for="customFile">Pilih File</label>
+                                                <input type="file" class="custom-file-input" id="ktp" name="ktp" accept=".pdf,.jpg,.jpeg,.png">
+                                                <label class="custom-file-label" for="ktp">Pilih File</label>
                                             </div>
+                                            <small class="form-text dok-info" data-jenis="ktp"></small>
                                         </div>
 
                                         <hr>
 
                                         <div class="form-group">
-                                            <label for="">Foto Copy akte pendirian Badan Usaha/Badan Hukum</label>
+                                            <label for="akta_pendirian">Foto Copy akte pendirian Badan Usaha/Badan Hukum</label>
                                             <div class="custom-file">
-                                                <input type="file" class="custom-file-input" id="customFile">
-                                                <label class="custom-file-label" for="customFile">Pilih File</label>
+                                                <input type="file" class="custom-file-input" id="akta_pendirian" name="akta_pendirian" accept=".pdf,.jpg,.jpeg,.png">
+                                                <label class="custom-file-label" for="akta_pendirian">Pilih File</label>
                                             </div>
+                                            <small class="form-text dok-info" data-jenis="akta_pendirian"></small>
                                         </div>
 
                                         <hr>
 
                                        <div class="form-group">
-                                            <label for="">Surat Kuasa Pengurusan permohonan izin pembangunan/penempatan bangunan dan jaringan utlitas</label>
+                                            <label for="surat_kuasa">Surat Kuasa Pengurusan permohonan izin pembangunan/penempatan bangunan dan jaringan utlitas</label>
                                             <div class="custom-file">
-                                                <input type="file" class="custom-file-input" id="customFile">
-                                                <label class="custom-file-label" for="customFile">Pilih File</label>
-                                                <small id="" class="form-text text-muted"><i>Dalam hal surat permohonan tidak ditanda tangani oleh penanggungjawab perusahaan</i></small>
+                                                <input type="file" class="custom-file-input" id="surat_kuasa" name="surat_kuasa" accept=".pdf,.jpg,.jpeg,.png">
+                                                <label class="custom-file-label" for="surat_kuasa">Pilih File</label>
                                             </div>
-                                        </div>
-
-                                        
-                                        
-                                        <hr>
-
-                                        <div class="form-group">
-                                            <label for="">Surat Pernyataan kesanggupan memenuhi dan mematuhi semua persyaratan yang ditentukan dalam pembangunan/penempatan bangunan dan jaringan utilitas.</label>
-                                            <div class="custom-file">
-                                                <input type="file" class="custom-file-input" id="customFile">
-                                                <label class="custom-file-label" for="customFile">Pilih File</label>
-                                                <small id="" class="form-text text-muted"><i>Di atas kertas bermaterai sesuai peraturan yang berlaku</i></small>
-                                            </div>
+                                            <small class="form-text text-muted"><i>Dalam hal surat permohonan tidak ditanda tangani oleh penanggungjawab perusahaan</i></small>
+                                            <small class="form-text dok-info" data-jenis="surat_kuasa"></small>
                                         </div>
 
                                         <hr>
 
                                         <div class="form-group">
-                                            <label for="">Surat pernyataan kesanggupan pembayaran Retribusi</label>
+                                            <label for="pernyataan_kesanggupan">Surat Pernyataan kesanggupan memenuhi dan mematuhi semua persyaratan yang ditentukan dalam pembangunan/penempatan bangunan dan jaringan utilitas.</label>
                                             <div class="custom-file">
-                                                <input type="file" class="custom-file-input" id="customFile">
-                                                <label class="custom-file-label" for="customFile">Pilih File</label>
-                                                <small id="" class="form-text text-muted"><i>Dalam hal surat permohonan tidak ditanda tangani oleh penanggungjawab perusahaan</i></small>
+                                                <input type="file" class="custom-file-input" id="pernyataan_kesanggupan" name="pernyataan_kesanggupan" accept=".pdf,.jpg,.jpeg,.png">
+                                                <label class="custom-file-label" for="pernyataan_kesanggupan">Pilih File</label>
                                             </div>
+                                            <small class="form-text text-muted"><i>Di atas kertas bermaterai sesuai peraturan yang berlaku</i></small>
+                                            <small class="form-text dok-info" data-jenis="pernyataan_kesanggupan"></small>
+                                        </div>
+
+                                        <hr>
+
+                                        <div class="form-group">
+                                            <label for="pernyataan_retribusi">Surat pernyataan kesanggupan pembayaran Retribusi</label>
+                                            <div class="custom-file">
+                                                <input type="file" class="custom-file-input" id="pernyataan_retribusi" name="pernyataan_retribusi" accept=".pdf,.jpg,.jpeg,.png">
+                                                <label class="custom-file-label" for="pernyataan_retribusi">Pilih File</label>
+                                            </div>
+                                            <small class="form-text dok-info" data-jenis="pernyataan_retribusi"></small>
                                         </div>
                                     </div>
                                 </div>
@@ -739,53 +787,61 @@
                                 <div class="row mt-3">
                                     <div class="col-12">
                                         <div class="form-group">
-                                            <label for="">Gambar Lokasi Pembangunan/Penempatan Bangunan dan Jaringan Utilitas</label>
+                                            <label for="gambar_lokasi">Gambar Lokasi Pembangunan/Penempatan Bangunan dan Jaringan Utilitas</label>
                                             <div class="custom-file">
-                                                <input type="file" class="custom-file-input" id="customFile">
-                                                <label class="custom-file-label" for="customFile">Pilih File</label>
+                                                <input type="file" class="custom-file-input" id="gambar_lokasi" name="gambar_lokasi" accept=".pdf,.jpg,.jpeg,.png">
+                                                <label class="custom-file-label" for="gambar_lokasi">Pilih File</label>
                                             </div>
+                                            <small class="form-text dok-info" data-jenis="gambar_lokasi"></small>
                                         </div>
 
                                         <hr>
 
                                        <div class="form-group">
-                                            <label for="">Rencana Teknis</label>
+                                            <label for="rencana_teknis">Rencana Teknis</label>
                                             <div class="custom-file">
-                                                <input type="file" class="custom-file-input" id="customFile">
-                                                <label class="custom-file-label" for="customFile">Pilih File</label>
-                                                <small id="" class="form-text text-muted"><i>Gambar Konstruksi dan bahan Konstruksi bangunan dan jaringan utilitas</i></small>
+                                                <input type="file" class="custom-file-input" id="rencana_teknis" name="rencana_teknis" accept=".pdf,.jpg,.jpeg,.png">
+                                                <label class="custom-file-label" for="rencana_teknis">Pilih File</label>
                                             </div>
+                                            <small class="form-text text-muted"><i>Gambar Konstruksi dan bahan Konstruksi bangunan dan jaringan utilitas</i></small>
+                                            <small class="form-text dok-info" data-jenis="rencana_teknis"></small>
                                         </div>
 
                                         <hr>
 
                                         <div class="form-group">
-                                            <label for="">Jadwal Pelaksanaan Kegiatan</label>
+                                            <label for="jadwal_pelaksanaan">Jadwal Pelaksanaan Kegiatan</label>
                                             <div class="custom-file">
-                                                <input type="file" class="custom-file-input" id="customFile">
-                                                <label class="custom-file-label" for="customFile">Pilih File</label>
+                                                <input type="file" class="custom-file-input" id="jadwal_pelaksanaan" name="jadwal_pelaksanaan" accept=".pdf,.jpg,.jpeg,.png">
+                                                <label class="custom-file-label" for="jadwal_pelaksanaan">Pilih File</label>
                                             </div>
+                                            <small class="form-text dok-info" data-jenis="jadwal_pelaksanaan"></small>
                                         </div>
-                                        
+
                                         <hr>
 
                                         <div class="form-group">
-                                            <label for="">Rencana Anggaran Biaya</label>
+                                            <label for="rencana_anggaran">Rencana Anggaran Biaya</label>
                                             <div class="custom-file">
-                                                <input type="file" class="custom-file-input" id="customFile">
-                                                <label class="custom-file-label" for="customFile">Pilih File</label>
+                                                <input type="file" class="custom-file-input" id="rencana_anggaran" name="rencana_anggaran" accept=".pdf,.jpg,.jpeg,.png">
+                                                <label class="custom-file-label" for="rencana_anggaran">Pilih File</label>
                                             </div>
+                                            <small class="form-text dok-info" data-jenis="rencana_anggaran"></small>
                                         </div>
                                     </div>
                                 </div>
                     </div>
                 </div>
+                </fieldset>
             </div>
             <div class="modal-footer">
+                <small class="text-muted mr-auto"><i>Format PDF / JPG / PNG, maks. 10 MB per file</i></small>
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
-                <button type="button" class="btn btn-primary">Simpan</button>
+                <% if (bisa_ubah) { %>
+                <button type="submit" class="btn btn-primary">Simpan</button>
+                <% } %>
             </div>
-            </div>
+            </form>
         </div>
     </div>
     <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
@@ -801,43 +857,270 @@
     <script type="text/javascript">
         var rooturl = '';
 
-        $(document).ready(function () {
-            // Init Select2
-            $('.autocomplete').select2({ theme: 'bootstrap4' });
-        });
+        var ID_PERMOHONAN = <%= permohonan.permohonan_id %>;
+        var BISA_UBAH = <%= bisa_ubah ? 'true' : 'false' %>;
+        var API = rooturl + '/perizinan/jaringan_utilitas/api/';
+        var URL_KEMBALI = '<%= url_kembali %>';
+        var JUMLAH_DOKUMEN_WAJIB = 8; // semua kecuali surat kuasa
 
-        let data_table  =$('#list-data').DataTable({
-            "language": {
-                "sProcessing":   "Sedang memproses...",
-                "sLengthMenu":   "_MENU_",
-                "sZeroRecords":  "Tidak ditemukan data yang sesuai",
-                "sInfo":         "Menampilkan _START_ sampai _END_ dari _TOTAL_ entri",
-                "sInfoEmpty":    "Menampilkan 0 sampai 0 dari 0 entri",
-                "sInfoFiltered": "(disaring dari _MAX_ entri keseluruhan)",
-                "sInfoPostFix":  "",
-                "sUrl":          "",
-                "oPaginate": {
-                    "sFirst":    "Pertama",
-                    "sPrevious": "Sebelumnya",
-                    "sNext":     "Selanjutnya",
-                    "sLast":     "Terakhir"
-                }
-            },
-            "processing": true,
+        var masterRuas = {};      // id -> data master_retribusi
+        var opsiRuas = '';        // <option> ruas, dibangun sekali
+        var idRuasLain = '';      // id baris 'Jalan Lain' = pilihan di luar ruas
+        var adaPerubahan = false; // ada isian tabel yang belum disimpan
 
-            "columnDefs": [
-                { "width": "30px", "targets": 0},
-                { "width": "140px", "targets": 3}
-            ],
-        });
+        function rupiah(n) {
+            return 'Rp ' + Number(n || 0).toLocaleString('id-ID', { maximumFractionDigits: 0 }) + ',-';
+        }
+        function angka(n) {
+            return Number(n || 0).toLocaleString('id-ID', { maximumFractionDigits: 2 });
+        }
+        function esc(t) {
+            return $('<div>').text(t == null ? '' : t).html();
+        }
+        function pesanGagal(xhr, def) {
+            return (xhr && xhr.responseJSON && xhr.responseJSON.message) || def;
+        }
 
-        data_table.on( 'draw.dt', function () {
-            let PageInfo = $('#list-data').DataTable().page.info();
-            data_table.column(0, { page: 'current' }).nodes().each( function (cell, i) {
-                cell.innerHTML = i + 1 + PageInfo.start;
+        // ---------------- tabel ruas ----------------
+        function tambahBaris(row) {
+            row = row || {};
+            var dis = BISA_UBAH ? '' : 'disabled';
+            var tiangKunci = row.digitasi_tiang > 0 || !BISA_UBAH ? 'readonly' : '';
+            var kabelKunci = row.digitasi_kabel > 0 || !BISA_UBAH ? 'readonly' : '';
+            var $tr = $('<tr>' +
+                '<td class="no"></td>' +
+                '<td><div class="w-100-flex" style="justify-content: center;flex-wrap: wrap;align-items: center;gap: 5px;">' +
+                    '<button type="button" class="btn btn-info btn-digitasi" data-jenis="tiang" title="Digitasi Tiang"><i class="fas fa-map-pin"></i></button>' +
+                    '<button type="button" class="btn btn-dark btn-digitasi" data-jenis="kabel" title="Digitasi Kabel"><i class="fas fa-grip-lines"></i></button>' +
+                    (BISA_UBAH ? '<button type="button" class="btn btn-danger btn-hapus" title="Hapus"><i class="fas fa-trash"></i></button>' : '') +
+                '</div></td>' +
+                '<td><select class="form-control pilih-ruas" ' + dis + '><option value="' + idRuasLain + '">-- Di luar ruas (Jalan Lain) --</option>' + opsiRuas + '</select></td>' +
+                '<td class="text-center c-no"></td>' +
+                '<td class="text-center c-aw"></td>' +
+                '<td class="text-center c-ak"></td>' +
+                '<td class="text-center c-panjang"></td>' +
+                '<td><input type="number" min="0" step="1" class="form-control in-tiang" ' + tiangKunci + '>' +
+                    (row.digitasi_tiang > 0 ? '<small class="text-muted">digitasi: ' + row.digitasi_tiang + ' titik</small>' : '') + '</td>' +
+                '<td><input type="number" min="0" step="0.01" class="form-control in-kabel" ' + kabelKunci + '>' +
+                    (row.digitasi_kabel > 0 ? '<small class="text-muted">digitasi: ' + row.digitasi_kabel + ' garis</small>' : '') + '</td>' +
+                '<td class="text-right c-tarif-tiang"></td>' +
+                '<td class="text-right c-tarif-kabel"></td>' +
+                '<td class="text-right c-ret-tiang"></td>' +
+                '<td class="text-right c-ret-kabel"></td>' +
+                '<td class="text-right c-ret-total"></td>' +
+                '</tr>');
+            $tr.data('row', row);
+            $tr.find('.pilih-ruas').val(row.ruas_id || idRuasLain);
+            $tr.find('.in-tiang').val(row.jumlah_tiang || 0);
+            $tr.find('.in-kabel').val(row.panjang_kabel || 0);
+            $('#tbody_ruas').append($tr);
+            $tr.find('.pilih-ruas').select2({ theme: 'bootstrap4', width: '100%' });
+            if (!row.permohonan_ruas_id) adaPerubahan = true;
+            hitungBaris($tr);
+            hitungTotal();
+        }
+
+        // Tarif yang sudah tersimpan dipakai selama ruasnya tidak diganti
+        function tarifBaris($tr) {
+            var row = $tr.data('row') || {};
+            var ruas_id = $tr.find('.pilih-ruas').val();
+            if (row.permohonan_ruas_id && String(row.ruas_id || '') === String(ruas_id)) {
+                return { tiang: Number(row.tarif_tiang), kabel: Number(row.tarif_kabel) };
+            }
+            var m = masterRuas[ruas_id];
+            return { tiang: m ? Number(m.t_k30cm || 0) : 0, kabel: m ? Number(m.jr_atk15cm || 0) : 0 };
+        }
+
+        function hitungBaris($tr) {
+            var m = masterRuas[$tr.find('.pilih-ruas').val()] || {};
+            var tarif = tarifBaris($tr);
+            var tiang = Number($tr.find('.in-tiang').val() || 0);
+            var kabel = Number($tr.find('.in-kabel').val() || 0);
+            $tr.find('.c-no').text(m.no || '-');
+            $tr.find('.c-aw').text(m.tk_ruas_aw || '-');
+            $tr.find('.c-ak').text(m.tk_ruas_ak || '-');
+            $tr.find('.c-panjang').text(m.panjang != null ? angka(m.panjang) : '-');
+            $tr.find('.c-tarif-tiang').text(rupiah(tarif.tiang));
+            $tr.find('.c-tarif-kabel').text(rupiah(tarif.kabel));
+            $tr.find('.c-ret-tiang').text(rupiah(tiang * tarif.tiang));
+            $tr.find('.c-ret-kabel').text(rupiah(kabel * tarif.kabel));
+            $tr.find('.c-ret-total').text(rupiah(tiang * tarif.tiang + kabel * tarif.kabel));
+        }
+
+        function hitungTotal() {
+            var t = { tiang: 0, kabel: 0, rt: 0, rk: 0 };
+            $('#tbody_ruas tr').each(function (i) {
+                var $tr = $(this);
+                var tarif = tarifBaris($tr);
+                var tiang = Number($tr.find('.in-tiang').val() || 0);
+                var kabel = Number($tr.find('.in-kabel').val() || 0);
+                $tr.find('.no').text((i + 1) + '.');
+                t.tiang += tiang; t.kabel += kabel;
+                t.rt += tiang * tarif.tiang; t.rk += kabel * tarif.kabel;
             });
+            $('#total_tiang').text(angka(t.tiang));
+            $('#total_kabel').text(angka(t.kabel) + ' m');
+            $('#total_ret_tiang').text(rupiah(t.rt));
+            $('#total_ret_kabel').text(rupiah(t.rk));
+            $('#total_ret').text(rupiah(t.rt + t.rk));
+        }
+
+        function isiTabel(rows) {
+            $('#tbody_ruas').empty();
+            rows.forEach(function (r) { tambahBaris(r); });
+            if (!rows.length && BISA_UBAH) tambahBaris();
+            adaPerubahan = !rows.length && BISA_UBAH;
+            hitungTotal();
+        }
+
+        $('#tbody_ruas').on('change input', '.pilih-ruas, .in-tiang, .in-kabel', function () {
+            adaPerubahan = true;
+            hitungBaris($(this).closest('tr'));
+            hitungTotal();
         });
 
+        $('#provider_id').on('change', function () { adaPerubahan = true; });
+
+        $('#tbody_ruas').on('click', '.btn-hapus', async function () {
+            var $tr = $(this).closest('tr');
+            var row = $tr.data('row') || {};
+            if (!row.permohonan_ruas_id) { $tr.remove(); hitungTotal(); return; }
+            var yakin = await swal({
+                title: 'Hapus Ruas',
+                text: 'Ruas beserta digitasi tiang & kabelnya akan dihapus. Lanjutkan?',
+                icon: 'warning', dangerMode: true, buttons: ['Tidak', 'Ya']
+            });
+            if (!yakin) return;
+            $.get(API + 'ruas/hapus/' + ID_PERMOHONAN + '/' + row.permohonan_ruas_id)
+                .done(function () { $tr.remove(); hitungTotal(); swal('Berhasil', 'Ruas dihapus', 'success'); })
+                .fail(function (xhr) { swal('Gagal', pesanGagal(xhr, 'Gagal menghapus ruas'), 'error'); });
+        });
+
+        // Tombol tiang / kabel: simpan dulu jika ada perubahan, lalu buka peta ruas tsb.
+        $('#tbody_ruas').on('click', '.btn-digitasi', async function () {
+            var $tr = $(this).closest('tr');
+            var jenis = $(this).data('jenis');
+            var index = $('#tbody_ruas tr').index($tr);
+            var rows = null;
+            if (BISA_UBAH && adaPerubahan) {
+                rows = await simpan(false);
+                if (!rows) return;
+            }
+            var row = rows ? rows[index] : $tr.data('row');
+            if (!row || !row.permohonan_ruas_id) return;
+            window.location.href = rooturl + '/perizinan/jaringan_utilitas/ruas_jalan/' + jenis + '/' + ID_PERMOHONAN + '/' + row.permohonan_ruas_id;
+        });
+
+        // Mengembalikan daftar ruas tersimpan, atau null jika gagal
+        async function simpan(tampilkanPesan) {
+            var ruas = [];
+            $('#tbody_ruas tr').each(function () {
+                var $tr = $(this);
+                ruas.push({
+                    permohonan_ruas_id: ($tr.data('row') || {}).permohonan_ruas_id || null,
+                    ruas_id: $tr.find('.pilih-ruas').val() || null,
+                    jumlah_tiang: $tr.find('.in-tiang').val(),
+                    panjang_kabel: $tr.find('.in-kabel').val()
+                });
+            });
+            try {
+                var res = await $.ajax({
+                    url: API + 'simpan/' + ID_PERMOHONAN,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ provider_id: $('#provider_id').val() || null, ruas: ruas })
+                });
+                isiTabel(res.data);
+                adaPerubahan = false;
+                if (tampilkanPesan) swal('Berhasil', 'Data berhasil disimpan', 'success');
+                return res.data;
+            } catch (xhr) {
+                swal('Gagal', pesanGagal(xhr, 'Gagal menyimpan data'), 'error');
+                return null;
+            }
+        }
+
+        async function ajukan() {
+            var yakin = await swal({
+                title: 'Ajukan Permohonan',
+                text: 'Setelah diajukan, data tidak bisa diubah sampai diproses admin. Lanjutkan?',
+                icon: 'info', buttons: ['Batal', 'Ajukan']
+            });
+            if (!yakin) return;
+            if (!(await simpan(false))) return;
+            $.post(API + 'ajukan/' + ID_PERMOHONAN)
+                .done(function () {
+                    swal('Berhasil', 'Permohonan berhasil diajukan', 'success').then(function () {
+                        window.location.href = URL_KEMBALI;
+                    });
+                })
+                .fail(function (xhr) { swal('Belum lengkap', pesanGagal(xhr, 'Gagal mengajukan permohonan'), 'warning'); });
+        }
+
+        // ---------------- dokumen persyaratan ----------------
+        function tampilDokumen(dokumen) {
+            $('.dok-info').html('<span class="text-danger"><i>Belum diupload</i></span>');
+            var wajib = 0;
+            dokumen.forEach(function (d) {
+                if (d.jenis_dokumen !== 'surat_kuasa') wajib++;
+                $('.dok-info[data-jenis=' + d.jenis_dokumen + ']').html(
+                    'File saat ini: <a href="' + rooturl + '/perizinan/jaringan_utilitas/dokumen/' + ID_PERMOHONAN + '/' +
+                    d.permohonan_dokumen_id + '" target="_blank">' + esc(d.nama_asli) + '</a>');
+            });
+            $('#info_dokumen').html(wajib + '/' + JUMLAH_DOKUMEN_WAJIB + ' dokumen wajib terupload');
+        }
+
+        $('#form-syarat').on('change', '.custom-file-input', function () {
+            $(this).next('.custom-file-label').text(this.files[0] ? this.files[0].name : 'Pilih File');
+        });
+
+        $('#form-syarat').on('submit', function (e) {
+            e.preventDefault();
+            var $btn = $(this).find('[type=submit]').prop('disabled', true);
+            $.ajax({
+                url: API + 'syarat/' + ID_PERMOHONAN,
+                type: 'POST',
+                data: new FormData(this),
+                processData: false,
+                contentType: false
+            }).done(function (res) {
+                tampilDokumen(res.data);
+                $('#form-syarat .custom-file-input').val('').next('.custom-file-label').text('Pilih File');
+                $('#modalSyarat').modal('hide');
+                swal('Berhasil', 'Persyaratan berhasil disimpan', 'success');
+            }).fail(function (xhr) {
+                swal('Gagal', pesanGagal(xhr, 'Gagal menyimpan persyaratan'), 'error');
+            }).always(function () { $btn.prop('disabled', false); });
+        });
+
+        // ---------------- muat data awal ----------------
+        $(document).ready(async function () {
+            try {
+                var [prov, master, detail] = await Promise.all([
+                    $.get(API + 'provider'),
+                    $.get(API + 'master_ruas'),
+                    $.get(API + 'detail/' + ID_PERMOHONAN)
+                ]);
+                prov.data.forEach(function (p) {
+                    $('#provider_id').append($('<option>').val(p.provider_id).text(p.provider));
+                });
+                $('#provider_id').val(detail.data.permohonan.provider_id || '').select2({ theme: 'bootstrap4' });
+
+                master.data.forEach(function (m) {
+                    masterRuas[m.id] = m;
+                    if (m.luar_ruas) { idRuasLain = m.id; return; }
+                    opsiRuas += '<option value="' + m.id + '">' + esc((m.no ? m.no + ' - ' : '') + m.nm_ruas) + '</option>';
+                });
+                isiTabel(detail.data.ruas);
+                tampilDokumen(detail.data.dokumen);
+            } catch (xhr) {
+                swal('Gagal', pesanGagal(xhr, 'Gagal memuat data'), 'error');
+            }
+        });
+
+        window.addEventListener('beforeunload', function (e) {
+            if (BISA_UBAH && adaPerubahan) { e.preventDefault(); e.returnValue = ''; }
+        });
 
     </script>
 </body>

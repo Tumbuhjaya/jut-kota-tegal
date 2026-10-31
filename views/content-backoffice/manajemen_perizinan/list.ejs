@@ -1,0 +1,208 @@
+<% include ../../template-backoffice/header.ejs %>
+  <!-- Main Content -->
+  <div class="main-content">
+    <section class="section">
+      <div class="w-100" style="padding: 0 30px;">
+        <div class="section-header">
+          <h1>Permohonan Izin Jaringan Utilitas</h1>
+          <div class="section-header-breadcrumb">
+            <div class="breadcrumb-item active"><a href="/backoffice">Dashboard</a></div>
+            <div class="breadcrumb-item">Permohonan Izin</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-body">
+        <div class="row">
+          <div class="col-lg-12 col-xl-12">
+            <div class="card">
+              <div class="card-header">
+                <button type="button" class="btn btn-primary custom-btn-card-header mr-3" data-toggle="modal" data-target="#modal-vendor"><i class="fas fa-plus"></i> Tambah Permohonan</button>
+                <div class="form-inline">
+                  <label for="filter_status" class="mr-2">Status</label>
+                  <select id="filter_status" class="form-control">
+                    <option value="">Semua</option>
+                    <option value="diajukan" selected>Menunggu Verifikasi</option>
+                    <option value="revisi">Perlu Revisi</option>
+                    <option value="disetujui">Disetujui</option>
+                    <option value="ditolak">Ditolak</option>
+                    <option value="draft">Draft (belum diajukan)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table class="table table-bordered" id="list-data">
+                    <thead>
+                      <tr>
+                        <th class="text-center" rowspan="2">No.</th>
+                        <th class="text-center" rowspan="2">Tgl. Diajukan</th>
+                        <th class="text-center" rowspan="2">Vendor</th>
+                        <th class="text-center" rowspan="2">Pemohon</th>
+                        <th class="text-center" rowspan="2">Provider</th>
+                        <th class="text-center" colspan="4">Total</th>
+                        <th class="text-center" rowspan="2">No. SK</th>
+                        <th class="text-center" rowspan="2" style="min-width: 120px;">Status</th>
+                        <th class="text-center" rowspan="2">Option</th>
+                      </tr>
+                      <tr>
+                        <th class="text-center">Ruas</th>
+                        <th class="text-center">Tiang</th>
+                        <th class="text-center">Kabel (m)</th>
+                        <th class="text-center" style="min-width: 130px;">Retribusi</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <!-- Modal pilih vendor: admin mengisi permohonan atas nama vendor -->
+  <div class="modal fade" id="modal-vendor" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <form class="modal-content" id="form-vendor">
+        <div class="modal-header">
+          <h5 class="modal-title">Tambah Permohonan Izin</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group mb-0">
+            <label for="id_user_vendor">Vendor Pemohon</label>
+            <select id="id_user_vendor" class="form-control" required style="width: 100%;">
+              <option value="">-- Pilih Vendor --</option>
+            </select>
+            <small class="form-text text-muted">Permohonan dibuat atas nama vendor ini dan akan tampil juga di akun vendor tersebut.</small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-primary">Lanjut Isi Data</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <footer class="main-footer">
+    <div class="footer-left">
+      <% include ../../template-backoffice/copyright-left.ejs %>
+    </div>
+    <div class="footer-right">
+      <% include ../../template-backoffice/copyright-right.ejs %>
+    </div>
+  </footer>
+<% include ../../template-backoffice/footer.ejs %>
+
+<script type="text/javascript">
+  var rooturl = ''
+  var STATUS = {
+    draft:     { label: 'Draft', badge: 'secondary' },
+    diajukan:  { label: 'Menunggu Verifikasi', badge: 'info' },
+    revisi:    { label: 'Perlu Revisi', badge: 'warning' },
+    disetujui: { label: 'Disetujui', badge: 'success' },
+    ditolak:   { label: 'Ditolak', badge: 'danger' }
+  };
+
+  function rupiah(n) {
+    return 'Rp ' + Number(n || 0).toLocaleString('id-ID', { maximumFractionDigits: 0 }) + ',-';
+  }
+  function esc(t) {
+    return $('<div>').text(t == null ? '' : t).html();
+  }
+
+  let data_table = $('#list-data').DataTable({
+    "language": {
+        "sProcessing":   "Sedang memproses...",
+        "sLengthMenu":   "_MENU_",
+        "sZeroRecords":  "Tidak ditemukan data yang sesuai",
+        "sInfo":         "Menampilkan _START_ sampai _END_ dari _TOTAL_ entri",
+        "sInfoEmpty":    "Menampilkan 0 sampai 0 dari 0 entri",
+        "sInfoFiltered": "(disaring dari _MAX_ entri keseluruhan)",
+        "sInfoPostFix":  "",
+        "sUrl":          "",
+        "oPaginate": {
+            "sFirst":    "Pertama",
+            "sPrevious": "Sebelumnya",
+            "sNext":     "Selanjutnya",
+            "sLast":     "Terakhir"
+        }
+    },
+    "processing": true,
+    "ordering": false,
+    "ajax": {
+        url: `${rooturl}/manajemen_perizinan/list`,
+        type: 'POST',
+        data: function (d) { return { status: $('#filter_status').val() }; }
+    },
+    "columns": [
+        { "data": null, "defaultContent": '' },
+        { "data": 'diajukanAt', "render": function (d) { return d ? moment(d).format('DD/MM/YYYY HH:mm') : '<i>belum diajukan</i>'; } },
+        { "data": null, "render": function (r) {
+            return esc(r.nama_vendor || r.username_vendor) + (Number(r.diisi_admin) ? '<br/><span class="badge badge-light">diisi admin</span>' : '');
+        } },
+        { "data": 'nama_pemohon', "render": esc },
+        { "data": 'provider', "render": function (d) { return esc(d || '-'); } },
+        { "data": 'jml_ruas', "className": 'text-center' },
+        { "data": 'jml_tiang', "className": 'text-center' },
+        { "data": 'jml_kabel', "className": 'text-center', "render": function (d) { return Number(d).toLocaleString('id-ID'); } },
+        { "data": 'retribusi', "className": 'text-right', "render": rupiah },
+        { "data": 'no_sk', "render": function (d) { return esc(d || '-'); } },
+        { "data": 'status', "render": function (d) {
+            var s = STATUS[d] || { label: d, badge: 'light' };
+            return '<span class="badge badge-' + s.badge + '">' + s.label + '</span>';
+        } },
+        { "data": null, "render": function (r) {
+            var id = r.permohonan_id, html = '<div class="w-100-flex" style="justify-content: center;gap: 5px;">';
+            if (r.status !== 'draft') html += '<a href="' + rooturl + '/manajemen_perizinan/detail/' + id + '" class="btn btn-info btn-sm" title="Lihat & Proses"><i class="fas fa-eye"></i></a>';
+            if (r.bisa_ubah) {
+              html += '<a href="' + rooturl + '/perizinan/jaringan_utilitas/ruas_jalan/' + id + '" class="btn btn-warning btn-sm" title="Isi / Edit Data"><i class="fas fa-edit"></i></a>';
+              html += '<button type="button" class="btn btn-danger btn-sm" title="Hapus" onclick="hapus(' + id + ')"><i class="fas fa-trash"></i></button>';
+            }
+            if (r.status === 'disetujui') html += '<a href="' + rooturl + '/manajemen_perizinan/cetak_sk/' + id + '" target="_blank" class="btn btn-success btn-sm" title="Cetak SK"><i class="fas fa-print"></i></a>';
+            return html + '</div>';
+        } }
+    ],
+    "columnDefs": [
+        { "width": "30px", "targets": 0 },
+        { "width": "130px", "targets": 11 }
+    ]
+  });
+
+  data_table.on('draw.dt', function () {
+    let PageInfo = $('#list-data').DataTable().page.info();
+    data_table.column(0, { page: 'current' }).nodes().each(function (cell, i) {
+        cell.innerHTML = i + 1 + PageInfo.start;
+    });
+  });
+
+  $('#filter_status').on('change', function () { data_table.ajax.reload(); });
+
+  $.get(rooturl + '/manajemen_perizinan/vendor').done(function (res) {
+    res.data.forEach(function (v) {
+      $('#id_user_vendor').append($('<option>').val(v.id_user).text((v.fullname || v.username) + ' (' + v.username + ')'));
+    });
+    $('#id_user_vendor').select2({ dropdownParent: $('#modal-vendor') });
+  });
+
+  $('#form-vendor').on('submit', function (e) {
+    e.preventDefault();
+    var id = $('#id_user_vendor').val();
+    if (!id) return swal('Pilih vendor', 'Vendor pemohon wajib dipilih', 'warning');
+    window.location.href = rooturl + '/perizinan/jaringan_utilitas/baru?id_user=' + id;
+  });
+
+  async function hapus(id) {
+    const yakin = await swal({
+      title: 'Hapus Data',
+      text: 'Permohonan beserta ruas, tiang dan kabelnya akan dihapus. Lanjutkan?',
+      icon: 'warning', dangerMode: true, buttons: ['Tidak', 'Ya']
+    });
+    if (!yakin) return;
+    $.get(rooturl + '/perizinan/jaringan_utilitas/api/hapus/' + id)
+      .done(function () { swal(text_delete.title, text_delete.text, text_delete.icon); data_table.ajax.reload(); })
+      .fail(function (xhr) { swal('Gagal', (xhr.responseJSON && xhr.responseJSON.message) || 'Gagal menghapus data', 'error'); });
+  }
+</script>
