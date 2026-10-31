@@ -83,51 +83,63 @@ router.get('/jaringan_utilitas/edit/:id', function(req, res) {
   res.render('content/jaringan_utilitas/edit'); 
 });
 
-router.get('/jaringan_utilitas/provider/:id_permohonan', function(req, res) {
-  res.render('content/jaringan_utilitas/provider'); 
-});
-
-router.get('/jaringan_utilitas/provider/insert/:id_permohonan', function(req, res) {
-  res.render('content/jaringan_utilitas/insert_provider'); 
-});
-
-router.get('/jaringan_utilitas/provider/edit/:id_permohonan/:id', function(req, res) {
-  res.render('content/jaringan_utilitas/edit_provider'); 
-});
-
-router.get('/jaringan_utilitas/ruas_jalan/:id_permohonan/:id_provider', function(req, res) {
+router.get('/jaringan_utilitas/ruas_jalan/:id_permohonan', function(req, res) {
   res.render('content/jaringan_utilitas/ruas_jalan'); 
 });
 
-router.get('/jaringan_utilitas/ruas_jalan/insert/:id_permohonan/:id_provider', function(req, res) {
-  res.render('content/jaringan_utilitas/insert_ruas_jalan'); 
-});
-
-router.get('/jaringan_utilitas/ruas_jalan/edit/:id_permohonan/:id_provider/:id', function(req, res) {
-  res.render('content/jaringan_utilitas/edit_ruas_jalan'); 
-});
-
-router.get('/jaringan_utilitas/tiang/:id_permohonan/:id_provider/:id_ruas', function(req, res) {
+router.get('/jaringan_utilitas/ruas_jalan/tiang/:id_permohonan/:id_ruas_jalan', function(req, res) {
   res.render('content/jaringan_utilitas/tiang'); 
 });
 
-router.get('/jaringan_utilitas/tiang/insert/:id_permohonan/:id_provider/:id_ruas', function(req, res) {
-  res.render('content/jaringan_utilitas/insert_tiang'); 
-});
-
-router.get('/jaringan_utilitas/tiang/edit/:id_permohonan/:id_provider/:id_ruas/:id', function(req, res) {
-  res.render('content/jaringan_utilitas/edit_tiang'); 
-});
-
-router.get('/jaringan_utilitas/kabel/:id_permohonan/:id_provider/:id_ruas', function(req, res) {
+router.get('/jaringan_utilitas/ruas_jalan/kabel/:id_permohonan/:id_ruas_jalan', function(req, res) {
   res.render('content/jaringan_utilitas/kabel'); 
 });
 
-router.get('/jaringan_utilitas/kabel/insert/:id_permohonan/:id_provider/:id_ruas', function(req, res) {
-  res.render('content/jaringan_utilitas/insert_kabel'); 
-});
+// router.get('/jaringan_utilitas/provider/:id_permohonan', function(req, res) {
+//   res.render('content/jaringan_utilitas/provider'); 
+// });
 
-router.get('/jaringan_utilitas/kabel/edit/:id_permohonan/:id_provider/:id_ruas/:id', function(req, res) {
-  res.render('content/jaringan_utilitas/edit_kabel'); 
-});
+// router.get('/jaringan_utilitas/provider/insert/:id_permohonan', function(req, res) {
+//   res.render('content/jaringan_utilitas/insert_provider'); 
+// });
+
+// router.get('/jaringan_utilitas/provider/edit/:id_permohonan/:id', function(req, res) {
+//   res.render('content/jaringan_utilitas/edit_provider'); 
+// });
+
+// router.get('/jaringan_utilitas/ruas_jalan/:id_permohonan/:id_provider', function(req, res) {
+//   res.render('content/jaringan_utilitas/ruas_jalan'); 
+// });
+
+// router.get('/jaringan_utilitas/ruas_jalan/insert/:id_permohonan/:id_provider', function(req, res) {
+//   res.render('content/jaringan_utilitas/insert_ruas_jalan'); 
+// });
+
+// router.get('/jaringan_utilitas/ruas_jalan/edit/:id_permohonan/:id_provider/:id', function(req, res) {
+//   res.render('content/jaringan_utilitas/edit_ruas_jalan'); 
+// });
+
+// router.get('/jaringan_utilitas/tiang/:id_permohonan/:id_provider/:id_ruas', function(req, res) {
+//   res.render('content/jaringan_utilitas/tiang'); 
+// });
+
+// router.get('/jaringan_utilitas/tiang/insert/:id_permohonan/:id_provider/:id_ruas', function(req, res) {
+//   res.render('content/jaringan_utilitas/insert_tiang'); 
+// });
+
+// router.get('/jaringan_utilitas/tiang/edit/:id_permohonan/:id_provider/:id_ruas/:id', function(req, res) {
+//   res.render('content/jaringan_utilitas/edit_tiang'); 
+// });
+
+// router.get('/jaringan_utilitas/kabel/:id_permohonan/:id_provider/:id_ruas', function(req, res) {
+//   res.render('content/jaringan_utilitas/kabel'); 
+// });
+
+// router.get('/jaringan_utilitas/kabel/insert/:id_permohonan/:id_provider/:id_ruas', function(req, res) {
+//   res.render('content/jaringan_utilitas/insert_kabel'); 
+// });
+
+// router.get('/jaringan_utilitas/kabel/edit/:id_permohonan/:id_provider/:id_ruas/:id', function(req, res) {
+//   res.render('content/jaringan_utilitas/edit_kabel'); 
+// });
 module.exports = router;

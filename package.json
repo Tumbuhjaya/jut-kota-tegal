@@ -20,7 +20,7 @@
     "cron": "^4.3.3",
     "dbffile": "^1.12.0",
     "dbgeo": "~0.1.1",
-    "deasync": "^0.1.30",
+    "deasync": "^0.1.32",
     "ejs": "0.8.3",
     "errorhandler": "^1.5.1",
     "exceljs": "^4.4.0",

@@ -406,15 +406,15 @@
         /* Primary Button - Yellow Gradient */
         .btn-gradient-yellow {
             /* width: 100%; */
-            padding: 0.85rem;
+            padding:8px 20px;
             /* Gradient dibuat dengan varian warna dari #f7ca18 */
             background: linear-gradient(135deg, #f7ca18 0%, #e6b800 50%, #f7ca18 100%);
             background-size: 200% 200%;
             color: #111; /* Teks gelap agar kontras dan mudah dibaca di atas warna kuning */
             border: none;
-            border-radius: 12px;
-            font-size: 0.95rem;
-            font-weight: 700;
+            border-radius: 6px;
+            /* font-size: 0.95rem; */
+            font-weight: 600;
             letter-spacing: 0.02em;
             cursor: pointer;
             transition: all 0.4s ease;
@@ -514,82 +514,94 @@
                                             <li class="list-inline-item"><i class="fas fa-chevron-right" style="color: #0c1e35;"></i></li>
                                             <li class="list-inline-item"><a href="/perizinan/jaringan_utilitas" style="color: #0c1e35;font-weight: 300;">Data Permohonan Izin</a></li>
                                             <li class="list-inline-item"><i class="fas fa-chevron-right" style="color: #0c1e35;"></i></li>
-                                            <li class="list-inline-item"><a href="/perizinan/jaringan_utilitas/provider/1" style="color: #0c1e35;font-weight: 300;">Data Provider</a></li>
-                                            <li class="list-inline-item"><i class="fas fa-chevron-right" style="color: #0c1e35;"></i></li>
 
-                                            <li class="list-inline-item"><span style="color: #0c1e35;">Data Ruas Jalan</span></li>
+                                            <li class="list-inline-item"><span style="color: #0c1e35;">Ruas Jalan</span></li>
                                         </ul>
                                         <hr>
-                                    </div>
-
-                                    <div class="col-12">
-                                        <a href="/perizinan/jaringan_utilitas/ruas_jalan/insert/1/1" class="btn btn-primary fw-600"><i class="fas fa-plus"></i>&nbsp;&nbsp;Tambah Data Ruas Jalan</a>
                                     </div>
                                 </div>
 
                                 <div class="row mt-3">
                                     <div class="col-12">
                                         <div class="table-responsive">
-                                            <table class="table table-bordered table-striped table-hover table-primary" id="list-data">
+                                            <table class="table table-bordered table-striped table-hover table-primary">
                                                 <thead>
                                                     <tr>
-                                                        <th class="text-center">No.</th>
-                                                        <th class="text-center">Kecamatan</th>
-                                                        <th class="text-center">Ruas Jalan</th>
-                                                        <th class="text-center">Option</th>
+                                                        <th rowspan="3" class="text-center">No.</th>
+                                                        <th rowspan="3" style="min-width: 300px;" class="text-center">Option</th>
+                                                        <th rowspan="3" style="min-width: 250px;" class="text-center">Ruas Jalan</th>
+                                                        <th colspan="3" rowspan="3" class="text-center">Nomor Ruas</th>
+                                                        <th rowspan="2" class="text-center">Panjang SK Jalan</th>
+                                                        <th colspan="2" class="text-center">Komponen Jaringan Telekomunikasi</th>
+                                                        <th colspan="2" class="text-center">Besaran Tarif Retribusi Pemanfaatan Aset Daerah</th>
+                                                        <th colspan="2" class="text-center">Jumlah Komponen Retribusi</th>
+                                                        <th rowspan="3"class="text-center" style="min-width: 180px;">Jumlah Retribusi (Rp)</th>
+                                                    </tr>
+                                                    <tr>
+                                                        <th class="text-center">Jumlah Tiang</th>
+                                                        <th class="text-center">Jumlah Kabel</th>
+                                                        <th class="text-center">Pemasangan Tiang Telekomunikasi Diameter &le; 30 cm</th>
+                                                        <th class="text-center">Pemasangan Pipa/Kabel/Jaringan Utilitas Atas Tanah Diameter &le; 15cm</th>
+                                                        <th class="text-center">Pemasangan Tiang</th>
+                                                        <th class="text-center">Pemasangan Kabel</th>
+                                                    </tr>
+
+                                                    <tr>
+                                                        <th class="text-center">Km</th>
+                                                        <th class="text-center" style="min-width: 100px;">Unit</th>
+                                                        <th class="text-center" style="min-width: 100px;">Meter</th>
+                                                        <th class="text-center" style="min-width: 180px;">Rp</th>
+                                                        <th class="text-center" style="min-width: 180px;">Rp</th>
+                                                        <th class="text-center" style="min-width: 180px;">Unit/Tahun</th>
+                                                        <th class="text-center" style="min-width: 180px;">Meter/Tahun</th>
                                                     </tr>
                                                 </thead>
-
                                                 <tbody>
                                                     <tr>
                                                         <td>1.</td>
-                                                        <td>Margadana</td>
-                                                        <td>Abdul Syukur</td>
-                                                        <td>
-                                                           <div class="w-100-flex" style="justify-content: center;flex-wrap: wrap;align-items: center;gap: 5px;">
-                                                                <a href="/perizinan/jaringan_utilitas/ruas_jalan/edit/1/1/1" class="btn btn-warning fw-600 btn-sm"><i class="fas fa-edit"></i></a>
-                                                                <a href="#" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
-                                                            </div>
-                                                            <div class="w-100-flex mt-2" style="justify-content: center;flex-wrap: wrap;align-items: center;gap: 5px;">
-                                                                <a href="/perizinan/jaringan_utilitas/tiang/1/1/1" class="btn btn-success fw-600 btn-sm"><i class="fas fa-plus"></i>&nbsp;&nbsp;Tiang</a>
-                                                                <a href="/perizinan/jaringan_utilitas/kabel/1/1/1" class="btn btn-secondary fw-600 btn-sm"><i class="fas fa-plus"></i>&nbsp;&nbsp;Kabel</a>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-
-                                                     <tr>
-                                                        <td>2.</td>
-                                                        <td>Margadana</td>
-                                                        <td>Jombang</td>
-                                                        <td>
-                                                           <div class="w-100-flex" style="justify-content: center;flex-wrap: wrap;align-items: center;gap: 5px;">
-                                                                <a href="/perizinan/jaringan_utilitas/ruas_jalan/edit/1/1/2" class="btn btn-warning fw-600 btn-sm"><i class="fas fa-edit"></i></a>
-                                                                <a href="#" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
-                                                            </div>
-                                                            <div class="w-100-flex mt-2" style="justify-content: center;flex-wrap: wrap;align-items: center;gap: 5px;">
-                                                                <a href="/perizinan/jaringan_utilitas/tiang/1/1/2" class="btn btn-success fw-600 btn-sm"><i class="fas fa-plus"></i>&nbsp;&nbsp;Tiang</a>
-                                                                <a href="/perizinan/jaringan_utilitas/kabel/1/1/2" class="btn btn-secondary fw-600 btn-sm"><i class="fas fa-plus"></i>&nbsp;&nbsp;Kabel</a>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-
-                                                     <tr>
-                                                        <td>3.</td>
-                                                        <td>Margadana</td>
-                                                        <td>Kapten Samdikun</td>
                                                         <td>
                                                             <div class="w-100-flex" style="justify-content: center;flex-wrap: wrap;align-items: center;gap: 5px;">
-                                                                <a href="/perizinan/jaringan_utilitas/ruas_jalan/edit/1/1/3" class="btn btn-warning fw-600 btn-sm"><i class="fas fa-edit"></i></a>        
+                                                                <a href="/perizinan/jaringan_utilitas/ruas_jalan/tiang/1/1" class="btn btn-info btn-sm"><i class="fas fa-plus"></i> &nbsp;&nbsp;Digitasi Tiang</a>
+                                                                <a href="/perizinan/jaringan_utilitas/ruas_jalan/kabel/1/1" class="btn btn-dark btn-sm"><i class="fas fa-plus"></i> &nbsp;&nbsp;Digitasi Kabel</a>
                                                                 <a href="#" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
-                                                                
-                                                            </div>
-                                                            <div class="w-100-flex mt-2" style="justify-content: center;flex-wrap: wrap;align-items: center;gap: 5px;">
-                                                                <a href="/perizinan/jaringan_utilitas/tiang/1/1/3" class="btn btn-success fw-600 btn-sm"><i class="fas fa-plus"></i>&nbsp;&nbsp;Tiang</a>
-                                                                <a href="/perizinan/jaringan_utilitas/kabel/1/1/3" class="btn btn-secondary fw-600 btn-sm"><i class="fas fa-plus"></i>&nbsp;&nbsp;Kabel</a>
                                                             </div>
                                                         </td>
+                                                        <td>
+                                                            <select name="" id="" class="form-control autocomplete">
+                                                                <option value="">-- Pilih --</option>
+                                                            </select>
+                                                        </td>
+                                                        
+                                                        <td class="text-center">0</td>
+                                                        <td class="text-center">0</td>
+                                                        <td class="text-center">0</td>
+                                                        <td class="text-center">00</td>
+                                                        <td>
+                                                            <input type="text" class="form-control">
+                                                        </td>
+                                                        <td>
+                                                            <input type="text" class="form-control">
+                                                        </td>
+                                                        <td class="text-right">Rp 00.000,-</td>
+                                                        <td class="text-right">Rp 00.000,-</td>
+                                                        <td class="text-right">Rp 00.000,-</td>
+                                                        <td class="text-right">Rp 00.000,-</td>
+                                                        <td class="text-right">Rp 00.000,-</td>
                                                     </tr>
+                                                </tbody>
                                             </table>
+                                            <div class="w-100-flex" style="justify-content: flex-start;flex-wrap: wrap;align-items: flex-start;margin-bottom: 15px;">
+                                                                <a href="/perizinan/jaringan_utilitas/edit/1" class="btn btn-gradient-yellow btn-sm"><i class="fas fa-plus"></i> &nbsp;&nbsp;Tambah Baris Tabel</a>
+                                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <hr>
+                                        <div class="w-100-flex" style="justify-content: center;">
+                                            <button type="submit" class="btn btn-gradient" style="padding-left: 90px;padding-right: 90px;"><i class="fas fa-save"></i>&nbsp;&nbsp;Simpan</button>
                                         </div>
                                     </div>
                                 </div>
