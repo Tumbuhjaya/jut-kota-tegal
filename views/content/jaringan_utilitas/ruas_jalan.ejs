@@ -69,7 +69,7 @@
             background-size: 200% 200%;
             animation: gradientShift 15s ease infinite;
             background-attachment: fixed;
-            font-size: 16px;
+            font-size: 14px;
             color:#0c1e35
         }
 
@@ -462,6 +462,19 @@
         .fw-600{
             font-weight: 600;
         }
+
+        th{
+            /* padding:0 10px !important; */
+            padding-top:5px !important;
+            padding-bottom:5px !important;
+            font-size: 12px;
+        }
+
+        td{
+             padding-top:5px !important;
+            padding-bottom:5px !important;
+            font-size: 12px;
+        }
     </style>
 </head>
 
@@ -522,38 +535,59 @@
                                 </div>
 
                                 <div class="row mt-3">
+                                    <div class="col-12 col-lg-12 col-xl-12">
+                                        <div class="alert alert-success" role="alert">
+                                            <div class="form-group">
+                                                <label for="">Provider</label>
+                                                <select name="" id="" class="form-control autocomplete">
+                                                    <option value="">-- Pilih Provider --</option>
+                                                </select>
+                                            </div>
+
+                                            <hr>
+
+                                            <div class="form-group">
+                                                <label for="">Persyaratan Teknis</label><br/>
+                                                <button type="button" class="btn btn-success btn-sm" data-toggle="modal" data-target="#modalSyarat">
+                                                <i class="fas fa-plus"></i>&nbsp;&nbsp;Upload 
+                                                </button>   
+                                            </div>
+                                        </div>  
+                                    </div>
+                                </div>
+                                <div class="row mt-3">
                                     <div class="col-12">
                                         <div class="table-responsive">
-                                            <table class="table table-bordered table-striped table-hover table-primary">
+                                            <table class="table table-bordered table-striped table-hover table-primary table-sm">
                                                 <thead>
                                                     <tr>
                                                         <th rowspan="3" class="text-center">No.</th>
-                                                        <th rowspan="3" style="min-width: 300px;" class="text-center">Option</th>
+                                                        <th rowspan="3" style="min-width: 150px;" class="text-center">Option</th>
                                                         <th rowspan="3" style="min-width: 250px;" class="text-center">Ruas Jalan</th>
                                                         <th colspan="3" rowspan="3" class="text-center">Nomor Ruas</th>
                                                         <th rowspan="2" class="text-center">Panjang SK Jalan</th>
-                                                        <th colspan="2" class="text-center">Komponen Jaringan Telekomunikasi</th>
-                                                        <th colspan="2" class="text-center">Besaran Tarif Retribusi Pemanfaatan Aset Daerah</th>
-                                                        <th colspan="2" class="text-center">Jumlah Komponen Retribusi</th>
-                                                        <th rowspan="3"class="text-center" style="min-width: 180px;">Jumlah Retribusi (Rp)</th>
+                                                        <th colspan="2" class="text-center">Komponen</th>
+                                                        <th colspan="2" class="text-center">Retribusi</th>
+                                                        <th colspan="2" class="text-center">Jumlah Retribusi</th>
+                                                        <th rowspan="3"class="text-center" style="min-width: 180px;">Jumlah Total Retribusi (Rp)</th>
                                                     </tr>
                                                     <tr>
                                                         <th class="text-center">Jumlah Tiang</th>
                                                         <th class="text-center">Jumlah Kabel</th>
-                                                        <th class="text-center">Pemasangan Tiang Telekomunikasi Diameter &le; 30 cm</th>
-                                                        <th class="text-center">Pemasangan Pipa/Kabel/Jaringan Utilitas Atas Tanah Diameter &le; 15cm</th>
-                                                        <th class="text-center">Pemasangan Tiang</th>
-                                                        <th class="text-center">Pemasangan Kabel</th>
+                                                        <th class="text-center">Tiang D &le; 30 cm</th>
+                                                        <th class="text-center">Jaringan Utilitas Atas D &le; 15cm</th>
+                                                        <th class="text-center">Tiang</th>
+                                                        <th class="text-center">Kabel</th>
                                                     </tr>
 
                                                     <tr>
                                                         <th class="text-center">Km</th>
                                                         <th class="text-center" style="min-width: 100px;">Unit</th>
                                                         <th class="text-center" style="min-width: 100px;">Meter</th>
-                                                        <th class="text-center" style="min-width: 180px;">Rp</th>
-                                                        <th class="text-center" style="min-width: 180px;">Rp</th>
-                                                        <th class="text-center" style="min-width: 180px;">Unit/Tahun</th>
-                                                        <th class="text-center" style="min-width: 180px;">Meter/Tahun</th>
+                                                        <th class="text-center" style="min-width: 120px;">Rp</th>
+                                                        <th class="text-center" style="min-width: 120px;">Rp</th>
+                                                        <th class="text-center" style="min-width: 120px;">Unit/Tahun</th>
+                                                        <th class="text-center" style="min-width: 120px;">Meter/Tahun</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -561,9 +595,10 @@
                                                         <td>1.</td>
                                                         <td>
                                                             <div class="w-100-flex" style="justify-content: center;flex-wrap: wrap;align-items: center;gap: 5px;">
-                                                                <a href="/perizinan/jaringan_utilitas/ruas_jalan/tiang/1/1" class="btn btn-info btn-sm"><i class="fas fa-plus"></i> &nbsp;&nbsp;Digitasi Tiang</a>
-                                                                <a href="/perizinan/jaringan_utilitas/ruas_jalan/kabel/1/1" class="btn btn-dark btn-sm"><i class="fas fa-plus"></i> &nbsp;&nbsp;Digitasi Kabel</a>
-                                                                <a href="#" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
+                                                                <a href="/perizinan/jaringan_utilitas/ruas_jalan/tiang/1/1" class="btn btn-info" title="Digitasi Tiang"><i class="fas fa-map-pin"></i></a>
+                                                                
+                                                                <a href="/perizinan/jaringan_utilitas/ruas_jalan/kabel/1/1" class="btn btn-dark"  title="Digitasi Kabel"><i class="fas fa-grip-lines"></i> </a>
+                                                                <a href="#" class="btn btn-danger"><i class="fas fa-trash"></i></a>
                                                             </div>
                                                         </td>
                                                         <td>
@@ -591,8 +626,8 @@
                                                 </tbody>
                                             </table>
                                             <div class="w-100-flex" style="justify-content: flex-start;flex-wrap: wrap;align-items: flex-start;margin-bottom: 15px;">
-                                                                <a href="/perizinan/jaringan_utilitas/edit/1" class="btn btn-gradient-yellow btn-sm"><i class="fas fa-plus"></i> &nbsp;&nbsp;Tambah Baris Tabel</a>
-                                                            </div>
+                                                <a href="/perizinan/jaringan_utilitas/edit/1" class="btn btn-gradient-yellow btn-sm"><i class="fas fa-plus"></i> &nbsp;&nbsp;Tambah Baris Tabel</a>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -612,6 +647,147 @@
             </div>
         </section>
     <% include ../../template/footer.ejs %>
+
+    <!-- Modal -->
+    <div class="modal fade" id="modalSyarat" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Syarat Administratif & Teknis</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-12">
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <div class="w-100-flex"  style="justify-content: center;padding: 10px 15px;align-items: center;border-top-left-radius: 15px;border-top-right-radius: 15px;background-color: #f7ca18;">
+                                            <h6 style="font-size: 20px;font-weight: 600;">Persyaratan Administrasi</h6>
+                                            <hr>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <div class="form-group">
+                                            <label for="">Foto copy Kartu Tanda Penduduk (KTP) Pemohon</label>
+                                            <div class="custom-file">
+                                                <input type="file" class="custom-file-input" id="customFile">
+                                                <label class="custom-file-label" for="customFile">Pilih File</label>
+                                            </div>
+                                        </div>
+
+                                        <hr>
+
+                                        <div class="form-group">
+                                            <label for="">Foto Copy akte pendirian Badan Usaha/Badan Hukum</label>
+                                            <div class="custom-file">
+                                                <input type="file" class="custom-file-input" id="customFile">
+                                                <label class="custom-file-label" for="customFile">Pilih File</label>
+                                            </div>
+                                        </div>
+
+                                        <hr>
+
+                                       <div class="form-group">
+                                            <label for="">Surat Kuasa Pengurusan permohonan izin pembangunan/penempatan bangunan dan jaringan utlitas</label>
+                                            <div class="custom-file">
+                                                <input type="file" class="custom-file-input" id="customFile">
+                                                <label class="custom-file-label" for="customFile">Pilih File</label>
+                                                <small id="" class="form-text text-muted"><i>Dalam hal surat permohonan tidak ditanda tangani oleh penanggungjawab perusahaan</i></small>
+                                            </div>
+                                        </div>
+
+                                        
+                                        
+                                        <hr>
+
+                                        <div class="form-group">
+                                            <label for="">Surat Pernyataan kesanggupan memenuhi dan mematuhi semua persyaratan yang ditentukan dalam pembangunan/penempatan bangunan dan jaringan utilitas.</label>
+                                            <div class="custom-file">
+                                                <input type="file" class="custom-file-input" id="customFile">
+                                                <label class="custom-file-label" for="customFile">Pilih File</label>
+                                                <small id="" class="form-text text-muted"><i>Di atas kertas bermaterai sesuai peraturan yang berlaku</i></small>
+                                            </div>
+                                        </div>
+
+                                        <hr>
+
+                                        <div class="form-group">
+                                            <label for="">Surat pernyataan kesanggupan pembayaran Retribusi</label>
+                                            <div class="custom-file">
+                                                <input type="file" class="custom-file-input" id="customFile">
+                                                <label class="custom-file-label" for="customFile">Pilih File</label>
+                                                <small id="" class="form-text text-muted"><i>Dalam hal surat permohonan tidak ditanda tangani oleh penanggungjawab perusahaan</i></small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <div class="w-100-flex"  style="justify-content: center;padding: 10px 15px;align-items: center;border-top-left-radius: 15px;border-top-right-radius: 15px;background-color: #f7ca18;">
+                                            <h6 style="font-size: 20px;font-weight: 600;">Persyaratan Teknis</h6>
+                                            <hr>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <div class="form-group">
+                                            <label for="">Gambar Lokasi Pembangunan/Penempatan Bangunan dan Jaringan Utilitas</label>
+                                            <div class="custom-file">
+                                                <input type="file" class="custom-file-input" id="customFile">
+                                                <label class="custom-file-label" for="customFile">Pilih File</label>
+                                            </div>
+                                        </div>
+
+                                        <hr>
+
+                                       <div class="form-group">
+                                            <label for="">Rencana Teknis</label>
+                                            <div class="custom-file">
+                                                <input type="file" class="custom-file-input" id="customFile">
+                                                <label class="custom-file-label" for="customFile">Pilih File</label>
+                                                <small id="" class="form-text text-muted"><i>Gambar Konstruksi dan bahan Konstruksi bangunan dan jaringan utilitas</i></small>
+                                            </div>
+                                        </div>
+
+                                        <hr>
+
+                                        <div class="form-group">
+                                            <label for="">Jadwal Pelaksanaan Kegiatan</label>
+                                            <div class="custom-file">
+                                                <input type="file" class="custom-file-input" id="customFile">
+                                                <label class="custom-file-label" for="customFile">Pilih File</label>
+                                            </div>
+                                        </div>
+                                        
+                                        <hr>
+
+                                        <div class="form-group">
+                                            <label for="">Rencana Anggaran Biaya</label>
+                                            <div class="custom-file">
+                                                <input type="file" class="custom-file-input" id="customFile">
+                                                <label class="custom-file-label" for="customFile">Pilih File</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-primary">Simpan</button>
+            </div>
+            </div>
+        </div>
+    </div>
     <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
     <script src="<%= rooturl %>/javascripts/template/bootstrap.bundle.js"></script>
     <!-- Plugins This Page -->
