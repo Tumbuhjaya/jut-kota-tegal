@@ -3,6 +3,7 @@
 var path = require('path');
 var fs = require('fs');
 var multer = require('multer');
+var ExcelJS = require('exceljs');
 var sql_enak = require('../database/mysql_enak.js').connection;
 
 // Disimpan di luar folder public agar KTP/akta tidak bisa diakses tanpa login
@@ -80,6 +81,16 @@ var SQL_REKAP = `
        GROUP BY permohonan_id
     ) t ON t.permohonan_id = p.permohonan_id
    WHERE p.deletedAt IS NULL`;
+
+// Draft baru atas nama vendor `pemohon`; dibuat_oleh = vendor sendiri atau admin yang mengisi
+async function buatDraft(pemohon, dibuat_oleh) {
+  var [hasil] = await sql_enak.raw(
+    `INSERT INTO permohonan (id_user, dibuat_oleh, nama_pemohon, telp_pemohon, email_pemohon, status, insertedAt, lastUpdateAt)
+     VALUES (?, ?, ?, ?, ?, 'draft', NOW(), NOW())`,
+    [pemohon.id_user, dibuat_oleh, pemohon.fullname || null, pemohon.telp || null, pemohon.email || null]
+  );
+  return hasil.insertId;
+}
 
 async function getPermohonan(permohonan_id, id_user) {
   var sql = `SELECT * FROM permohonan WHERE permohonan_id = ? AND deletedAt IS NULL`;
@@ -275,6 +286,132 @@ async function getDataSk(permohonan) {
   return detail;
 }
 
+var STATUS_LABEL = { draft: 'Draft', diajukan: 'Menunggu Verifikasi', revisi: 'Perlu Revisi', disetujui: 'Disetujui', ditolak: 'Ditolak' };
+
+function tglIndo(d) {
+  if (!d) return '-';
+  d = new Date(d);
+  function dua(n) { return (n < 10 ? '0' : '') + n; }
+  return dua(d.getDate()) + '/' + dua(d.getMonth() + 1) + '/' + d.getFullYear();
+}
+
+// Workbook rincian ruas & retribusi satu permohonan; kolom mengikuti tabel ruas di form pengisian.
+// data = hasil getDataSk()
+async function buatExcel(data) {
+  var p = data.permohonan;
+  var wb = new ExcelJS.Workbook();
+  wb.calcProperties.fullCalcOnLoad = true;
+  var ws = wb.addWorksheet('Permohonan ' + p.permohonan_id);
+  ws.columns = [6, 35, 10, 18, 18, 12, 12, 12, 15, 18, 16, 16, 20].map(function (w) { return { width: w }; });
+
+  ws.mergeCells('A1:M1');
+  ws.getCell('A1').value = 'Rincian Permohonan Izin Jaringan Utilitas';
+  ws.getCell('A1').font = { bold: true, size: 14 };
+  [
+    ['Vendor', (p.vendor && (p.vendor.fullname || p.vendor.username)) || '-'],
+    ['Pemohon', (p.nama_pemohon || '-') + (p.jabatan_pemohon ? ' (' + p.jabatan_pemohon + ')' : '')],
+    ['Telp / Email', (p.telp_pemohon || '-') + ' / ' + (p.email_pemohon || '-')],
+    ['Provider', p.provider || '-'],
+    ['Status', STATUS_LABEL[p.status] || p.status],
+    ['Tgl. Diajukan', tglIndo(p.diajukanAt)],
+    ['No. / Tgl. SK', (p.no_sk || '-') + (p.tanggal_sk ? ' / ' + tglIndo(p.tanggal_sk) : '')]
+  ].forEach(function (info, i) {
+    var r = i + 2;
+    ws.getCell('A' + r).value = info[0];
+    ws.mergeCells('A' + r + ':B' + r);
+    ws.getCell('C' + r).value = ': ' + info[1];
+    ws.mergeCells('C' + r + ':M' + r);
+  });
+
+  // Header tabel 3 baris (baris 10-12)
+  var H = 10;
+  var header = [
+    ['A10:A12', 'No.'], ['B10:B12', 'Ruas Jalan'], ['C10:E11', 'Nomor Ruas'], ['F10', 'Panjang SK Jalan'],
+    ['G10:H10', 'Komponen'], ['I10:J10', 'Retribusi'], ['K10:L10', 'Jumlah Retribusi'], ['M10:M12', 'Jumlah Total Retribusi (Rp)'],
+    ['F11:F12', 'Km'], ['G11', 'Jumlah Tiang'], ['H11', 'Jumlah Kabel'], ['I11', 'Tiang D ≤ 30 cm'],
+    ['J11', 'Jaringan Utilitas Atas D ≤ 15cm'], ['K11', 'Tiang'], ['L11', 'Kabel'],
+    ['C12', 'No.'], ['D12', 'Titik Awal'], ['E12', 'Titik Akhir'], ['G12', 'Unit'], ['H12', 'Meter'],
+    ['I12', 'Rp'], ['J12', 'Rp'], ['K12', 'Rp/Tahun'], ['L12', 'Rp/Tahun']
+  ];
+  header.forEach(function (h) {
+    if (h[0].indexOf(':') > -1) ws.mergeCells(h[0]);
+    ws.getCell(h[0].split(':')[0]).value = h[1];
+  });
+  for (var hr = H; hr <= H + 2; hr++) {
+    ws.getRow(hr).eachCell({ includeEmpty: true }, function (c) {
+      c.font = { bold: true };
+      c.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+      c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9E1F2' } };
+    });
+  }
+
+  var awal = H + 3, r = awal;
+  data.ruas.forEach(function (x, i) {
+    var luar = Number(x.luar_ruas);
+    ws.getRow(r).values = [
+      i + 1,
+      luar ? 'Di luar ruas (Jalan Lain)' : (x.nm_ruas || '-'),
+      luar ? '-' : (x.no || '-'),
+      luar ? '-' : (x.tk_ruas_aw || '-'),
+      luar ? '-' : (x.tk_ruas_ak || '-'),
+      luar || x.panjang == null ? null : Number(x.panjang),
+      Number(x.jumlah_tiang),
+      Number(x.panjang_kabel),
+      Number(x.tarif_tiang),
+      Number(x.tarif_kabel),
+      { formula: 'G' + r + '*I' + r, result: Number(x.retribusi_tiang) },
+      { formula: 'H' + r + '*J' + r, result: Number(x.retribusi_kabel) },
+      { formula: 'K' + r + '+L' + r, result: Number(x.retribusi_total) }
+    ];
+    ws.getCell('A' + r).alignment = { horizontal: 'center' };
+    ['C', 'D', 'E'].forEach(function (k) { ws.getCell(k + r).alignment = { horizontal: 'center' }; });
+    r++;
+  });
+  if (!data.ruas.length) {
+    ws.mergeCells('A' + r + ':M' + r);
+    ws.getCell('A' + r).value = 'Belum ada ruas jalan';
+    ws.getCell('A' + r).alignment = { horizontal: 'center' };
+    r++;
+  }
+  var akhir = r - 1, t = data.total;
+  function jumlah(k, hasil) {
+    return data.ruas.length ? { formula: 'SUM(' + k + awal + ':' + k + akhir + ')', result: hasil } : 0;
+  }
+  ws.mergeCells('A' + r + ':F' + r);
+  ws.getCell('A' + r).value = 'Total';
+  ws.getCell('A' + r).alignment = { horizontal: 'right' };
+  ws.getCell('G' + r).value = jumlah('G', t.tiang);
+  ws.getCell('H' + r).value = jumlah('H', t.kabel);
+  ws.getCell('K' + r).value = jumlah('K', t.retribusi_tiang);
+  ws.getCell('L' + r).value = jumlah('L', t.retribusi_kabel);
+  ws.getCell('M' + r).value = jumlah('M', t.retribusi);
+  ws.getRow(r).eachCell({ includeEmpty: true }, function (c) {
+    c.font = { bold: true };
+    c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF2CC' } };
+  });
+  r++;
+  ws.mergeCells('A' + r + ':B' + r);
+  ws.getCell('A' + r).value = 'Terbilang';
+  ws.getCell('A' + r).font = { bold: true };
+  ws.mergeCells('C' + r + ':M' + r);
+  ws.getCell('C' + r).value = t.terbilang;
+  ws.getCell('C' + r).font = { italic: true };
+
+  for (var b = H; b <= r; b++) {
+    for (var k = 1; k <= 13; k++) {
+      ws.getRow(b).getCell(k).border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+    }
+  }
+  for (var n = awal; n < r; n++) {
+    ws.getCell('F' + n).numFmt = '#,##0.00';
+    ws.getCell('G' + n).numFmt = '#,##0';
+    ws.getCell('H' + n).numFmt = '#,##0.00';
+    ['I', 'J', 'K', 'L', 'M'].forEach(function (k) { ws.getCell(k + n).numFmt = '#,##0'; });
+  }
+  ws.views = [{ state: 'frozen', ySplit: H + 2 }];
+  return wb;
+}
+
 function kirimDokumen(res, dokumen) {
   if (!dokumen) return res.status(404).send('Dokumen tidak ditemukan');
   var file = path.join(DIR_DOKUMEN, path.basename(dokumen.nama_file));
@@ -289,8 +426,10 @@ module.exports = {
   NAMA_RUAS_LAIN: NAMA_RUAS_LAIN,
   getIdRuasLain: getIdRuasLain,
   getDataSk: getDataSk,
+  buatExcel: buatExcel,
   bisaUbah: bisaUbah,
   SQL_REKAP: SQL_REKAP,
+  buatDraft: buatDraft,
   getPermohonan: getPermohonan,
   getRuas: getRuas,
   getDokumen: getDokumen,

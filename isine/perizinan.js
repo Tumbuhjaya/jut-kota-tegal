@@ -148,33 +148,21 @@ router.get(JU, cek_pemohon, function (req, res) {
 });
 
 // Tombol "Tambah Data": buat draft lalu langsung ke halaman ruas jalan.
-// Admin wajib memilih vendor (?id_user=) yang menjadi pemohon.
+// Admin mengisi lewat halaman backoffice (/manajemen_perizinan/insert).
 router.get(JU + '/baru', cek_pemohon, async function (req, res) {
-  var user = getUser(req);
-  var kembali = isAdmin(req) ? '/manajemen_perizinan' : '/perizinan' + JU;
+  if (isAdmin(req)) return res.redirect('/manajemen_perizinan/insert?id_user=' + encodeURIComponent(req.query.id_user || ''));
   try {
-    var pemohon = user;
-    if (isAdmin(req)) {
-      var [v] = await sql_enak.raw(
-        `SELECT id_user, fullname, telp, email FROM user WHERE id_user = ? AND is_admin = 3 AND deleted = 0`,
-        [req.query.id_user || 0]
-      );
-      if (!v.length) return res.redirect(kembali);
-      pemohon = v[0];
-    }
-    var [hasil] = await sql_enak.raw(
-      `INSERT INTO permohonan (id_user, dibuat_oleh, nama_pemohon, telp_pemohon, email_pemohon, status, insertedAt, lastUpdateAt)
-       VALUES (?, ?, ?, ?, ?, 'draft', NOW(), NOW())`,
-      [pemohon.id_user, user.id_user, pemohon.fullname || null, pemohon.telp || null, pemohon.email || null]
-    );
-    res.redirect('/perizinan' + JU + '/ruas_jalan/' + hasil.insertId);
+    var user = getUser(req);
+    var id = await helper.buatDraft(user, user.id_user);
+    res.redirect('/perizinan' + JU + '/ruas_jalan/' + id);
   } catch (err) {
     console.log(err);
-    res.redirect(kembali);
+    res.redirect('/perizinan' + JU);
   }
 });
 
 router.get(JU + '/ruas_jalan/:id_permohonan', cek_pemohon, async function (req, res) {
+  if (isAdmin(req)) return res.redirect('/manajemen_perizinan/edit/' + req.params.id_permohonan);
   var p = await helper.getPermohonan(req.params.id_permohonan, idPemilik(req));
   if (!p) return res.redirect(isAdmin(req) ? '/manajemen_perizinan' : '/perizinan' + JU);
   var locals = await localsPengisian(req, p);
@@ -184,6 +172,7 @@ router.get(JU + '/ruas_jalan/:id_permohonan', cek_pemohon, async function (req, 
 
 function viewDigitasi(jenis) {
   return async function (req, res) {
+    if (isAdmin(req)) return res.redirect('/manajemen_perizinan/' + jenis + '/' + req.params.id_permohonan + '/' + req.params.id_ruas);
     var p = await helper.getPermohonan(req.params.id_permohonan, idPemilik(req));
     if (!p) return res.redirect(isAdmin(req) ? '/manajemen_perizinan' : '/perizinan' + JU);
     var [ruas] = await sql_enak.raw(

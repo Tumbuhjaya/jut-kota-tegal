@@ -3,11 +3,11 @@
     <section class="section">
       <div class="w-100" style="padding: 0 30px;">
         <div class="section-header" style="border-radius: 0.25rem;">
-          <h1>Edit Data</h1>
+          <h1><%= permohonan.status === 'draft' ? 'Tambah' : 'Edit' %> Permohonan Izin</h1>
           <div class="section-header-breadcrumb">
             <div class="breadcrumb-item active"><a href="/backoffice">Dashboard</a></div>
-            <div class="breadcrumb-item active"><a href="/manajemen_basic">Data</a></div>
-            <div class="breadcrumb-item">Edit Data</div>
+            <div class="breadcrumb-item active"><a href="/manajemen_perizinan">Permohonan Izin</a></div>
+            <div class="breadcrumb-item">Ruas Jalan</div>
           </div>
         </div>
       </div>
@@ -27,7 +27,8 @@
   </footer>
 
 <% include ../../template-backoffice/footer.ejs %>
-<div class="modal fade" id="modalSyarat" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+
+    <div class="modal fade" id="modalSyarat" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <form class="modal-content" id="form-syarat" enctype="multipart/form-data">
             <div class="modal-header">
@@ -37,8 +38,39 @@
                 </button>
             </div>
             <div class="modal-body">
+                <fieldset <%= bisa_ubah ? '' : 'disabled' %>>
                 <div class="row">
                     <div class="col-12">
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <div class="w-100-flex"  style="justify-content: center;padding: 10px 15px;align-items: center;border-top-left-radius: 15px;border-top-right-radius: 15px;background-color: #f7ca18;">
+                                            <h6 style="font-size: 20px;font-weight: 600;">Informasi Pemohon/Penanggung Jawab (Vendor)</h6>
+                                            <hr>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <div class="form-group">
+                                            <label for="nama_pemohon">Nama</label>
+                                            <input type="text" name="nama_pemohon" id="nama_pemohon" class="form-control" value="<%= permohonan.nama_pemohon || '' %>">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="jabatan_pemohon">Jabatan</label>
+                                            <input type="text" name="jabatan_pemohon" id="jabatan_pemohon" class="form-control" value="<%= permohonan.jabatan_pemohon || '' %>">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="telp_pemohon">No. Telepon (WhatsApp)</label>
+                                            <input type="text" name="telp_pemohon" id="telp_pemohon" class="form-control" value="<%= permohonan.telp_pemohon || '' %>">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="email_pemohon">Email</label>
+                                            <input type="email" name="email_pemohon" id="email_pemohon" class="form-control" value="<%= permohonan.email_pemohon || '' %>">
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div class="row mt-3">
                                     <div class="col-12">
                                         <div class="w-100-flex"  style="justify-content: center;padding: 10px 15px;align-items: center;border-top-left-radius: 15px;border-top-right-radius: 15px;background-color: #f7ca18;">
@@ -164,88 +196,292 @@
                                 </div>
                     </div>
                 </div>
+                </fieldset>
             </div>
             <div class="modal-footer">
                 <small class="text-muted mr-auto"><i>Format PDF / JPG / PNG, maks. 10 MB per file</i></small>
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>\
-                <button type="submit" class="btn btn-primary">Simpan</button>\
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                <% if (bisa_ubah) { %>
+                <button type="submit" class="btn btn-primary">Simpan</button>
+                <% } %>
             </div>
             </form>
         </div>
     </div>
-<script type="text/javascript">
-  var rooturl = ''
-  let data_basic = {}
-  window.onload =async function (params) {
-    await $.get('/api_basic/list?data_basic_id=').then(function (data) {
-      data_basic = data.data[0]
-      for (const i in data_basic) {
-        if (Object.hasOwnProperty.call(data_basic, i)) {
-          if (i.substring(0,4)=='foto') {
-            if (data_basic[i]) {
-              $('#lihat_'+i).append(`<div style="width: 30%;border:2px dashed #6777ef;padding: 5px;margin-top: 15px;border-radius: 0.25rem;"><img src="/foto/${data_basic[i]}" alt="" class="w-100" style="border-radius: 0.25rem;"></div>`)
+    <script type="text/javascript">
+        var rooturl = '';
+
+        var ID_PERMOHONAN = <%= permohonan.permohonan_id %>;
+        var BISA_UBAH = <%= bisa_ubah ? 'true' : 'false' %>;
+        var API = rooturl + '/perizinan/jaringan_utilitas/api/';
+        var URL_KEMBALI = rooturl + '/manajemen_perizinan';
+        var JUMLAH_DOKUMEN_WAJIB = 8; // semua kecuali surat kuasa
+
+        var masterRuas = {};      // id -> data master_retribusi
+        var opsiRuas = '';        // <option> ruas, dibangun sekali
+        var idRuasLain = '';      // id baris 'Jalan Lain' = pilihan di luar ruas
+        var adaPerubahan = false; // ada isian tabel yang belum disimpan
+
+        function rupiah(n) {
+            return 'Rp ' + Number(n || 0).toLocaleString('id-ID', { maximumFractionDigits: 0 }) + ',-';
+        }
+        function angka(n) {
+            return Number(n || 0).toLocaleString('id-ID', { maximumFractionDigits: 2 });
+        }
+        function esc(t) {
+            return $('<div>').text(t == null ? '' : t).html();
+        }
+        function pesanGagal(xhr, def) {
+            return (xhr && xhr.responseJSON && xhr.responseJSON.message) || def;
+        }
+
+        // ---------------- tabel ruas ----------------
+        function tambahBaris(row) {
+            row = row || {};
+            var dis = BISA_UBAH ? '' : 'disabled';
+            var tiangKunci = row.digitasi_tiang > 0 || !BISA_UBAH ? 'readonly' : '';
+            var kabelKunci = row.digitasi_kabel > 0 || !BISA_UBAH ? 'readonly' : '';
+            var $tr = $('<tr>' +
+                '<td class="no"></td>' +
+                '<td><div class="w-100-flex" style="justify-content: center;flex-wrap: wrap;align-items: center;gap: 5px;">' +
+                    '<button type="button" class="btn btn-info btn-digitasi" data-jenis="tiang" title="Digitasi Tiang"><i class="fas fa-map-pin"></i></button>' +
+                    '<button type="button" class="btn btn-dark btn-digitasi" data-jenis="kabel" title="Digitasi Kabel"><i class="fas fa-grip-lines"></i></button>' +
+                    (BISA_UBAH ? '<button type="button" class="btn btn-danger btn-hapus" title="Hapus"><i class="fas fa-trash"></i></button>' : '') +
+                '</div></td>' +
+                '<td><select class="form-control pilih-ruas" ' + dis + '><option value="' + idRuasLain + '">-- Di luar ruas (Jalan Lain) --</option>' + opsiRuas + '</select></td>' +
+                '<td class="text-center c-no"></td>' +
+                '<td class="text-center c-aw"></td>' +
+                '<td class="text-center c-ak"></td>' +
+                '<td class="text-center c-panjang"></td>' +
+                '<td><input type="number" min="0" step="1" class="form-control in-tiang" ' + tiangKunci + '>' +
+                    (row.digitasi_tiang > 0 ? '<small class="text-muted">digitasi: ' + row.digitasi_tiang + ' titik</small>' : '') + '</td>' +
+                '<td><input type="number" min="0" step="0.01" class="form-control in-kabel" ' + kabelKunci + '>' +
+                    (row.digitasi_kabel > 0 ? '<small class="text-muted">digitasi: ' + row.digitasi_kabel + ' garis</small>' : '') + '</td>' +
+                '<td class="text-right c-tarif-tiang"></td>' +
+                '<td class="text-right c-tarif-kabel"></td>' +
+                '<td class="text-right c-ret-tiang"></td>' +
+                '<td class="text-right c-ret-kabel"></td>' +
+                '<td class="text-right c-ret-total"></td>' +
+                '</tr>');
+            $tr.data('row', row);
+            $tr.find('.pilih-ruas').val(row.ruas_id || idRuasLain);
+            $tr.find('.in-tiang').val(row.jumlah_tiang || 0);
+            $tr.find('.in-kabel').val(row.panjang_kabel || 0);
+            $('#tbody_ruas').append($tr);
+            $tr.find('.pilih-ruas').select2({ width: '100%' });
+            if (!row.permohonan_ruas_id) adaPerubahan = true;
+            hitungBaris($tr);
+            hitungTotal();
+        }
+
+        // Tarif yang sudah tersimpan dipakai selama ruasnya tidak diganti
+        function tarifBaris($tr) {
+            var row = $tr.data('row') || {};
+            var ruas_id = $tr.find('.pilih-ruas').val();
+            if (row.permohonan_ruas_id && String(row.ruas_id || '') === String(ruas_id)) {
+                return { tiang: Number(row.tarif_tiang), kabel: Number(row.tarif_kabel) };
             }
-          }else if(i.substring(i.length-2,i.length)=='id'){
-            $('#'+i).val(data_basic[i]).select2()
-          }
-          // else if (i.substring(0,3)=='ket'){        
-          //   CKEDITOR.instances[i].setData(data_basic[i])
-          // }
-          else{
-            $('#'+i).val(data_basic[i])
-          }
+            var m = masterRuas[ruas_id];
+            return { tiang: m ? Number(m.t_k30cm || 0) : 0, kabel: m ? Number(m.jr_atk15cm || 0) : 0 };
         }
-      }
-    })
-  }
 
-  async function submit() {
-    const will_update = await swal({
-      title: "Edit Data",
-      text: "Apakah anda akan mengedit data ini?",
-      icon: "warning",
-      dangerMode: true,
-      buttons: ["Tidak", "Ya"],
-    });        
-    
-    if ( will_update) {
-      $('#button_submit').empty()
-      $('#button_submit').append('<button class="btn btn-primary btn-embossed" disabled>Simpan</button>')
-    
-      let formData = new FormData();    
-      // nama kolom db
-      let arr = ['NamaKolomDb1', 'NamaKolomDb2', 'NamaKolomDb3']
-    
-      formData.append('data_basic_id', data_basic.data_basic_id);
+        function hitungBaris($tr) {
+            var m = masterRuas[$tr.find('.pilih-ruas').val()] || {};
+            var tarif = tarifBaris($tr);
+            var tiang = Number($tr.find('.in-tiang').val() || 0);
+            var kabel = Number($tr.find('.in-kabel').val() || 0);
+            $tr.find('.c-no').text(m.no || '-');
+            $tr.find('.c-aw').text(m.tk_ruas_aw || '-');
+            $tr.find('.c-ak').text(m.tk_ruas_ak || '-');
+            $tr.find('.c-panjang').text(m.panjang != null ? angka(m.panjang) : '-');
+            $tr.find('.c-tarif-tiang').text(rupiah(tarif.tiang));
+            $tr.find('.c-tarif-kabel').text(rupiah(tarif.kabel));
+            $tr.find('.c-ret-tiang').text(rupiah(tiang * tarif.tiang));
+            $tr.find('.c-ret-kabel').text(rupiah(kabel * tarif.kabel));
+            $tr.find('.c-ret-total').text(rupiah(tiang * tarif.tiang + kabel * tarif.kabel));
+        }
 
-      for (let i = 0; i < arr.length; i++) {
-        if (arr[i].substring(0,4)=='foto') {
-          if ( $(`#`+arr[i])[0].files[0]){
-            formData.append(arr[i], $(`#`+arr[i])[0].files[0]);
-          } 
+        function hitungTotal() {
+            var t = { tiang: 0, kabel: 0, rt: 0, rk: 0 };
+            $('#tbody_ruas tr').each(function (i) {
+                var $tr = $(this);
+                var tarif = tarifBaris($tr);
+                var tiang = Number($tr.find('.in-tiang').val() || 0);
+                var kabel = Number($tr.find('.in-kabel').val() || 0);
+                $tr.find('.no').text((i + 1) + '.');
+                t.tiang += tiang; t.kabel += kabel;
+                t.rt += tiang * tarif.tiang; t.rk += kabel * tarif.kabel;
+            });
+            $('#total_tiang').text(angka(t.tiang));
+            $('#total_kabel').text(angka(t.kabel) + ' m');
+            $('#total_ret_tiang').text(rupiah(t.rt));
+            $('#total_ret_kabel').text(rupiah(t.rk));
+            $('#total_ret').text(rupiah(t.rt + t.rk));
         }
-        // else if (arr[i].substring(0,3)=='ket'){        
-        //   formData.append(arr[i] ,CKEDITOR.instances[arr[i]].getData())
-        // }
-        else{
-          formData.append(arr[i],$('#'+arr[i]).val())
-        }
-      }
 
-      $.ajax({
-        type: 'POST',
-        enctype: 'multipart/form-data',
-        url: rooturl+'/api_basic/edit',
-        data: formData,
-        processData: false,
-        contentType: false,
-        success: function(data) {
-          swal({title:text_edit.title,text:text_edit.text, icon: text_edit.icon, type:text_edit.type})
-          window.location.href = rooturl+'/manajemen_basic';
-        },error: function(data) {
-          swal({title:text_error.title,text:text_error.text, icon: text_error.icon, type:text_error.type})
+        function isiTabel(rows) {
+            $('#tbody_ruas').empty();
+            rows.forEach(function (r) { tambahBaris(r); });
+            if (!rows.length && BISA_UBAH) tambahBaris();
+            adaPerubahan = !rows.length && BISA_UBAH;
+            hitungTotal();
         }
-      })      
-    } 
-  }
-</script>
+
+        $('#tbody_ruas').on('change input', '.pilih-ruas, .in-tiang, .in-kabel', function () {
+            adaPerubahan = true;
+            hitungBaris($(this).closest('tr'));
+            hitungTotal();
+        });
+
+        $('#provider_id').on('change', function () { adaPerubahan = true; });
+
+        $('#tbody_ruas').on('click', '.btn-hapus', async function () {
+            var $tr = $(this).closest('tr');
+            var row = $tr.data('row') || {};
+            if (!row.permohonan_ruas_id) { $tr.remove(); hitungTotal(); return; }
+            var yakin = await swal({
+                title: 'Hapus Ruas',
+                text: 'Ruas beserta digitasi tiang & kabelnya akan dihapus. Lanjutkan?',
+                icon: 'warning', dangerMode: true, buttons: ['Tidak', 'Ya']
+            });
+            if (!yakin) return;
+            $.get(API + 'ruas/hapus/' + ID_PERMOHONAN + '/' + row.permohonan_ruas_id)
+                .done(function () { $tr.remove(); hitungTotal(); swal('Berhasil', 'Ruas dihapus', 'success'); })
+                .fail(function (xhr) { swal('Gagal', pesanGagal(xhr, 'Gagal menghapus ruas'), 'error'); });
+        });
+
+        // Tombol tiang / kabel: simpan dulu jika ada perubahan, lalu buka peta ruas tsb.
+        $('#tbody_ruas').on('click', '.btn-digitasi', async function () {
+            var $tr = $(this).closest('tr');
+            var jenis = $(this).data('jenis');
+            var index = $('#tbody_ruas tr').index($tr);
+            var rows = null;
+            if (BISA_UBAH && adaPerubahan) {
+                rows = await simpan(false);
+                if (!rows) return;
+            }
+            var row = rows ? rows[index] : $tr.data('row');
+            if (!row || !row.permohonan_ruas_id) return;
+            window.location.href = rooturl + '/manajemen_perizinan/' + jenis + '/' + ID_PERMOHONAN + '/' + row.permohonan_ruas_id;
+        });
+
+        // Mengembalikan daftar ruas tersimpan, atau null jika gagal
+        async function simpan(tampilkanPesan) {
+            var ruas = [];
+            $('#tbody_ruas tr').each(function () {
+                var $tr = $(this);
+                ruas.push({
+                    permohonan_ruas_id: ($tr.data('row') || {}).permohonan_ruas_id || null,
+                    ruas_id: $tr.find('.pilih-ruas').val() || null,
+                    jumlah_tiang: $tr.find('.in-tiang').val(),
+                    panjang_kabel: $tr.find('.in-kabel').val()
+                });
+            });
+            try {
+                var res = await $.ajax({
+                    url: API + 'simpan/' + ID_PERMOHONAN,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ provider_id: $('#provider_id').val() || null, ruas: ruas })
+                });
+                isiTabel(res.data);
+                adaPerubahan = false;
+                if (tampilkanPesan) swal('Berhasil', 'Data berhasil disimpan', 'success');
+                return res.data;
+            } catch (xhr) {
+                swal('Gagal', pesanGagal(xhr, 'Gagal menyimpan data'), 'error');
+                return null;
+            }
+        }
+
+        async function ajukan() {
+            var yakin = await swal({
+                title: 'Ajukan Permohonan',
+                text: 'Setelah diajukan, data tidak bisa diubah sampai diproses admin. Lanjutkan?',
+                icon: 'info', buttons: ['Batal', 'Ajukan']
+            });
+            if (!yakin) return;
+            if (!(await simpan(false))) return;
+            $.post(API + 'ajukan/' + ID_PERMOHONAN)
+                .done(function () {
+                    swal('Berhasil', 'Permohonan berhasil diajukan', 'success').then(function () {
+                        window.location.href = URL_KEMBALI;
+                    });
+                })
+                .fail(function (xhr) { swal('Belum lengkap', pesanGagal(xhr, 'Gagal mengajukan permohonan'), 'warning'); });
+        }
+
+        // ---------------- dokumen persyaratan ----------------
+        function tampilDokumen(dokumen) {
+            $('.dok-info').html('<span class="text-danger"><i>Belum diupload</i></span>');
+            var wajib = 0;
+            dokumen.forEach(function (d) {
+                if (d.jenis_dokumen !== 'surat_kuasa') wajib++;
+                $('.dok-info[data-jenis=' + d.jenis_dokumen + ']').html(
+                    'File saat ini: <a href="' + rooturl + '/manajemen_perizinan/dokumen/' +
+                    d.permohonan_dokumen_id + '" target="_blank">' + esc(d.nama_asli) + '</a>');
+            });
+            $('#info_dokumen').html(wajib + '/' + JUMLAH_DOKUMEN_WAJIB + ' dokumen wajib terupload');
+        }
+
+        $('#form-syarat').on('change', '.custom-file-input', function () {
+            $(this).next('.custom-file-label').text(this.files[0] ? this.files[0].name : 'Pilih File');
+        });
+
+        $('#form-syarat').on('submit', function (e) {
+            e.preventDefault();
+            var $btn = $(this).find('[type=submit]').prop('disabled', true);
+            $.ajax({
+                url: API + 'syarat/' + ID_PERMOHONAN,
+                type: 'POST',
+                data: new FormData(this),
+                processData: false,
+                contentType: false
+            }).done(function (res) {
+                tampilDokumen(res.data);
+                $('#form-syarat .custom-file-input').val('').next('.custom-file-label').text('Pilih File');
+                $('#modalSyarat').modal('hide');
+                swal('Berhasil', 'Persyaratan berhasil disimpan', 'success');
+            }).fail(function (xhr) {
+                swal('Gagal', pesanGagal(xhr, 'Gagal menyimpan persyaratan'), 'error');
+            }).always(function () { $btn.prop('disabled', false); });
+        });
+
+        // ---------------- muat data awal ----------------
+        // jQuery 3.2.1 di template backoffice mengabaikan async function sebagai handler ready,
+        // jadi dibungkus function biasa
+        $(document).ready(function () { muatData(); });
+
+        async function muatData() {
+            console.log('aaaaaaaaaaaaaaaaa');
+            
+            try {
+                var [prov, master, detail] = await Promise.all([
+                    $.get(API + 'provider'),
+                    $.get(API + 'master_ruas'),
+                    $.get(API + 'detail/' + ID_PERMOHONAN)
+                ]);
+                console.log(prov, master, detail);
+                
+                prov.data.forEach(function (p) {
+                    $('#provider_id').append($('<option>').val(p.provider_id).text(p.provider));
+                });
+                $('#provider_id').val(detail.data.permohonan.provider_id || '').select2({ width: '100%' });
+
+                master.data.forEach(function (m) {
+                    masterRuas[m.id] = m;
+                    if (m.luar_ruas) { idRuasLain = m.id; return; }
+                    opsiRuas += '<option value="' + m.id + '">' + esc((m.no ? m.no + ' - ' : '') + m.nm_ruas) + '</option>';
+                });
+                isiTabel(detail.data.ruas);
+                tampilDokumen(detail.data.dokumen);
+            } catch (xhr) {
+                swal('Gagal', pesanGagal(xhr, 'Gagal memuat data'), 'error');
+            }
+        }
+
+        window.addEventListener('beforeunload', function (e) {
+            if (BISA_UBAH && adaPerubahan) { e.preventDefault(); e.returnValue = ''; }
+        });
+
+    </script>

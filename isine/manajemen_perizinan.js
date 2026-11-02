@@ -38,24 +38,75 @@ router.get('/', cek_admin, function (req, res) {
   res.render('content-backoffice/manajemen_perizinan/list', { user: getUser(req) });
 });
 
-router.get('/insert', cek_admin, function (req, res) {
-  res.render('content-backoffice/manajemen_perizinan/insert', { user: getUser(req) });
+// Admin mengisi permohonan atas nama vendor (?id_user=): buat draft lalu ke halaman edit.
+// API simpan / syarat / digitasi memakai /perizinan/jaringan_utilitas/api yang juga melayani admin.
+router.get('/insert', cek_admin, async function (req, res) {
+  try {
+    var [v] = await sql_enak.raw(
+      `SELECT id_user, fullname, telp, email FROM user WHERE id_user = ? AND is_admin = 3 AND deleted = 0`,
+      [req.query.id_user || 0]
+    );
+    if (!v.length) return res.redirect('/manajemen_perizinan');
+    var id = await helper.buatDraft(v[0], getUser(req).id_user);
+    res.redirect('/manajemen_perizinan/edit/' + id);
+  } catch (err) {
+    console.log(err);
+    res.redirect('/manajemen_perizinan');
+  }
 });
 
-router.get('/edit/:id', cek_admin, function (req, res) {
-  res.render('content-backoffice/manajemen_perizinan/edit', { user: getUser(req) });
+async function localsPengisian(p) {
+  var [v] = await sql_enak.raw(`SELECT fullname, username FROM user WHERE id_user = ?`, [p.id_user]);
+  return {
+    permohonan: p,
+    bisa_ubah: helper.bisaUbah(p),
+    atas_nama: v[0] ? (v[0].fullname || v[0].username) : '-'
+  };
+}
+
+router.get('/edit/:id', cek_admin, async function (req, res) {
+  var p = await helper.getPermohonan(req.params.id);
+  if (!p) return res.redirect('/manajemen_perizinan');
+  var locals = await localsPengisian(p);
+  locals.user = getUser(req);
+  res.render('content-backoffice/manajemen_perizinan/edit', locals);
 });
 
-router.get('/tiang/:id', cek_admin, function (req, res) {
-  res.render('content-backoffice/manajemen_perizinan/tiang', { user: getUser(req) });
-});
+function viewDigitasi(jenis) {
+  return async function (req, res) {
+    var p = await helper.getPermohonan(req.params.id);
+    if (!p) return res.redirect('/manajemen_perizinan');
+    var [ruas] = await sql_enak.raw(
+      `SELECT r.permohonan_ruas_id, r.ruas_id, mr.nm_ruas FROM permohonan_ruas r
+         LEFT JOIN master_retribusi mr ON mr.id = r.ruas_id
+        WHERE r.permohonan_ruas_id = ? AND r.permohonan_id = ? AND r.deletedAt IS NULL`,
+      [req.params.id_ruas, p.permohonan_id]
+    );
+    if (!ruas.length) return res.redirect('/manajemen_perizinan/edit/' + p.permohonan_id);
+    // Jalan Lain hanya punya titik dummy: peta tidak di-zoom ke sana
+    if (ruas[0].nm_ruas === helper.NAMA_RUAS_LAIN) ruas[0].ruas_id = null;
+    var locals = await localsPengisian(p);
+    locals.user = getUser(req);
+    locals.ruas = ruas[0];
+    locals.jenis = jenis;
+    res.render('content-backoffice/manajemen_perizinan/digitasi', locals);
+  };
+}
+router.get('/tiang/:id/:id_ruas', cek_admin, viewDigitasi('tiang'));
+router.get('/kabel/:id/:id_ruas', cek_admin, viewDigitasi('kabel'));
 
-router.get('/kabel/:id', cek_admin, function (req, res) {
-  res.render('content-backoffice/manajemen_perizinan/kabel', { user: getUser(req) });
-});
-
-router.get('/export_excel/:id', cek_admin, function (req, res) {
-  res.render('content-backoffice/manajemen_perizinan/export_excel', { user: getUser(req) });
+// Unduh rincian ruas & retribusi satu permohonan sebagai file Excel (.xlsx)
+router.get('/export_excel/:id', cek_admin, async function (req, res) {
+  try {
+    var p = await helper.getPermohonan(req.params.id);
+    if (!p) return res.status(404).send('Permohonan tidak ditemukan');
+    var wb = await helper.buatExcel(await helper.getDataSk(p));
+    var nama = 'Permohonan_Izin_' + p.permohonan_id + '_' + new Date().toISOString().slice(0, 10) + '.xlsx';
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="' + nama + '"');
+    await wb.xlsx.write(res);
+    res.end();
+  } catch (err) { gagal(res, err); }
 });
 
 router.get('/detail/:id', cek_admin, async function (req, res) {

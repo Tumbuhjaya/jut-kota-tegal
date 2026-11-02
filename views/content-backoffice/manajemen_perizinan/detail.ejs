@@ -262,7 +262,7 @@
       '<th class="text-right">' + rupiah(t.rt + t.rk) + '</th><th></th></tr>');
 
     $('#btn_cetak').attr('href', rooturl + '/manajemen_perizinan/cetak_sk/' + ID_PERMOHONAN).toggle(p.status === 'disetujui');
-    $('#btn_edit').attr('href', rooturl + '/perizinan/jaringan_utilitas/ruas_jalan/' + ID_PERMOHONAN).toggle(p.status === 'revisi');
+    $('#btn_edit').attr('href', rooturl + '/manajemen_perizinan/edit/' + ID_PERMOHONAN).toggle(p.status === 'revisi');
     $('#wrap_proses').toggle(['diajukan', 'disetujui', 'ditolak'].indexOf(p.status) !== -1);
     $('#no_sk').val(p.no_sk || '');
     $('#tanggal_sk').val(p.tanggal_sk ? moment(p.tanggal_sk).format('YYYY-MM-DD') : '');

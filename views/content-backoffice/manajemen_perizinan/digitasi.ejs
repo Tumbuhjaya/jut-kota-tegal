@@ -3,11 +3,12 @@
     <section class="section">
       <div class="w-100" style="padding: 0 30px;">
         <div class="section-header" style="border-radius: 0.25rem;">
-          <h1>Digitasi Tiang</h1>
+          <h1>Digitasi <%= jenis === 'tiang' ? 'Tiang' : 'Kabel' %></h1>
           <div class="section-header-breadcrumb">
             <div class="breadcrumb-item active"><a href="/backoffice">Dashboard</a></div>
-            <div class="breadcrumb-item active"><a href="/manajemen_basic">Data</a></div>
-            <div class="breadcrumb-item">Tambah Data</div>
+            <div class="breadcrumb-item active"><a href="/manajemen_perizinan">Permohonan Izin</a></div>
+            <div class="breadcrumb-item active"><a href="/manajemen_perizinan/edit/<%= permohonan.permohonan_id %>">Ruas Jalan</a></div>
+            <div class="breadcrumb-item">Digitasi <%= jenis === 'tiang' ? 'Tiang' : 'Kabel' %></div>
           </div>
         </div>
       </div>
@@ -17,16 +18,56 @@
             <div class="col-12 col-lg-12 col-xl-12">
                 <div class="card">
                     <div class="card-body">
+                        <div class="alert alert-success" role="alert">
+                            Ruas: <strong><%= ruas.ruas_id ? ruas.nm_ruas : 'Di luar ruas (Jalan Lain)' %></strong>
+                            <br/><i class="fas fa-user-shield"></i>&nbsp; Diisi admin atas nama vendor <strong><%= atas_nama %></strong>
+                            <% if (bisa_ubah) { %>
+                            <br/><small><i>Gunakan tombol <%= jenis === 'tiang' ? 'marker' : 'garis' %> di kiri atas peta untuk menambah <%= jenis %>, tombol edit untuk menggeser, lalu klik Simpan.</i></small>
+                            <% } %>
+                        </div>
                         <div class="row">
                             <div class="col-12">
-                                <div style="width: 100%;height: 500px;" id="map"></div>
+                                <div style="width: 100%;height: 500px;background-color: whitesmoke;" id="map"></div>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-striped table-hover table-primary table-sm" id="tabel_digitasi">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-center" style="width: 50px;">No.</th>
+                                                <% if (jenis === 'tiang') { %>
+                                                <th class="text-center">Koordinat</th>
+                                                <th class="text-center" style="width: 120px;">Jumlah Tiang</th>
+                                                <% } else { %>
+                                                <th class="text-center" style="width: 140px;">Panjang (m)</th>
+                                                <th class="text-center" style="width: 120px;">Jumlah Kabel</th>
+                                                <% } %>
+                                                <th class="text-center">Keterangan</th>
+                                                <th class="text-center" style="width: 110px;">Option</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <th colspan="2" class="text-right">Total</th>
+                                                <th class="text-center" id="total_digitasi">0</th>
+                                                <th colspan="2"></th>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                         <div class="row">
                             <div class="col-12">
                                 <hr>
                                 <div class="w-100-flex" style="justify-content: center;flex-wrap: wrap;gap: 10px;">
-                                    <button type="button" class="btn btn-primary" style="padding-left: 90px;padding-right: 90px;"><i class="fas fa-save"></i>&nbsp;&nbsp;Simpan</button>     
+                                    <a href="/manajemen_perizinan/edit/<%= permohonan.permohonan_id %>" class="btn btn-secondary"><i class="fas fa-arrow-left"></i>&nbsp;&nbsp;Kembali</a>
+                                    <% if (bisa_ubah) { %>
+                                    <button type="button" class="btn btn-primary" style="padding-left: 90px;padding-right: 90px;" onclick="simpanDigitasi()"><i class="fas fa-save"></i>&nbsp;&nbsp;Simpan</button>
+                                    <% } %>
                                 </div>
                             </div>
                         </div>
@@ -49,57 +90,56 @@
   </footer>
 
 <% include ../../template-backoffice/footer.ejs %>
-<script type="text/javascript">
-  var rooturl = ''
+    <script type="text/javascript">
+        var rooturl = '';
 
-  async function submit() {
-    const will_insert = await swal({
-      title: "Tambah Data",
-      text: "Apakah anda akan menambahkan data ini?",
-      icon: "warning",
-      dangerMode: true,
-      buttons: ["Tidak", "Ya"],
-    });
+        // Konfigurasi digitasi (dipakai kontrol gambar di bawah & script digitasi di akhir halaman)
+        var ID_PERMOHONAN = <%= permohonan.permohonan_id %>;
+        var ID_RUAS = <%= ruas.permohonan_ruas_id %>;
+        var RUAS_MASTER_ID = <%= ruas.ruas_id || 'null' %>;
+        var JENIS = '<%= jenis %>';
+        var BISA_UBAH = <%= bisa_ubah ? 'true' : 'false' %>;
+        var API_DIGITASI = rooturl + '/perizinan/jaringan_utilitas/api/digitasi/' + JENIS + '/' + ID_PERMOHONAN + '/' + ID_RUAS;
 
-    if ( will_insert) {
-      $('#button_submit').empty()
-      $('#button_submit').append('<button class="btn btn-primary btn-embossed" disabled>Simpan</button>')
-      
-      let formData = new FormData();    
-      // nama kolom db
-      let arr = ['NamaKolomDb1', 'NamaKolomDb2', 'NamaKolomDb3']
-      for (let i = 0; i < arr.length; i++) {
-        if (arr[i].substring(0,4)=='foto') {
-          if ( $(`#`+arr[i])[0].files[0]){
-            formData.append(arr[i], $(`#`+arr[i])[0].files[0]);
-          } 
-        }
-        // else if (arr[i].substring(0,3)=='ket'){        
-        //   formData.append(arr[i] ,CKEDITOR.instances[arr[i]].getData())
-        // }
-        else{
-          formData.append(arr[i],$('#'+arr[i]).val())
-        }
-      }
+        $(document).ready(function () {
+            // Init Select2
+            $('.autocomplete').select2({ theme: 'bootstrap4' });
+        });
 
-      $.ajax({
-        type: 'POST',
-        enctype: 'multipart/form-data',
-        url: rooturl+'/api_basic/insert',
-        data: formData,
-        processData: false,
-        contentType: false,
-        success: function(data) {
-          swal({title:text_insert.title,text:text_insert.text, icon: text_insert.icon, type:text_insert.type})
-          window.location.href = rooturl+'/manajemen_basic';
-        },error: function(data) {
-          swal({title:text_error.title,text:text_error.text, icon: text_error.icon, type:text_error.type})
-        }
-      })      
-    } 
-  }
+        let data_table  =$('#list-data').DataTable({
+            "language": {
+                "sProcessing":   "Sedang memproses...",
+                "sLengthMenu":   "_MENU_",
+                "sZeroRecords":  "Tidak ditemukan data yang sesuai",
+                "sInfo":         "Menampilkan _START_ sampai _END_ dari _TOTAL_ entri",
+                "sInfoEmpty":    "Menampilkan 0 sampai 0 dari 0 entri",
+                "sInfoFiltered": "(disaring dari _MAX_ entri keseluruhan)",
+                "sInfoPostFix":  "",
+                "sUrl":          "",
+                "oPaginate": {
+                    "sFirst":    "Pertama",
+                    "sPrevious": "Sebelumnya",
+                    "sNext":     "Selanjutnya",
+                    "sLast":     "Terakhir"
+                }
+            },
+            "processing": true,
 
-  function toWKT (layer) { 
+            "columnDefs": [
+                { "width": "30px", "targets": 0},
+                { "width": "80px", "targets": 2}
+            ],
+        });
+
+        data_table.on( 'draw.dt', function () {
+            let PageInfo = $('#list-data').DataTable().page.info();
+            data_table.column(0, { page: 'current' }).nodes().each( function (cell, i) {
+                cell.innerHTML = i + 1 + PageInfo.start;
+            });
+        });
+
+
+        function toWKT (layer) { 
                           var lng, lat, coords = []; 
                          if (layer instanceof L.Polygon || layer instanceof L.Polyline) { 
                            var latlngs = layer.getLatLngs(); 
@@ -632,7 +672,7 @@
                         var options = { 
                               position: 'topleft', 
                               draw: { 
-                                  polyline: false, 
+                                  polyline: <%= jenis === 'kabel' %>, 
                                 //   polygon: { 
                                 //    showArea: true, 
                                 //       allowIntersection: false, // Restricts shapes to simple polygons 
@@ -647,68 +687,20 @@
                                 polygon:false,
                                   circle: false, // Turns off this drawing tool 
                                   rectangle: false, 
-                                  marker: true 
+                                  marker: <%= jenis === 'tiang' %> 
                               }, 
                               edit: { 
                                   featureGroup: drawnItems, //REQUIRED!! 
-                                  remove: true 
+                                  remove: false 
                               } 
                           }; 
                            
                           var drawControl = new L.Control.Draw(options); 
-                         map.addControl(drawControl); 
+                         if (BISA_UBAH) map.addControl(drawControl); 
                            
-                           map.on(L.Draw.Event.CREATED, function(event) { 
-                             drawnItems.clearLayers(); 
-                              var layer = event.layer; 
-                                    var latlngss = layer.getLatLng(); 
-                            console.log(latlngss) 
-                            $('#xe').val(latlngss.lng)
-                            
-                            $('#ye').val(latlngss.lat)
-                                //  var seeArea =  L.GeometryUtil.geodesicArea(latlngss[0]); 
-                                                //  seeArea = L.GeometryUtil.readableArea(seeArea, true, {}) 
-                                               // console.log(seeArea); 
-                                 // console.log(toWKT(layer)); 
-                                 // console.log(layer); 
-                             
-                                      
-                                               
-         
-                               //    html = html+"</br>"+"<a href='/peta/print?p="+toWKT(layer)+"' style='color:blue' target='_blank'>[DOWNLOAD]</a>"; 
-                                        //  var bounds = layer.getBounds(); 
-                                //         // Get center of bounds 
-                                        //  var center = bounds.getCenter(); 
-                                  // map.openPopup(html, center, { 
-                                  //     offset: L.point(0, -24) 
-                                  //   }); 
-                                  //  $('#konten_polaruang').empty() 
-                                  // $('#konten_polaruang').append(html) 
-         
-                                  // // $("#konten-detail").toggle("slide", {direction:"right"}, 500); 
-                                  // $('.modal').modal('show'); 
-                            //  drawnItems.addLayer(layer); 
-                                peta_pemohon(toWKT(layer)) 
-                              
-                            
-                            }); 
+                           map.on(L.Draw.Event.CREATED, function (event) { digitasiBaru(event.layer); });
+                           map.on(L.Draw.Event.EDITED, function (event) { event.layers.eachLayer(digitasiDiubah); });
 
-
-                            map.on(L.Draw.Event.EDITED, function(event) { 
-                                event.layers.eachLayer(function (layer) { 
-                             
-                                    var latlngss = layer.getLatLng(); 
-                            console.log(latlngss) 
-                            $('#xe').val(latlngss.lng)
-                            
-                            $('#ye').val(latlngss.lat)
-                                
-                                // peta_pemohon(toWKT(layer)) 
-                              
-                                })
-                            }); 
-         
-         
                         //gambar end  
          
          
@@ -1428,7 +1420,7 @@ function loadGeoJsoninovasi(data) {
                             .done(loadGeoJsonkec).then(function (params) {
                                      var geoJsonUrl =root+"peta/sk_jalan";  
                           $.getJSON(geoJsonUrl) 
-                            .done(loadGeoJsonSk_jalan); 
+                            .done(function (data) { loadGeoJsonSk_jalan(data); zoomKeRuas(); }); 
                             })
     //                                                var geoJsonUrl = root + "peta/ruas_kabel" 
     // $.getJSON(geoJsonUrl)
@@ -1733,4 +1725,160 @@ function loadGeoJsoninovasi(data) {
                     
                             
                   });
-</script>
+    </script>
+    <script type="text/javascript">
+        // ============================================================
+        // Digitasi tiang / kabel satu ruas permohonan.
+        // Memakai variabel global halaman peta: map, drawnItems, sk_jalan_layer, toWKT.
+        // ============================================================
+        var fiturHapus = [];        // id tersimpan yang dihapus, dikirim saat Simpan
+        var adaPerubahan = false;
+        var ikonTiang = L.ExtraMarkers.icon({ icon: 'fa-map-pin', markerColor: 'blue-dark', prefix: 'fa', iconColor: 'white', shape: 'circle' });
+
+        function esc(t) {
+            return $('<div>').text(t == null ? '' : t).html();
+        }
+
+        // Zoom ke ruas yang dipilih; jika di luar ruas, peta tetap pada tampilan awal
+        function zoomKeRuas() {
+            if (!RUAS_MASTER_ID) {
+                if (drawnItems.getLayers().length) map.fitBounds(drawnItems.getBounds(), { padding: [30, 30], maxZoom: 19 });
+                return;
+            }
+            sk_jalan_layer.eachLayer(function (layer) {
+                if (layer.feature && String(layer.feature.properties.id) === String(RUAS_MASTER_ID)) {
+                    layer.setStyle({ color: '#f7ca18', weight: 7, opacity: 1 });
+                    layer.bringToFront();
+                    map.fitBounds(layer.getBounds(), { padding: [30, 30], maxZoom: 19 });
+                }
+            });
+        }
+
+        function hitungPanjang(layer) {
+            if (JENIS !== 'kabel') return 0;
+            var ll = layer.getLatLngs(), total = 0;
+            for (var i = 1; i < ll.length; i++) total += ll[i - 1].distanceTo(ll[i]);
+            return Math.round(total * 100) / 100;
+        }
+
+        function buatLayer(f) {
+            var c = f.geojson.coordinates;
+            var layer = JENIS === 'tiang'
+                ? L.marker([c[1], c[0]], { icon: ikonTiang })
+                : L.polyline(c.map(function (p) { return [p[1], p[0]]; }), { color: '#e74c3c', weight: 4 });
+            layer.fitur = { id: f.id, jumlah: f.jumlah, keterangan: f.keterangan || '', panjang: Number(f.panjang || 0) };
+            return layer;
+        }
+
+        function isiFitur(list) {
+            drawnItems.clearLayers();
+            list.forEach(function (f) { drawnItems.addLayer(buatLayer(f)); });
+            fiturHapus = [];
+            adaPerubahan = false;
+            renderTabel();
+        }
+
+        function digitasiBaru(layer) {
+            if (JENIS === 'tiang') layer.setIcon(ikonTiang);
+            layer.fitur = { id: null, jumlah: 1, keterangan: '', panjang: hitungPanjang(layer) };
+            drawnItems.addLayer(layer);
+            adaPerubahan = true;
+            renderTabel();
+        }
+
+        function digitasiDiubah(layer) {
+            if (!layer.fitur) return;
+            layer.fitur.panjang = hitungPanjang(layer);
+            adaPerubahan = true;
+            renderTabel();
+        }
+
+        function renderTabel() {
+            var $tb = $('#tabel_digitasi tbody').empty();
+            var dis = BISA_UBAH ? '' : 'disabled';
+            var total = 0;
+            drawnItems.getLayers().forEach(function (layer, i) {
+                var f = layer.fitur;
+                total += JENIS === 'tiang' ? Number(f.jumlah) : f.panjang * Number(f.jumlah);
+                var info = JENIS === 'tiang'
+                    ? layer.getLatLng().lat.toFixed(6) + ', ' + layer.getLatLng().lng.toFixed(6)
+                    : f.panjang.toLocaleString('id-ID');
+                var $tr = $('<tr>' +
+                    '<td class="text-center">' + (i + 1) + '.</td>' +
+                    '<td class="text-center">' + info + '</td>' +
+                    '<td><input type="number" min="1" step="1" class="form-control form-control-sm in-jumlah" ' + dis + '></td>' +
+                    '<td><input type="text" class="form-control form-control-sm in-ket" ' + dis + '></td>' +
+                    '<td class="text-center"><div class="w-100-flex" style="justify-content: center;gap: 5px;">' +
+                        '<button type="button" class="btn btn-info btn-sm btn-zoom" title="Lihat di peta"><i class="fas fa-search-location"></i></button>' +
+                        (BISA_UBAH ? '<button type="button" class="btn btn-danger btn-sm btn-hapus" title="Hapus"><i class="fas fa-trash"></i></button>' : '') +
+                    '</div></td></tr>');
+                $tr.find('.in-jumlah').val(f.jumlah);
+                $tr.find('.in-ket').val(f.keterangan);
+                $tr.data('layer', layer);
+                $tb.append($tr);
+                layer.bindTooltip(JENIS + ' ' + (i + 1));
+            });
+            if (!drawnItems.getLayers().length) {
+                $tb.append('<tr><td colspan="5" class="text-center"><i>Belum ada data ' + JENIS + '</i></td></tr>');
+            }
+            $('#total_digitasi').text(JENIS === 'tiang' ? total + ' unit' : total.toLocaleString('id-ID') + ' m');
+        }
+
+        $('#tabel_digitasi').on('change', '.in-jumlah, .in-ket', function () {
+            var $tr = $(this).closest('tr');
+            var f = $tr.data('layer').fitur;
+            f.jumlah = Math.max(1, parseInt($tr.find('.in-jumlah').val()) || 1);
+            f.keterangan = $tr.find('.in-ket').val();
+            adaPerubahan = true;
+            renderTabel();
+        });
+
+        $('#tabel_digitasi').on('click', '.btn-zoom', function () {
+            var layer = $(this).closest('tr').data('layer');
+            if (layer.getLatLng) map.setView(layer.getLatLng(), 19);
+            else map.fitBounds(layer.getBounds(), { padding: [30, 30], maxZoom: 19 });
+            layer.openTooltip();
+        });
+
+        $('#tabel_digitasi').on('click', '.btn-hapus', async function () {
+            var layer = $(this).closest('tr').data('layer');
+            var yakin = await swal({ title: 'Hapus ' + JENIS, text: 'Data ini akan dihapus setelah klik Simpan. Lanjutkan?', icon: 'warning', dangerMode: true, buttons: ['Tidak', 'Ya'] });
+            if (!yakin) return;
+            if (layer.fitur.id) fiturHapus.push(layer.fitur.id);
+            drawnItems.removeLayer(layer);
+            adaPerubahan = true;
+            renderTabel();
+        });
+
+        function simpanDigitasi() {
+            var fitur = drawnItems.getLayers().map(function (layer) {
+                return {
+                    id: layer.fitur.id,
+                    wkt: toWKT(layer),
+                    jumlah: layer.fitur.jumlah,
+                    panjang: layer.fitur.panjang,
+                    keterangan: layer.fitur.keterangan
+                };
+            });
+            $.ajax({
+                url: API_DIGITASI,
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ fitur: fitur, hapus: fiturHapus })
+            }).done(function (res) {
+                isiFitur(res.data.fitur);
+                swal('Berhasil', 'Data ' + JENIS + ' berhasil disimpan', 'success');
+            }).fail(function (xhr) {
+                swal('Gagal', (xhr.responseJSON && xhr.responseJSON.message) || 'Gagal menyimpan data', 'error');
+            });
+        }
+
+        $.get(API_DIGITASI).done(function (res) {
+            isiFitur(res.data.fitur);
+            if (!RUAS_MASTER_ID) zoomKeRuas();
+        });
+
+        window.addEventListener('beforeunload', function (e) {
+            if (BISA_UBAH && adaPerubahan) { e.preventDefault(); e.returnValue = ''; }
+        });
+    </script>
