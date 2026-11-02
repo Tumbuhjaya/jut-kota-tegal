@@ -483,46 +483,65 @@
                                 </div>
 
 
+                                <form id="form-daftar" autocomplete="off">
                                 <div class="row mt-3">
                                     <div class="col-12 col-lg-12 col-xl-12">
                                         <div class="form-group">
-                                            <label>Username</label>
-                                            <input type="text" name="" id="" class="form-control">
+                                            <label for="username">Username</label>
+                                            <input type="text" name="username" id="username" class="form-control" required maxlength="50" pattern="[A-Za-z0-9_.]{4,50}">
+                                            <small class="form-text text-muted">4-50 karakter: huruf, angka, titik atau garis bawah</small>
                                         </div>
 
                                         <hr>
 
                                         <div class="form-group">
-                                            <label>Password</label>
-                                            <input type="text" name="" id="" class="form-control">
+                                            <label for="password">Password</label>
+                                            <input type="password" name="password" id="password" class="form-control" required minlength="8" autocomplete="new-password">
+                                            <small class="form-text text-muted">Minimal 8 karakter, kombinasi huruf besar, huruf kecil, angka (1-9) dan karakter khusus</small>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="konfirmasi_password">Konfirmasi Password</label>
+                                            <input type="password" name="konfirmasi_password" id="konfirmasi_password" class="form-control" required autocomplete="new-password">
                                         </div>
 
                                         <hr>
                                         
                                         <div class="form-group">
-                                            <label>Nama Vendor</label>
-                                            <input type="text" name="" id="" class="form-control">
+                                            <label for="fullname">Nama Vendor</label>
+                                            <input type="text" name="fullname" id="fullname" class="form-control" required maxlength="255">
                                         </div>
 
                                         <hr>
 
                                         <div class="form-group">
-                                            <label>Alamat Vendor</label>
-                                            <input type="text" name="" id="" class="form-control">
+                                            <label for="alamat">Alamat Vendor</label>
+                                            <input type="text" name="alamat" id="alamat" class="form-control" required maxlength="255">
                                         </div>
 
                                         <hr>
 
                                         <div class="form-group">
-                                            <label>No. Telepon Vendor</label>
-                                            <input type="text" name="" id="" class="form-control">
+                                            <label for="telp">No. Telepon Vendor</label>
+                                            <input type="tel" name="telp" id="telp" class="form-control" required maxlength="20">
                                         </div>
                                         
                                         <hr>
 
                                         <div class="form-group">
-                                            <label>Email Vendor</label>
-                                            <input type="text" name="" id="" class="form-control" required>
+                                            <label for="email">Email Vendor</label>
+                                            <input type="email" name="email" id="email" class="form-control" required maxlength="100">
+                                        </div>
+
+                                        <hr>
+
+                                        <div class="form-group">
+                                            <label for="captcha">Captcha</label>
+                                            <div class="w-100-flex" style="justify-content: center;align-items: center;gap: 10px;border-top-left-radius: 10px;border-top-right-radius: 10px;border:1px solid #e4e6fc;padding-bottom: 10px;border-bottom: hidden;">
+                                                <span id="gambar_captcha"><%- captcha.data %></span>
+                                                <button type="button" class="btn btn-sm btn-light" onclick="gantiCaptcha()" title="Ganti captcha"><i class="fas fa-sync-alt"></i></button>
+                                            </div>
+                                            <input type="text" name="captcha" id="captcha" class="form-control" placeholder="Isi dengan hasil penjumlahan captcha" required autocomplete="off" style="border-top-left-radius: 0;border-top-right-radius: 0;">
                                         </div>
                                     </div>
                                 </div>
@@ -530,14 +549,15 @@
                                 <div class="row">
                                     <div class="col-12">
                                         <div class="w-100-flex" style="justify-content: center;">
-                                            <button type="submit" class="btn btn-gradient" style="padding-left: 90px;padding-right: 90px;"><i class="fas fa-user"></i>&nbsp;&nbsp;Daftar</button>
+                                            <button type="submit" id="btn_daftar" class="btn btn-gradient" style="padding-left: 90px;padding-right: 90px;"><i class="fas fa-user"></i>&nbsp;&nbsp;Daftar</button>
                                             
                                         </div>
                                         <ul class="list-inline mb-0 mt-3 text-center">
-                                                <li class="list-inline-item"><a href="/perizinan/login" style="color: #0c1e35;font-weight: 300;">Kembali ke login</a></li>
+                                                <li class="list-inline-item"><a href="/" onclick="keLoginVendor()" style="color: #0c1e35;font-weight: 300;">Kembali ke login</a></li>
                                             </ul>
                                     </div>
                                 </div>
+                                </form>
                             </div>
                         </div>
                     </div>
@@ -558,43 +578,51 @@
     <script type="text/javascript">
         var rooturl = '';
 
-        $(document).ready(function () {
-            // Init Select2
-            $('.autocomplete').select2({ theme: 'bootstrap4' });
+        // Halaman login utama (/) dibuka langsung di tab Vendor
+        function keLoginVendor() {
+            try { localStorage.setItem('login_sebagai', 'vendor'); } catch (e) {}
+        }
+
+        function gantiCaptcha(svg) {
+            $('#captcha').val('');
+            if (svg) return $('#gambar_captcha').html(svg);
+            $.get(rooturl + '/perizinan/daftar_akun/captcha?_=' + Date.now(), function (data) {
+                $('#gambar_captcha').html(new XMLSerializer().serializeToString(data.documentElement || data));
+            }, 'xml');
+        }
+
+        $('#form-daftar').on('submit', function (e) {
+            e.preventDefault();
+            if (!this.checkValidity()) { this.reportValidity(); return; }
+            if ($('#password').val() !== $('#konfirmasi_password').val()) {
+                return swal('Periksa kembali', 'Konfirmasi password tidak sama', 'warning');
+            }
+            var $btn = $('#btn_daftar').prop('disabled', true);
+            $.ajax({
+                url: rooturl + '/perizinan/daftar_akun',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    username: $('#username').val(),
+                    password: $('#password').val(),
+                    konfirmasi_password: $('#konfirmasi_password').val(),
+                    fullname: $('#fullname').val(),
+                    alamat: $('#alamat').val(),
+                    telp: $('#telp').val(),
+                    email: $('#email').val(),
+                    captcha: $('#captcha').val()
+                })
+            }).done(function () {
+                keLoginVendor();
+                swal('Pendaftaran berhasil', 'Akun vendor berhasil dibuat. Silakan login melalui tab Vendor.', 'success').then(function () {
+                    window.location.href = rooturl + '/';
+                });
+            }).fail(function (xhr) {
+                var res = xhr.responseJSON || {};
+                gantiCaptcha(res.data && res.data.captcha);
+                swal('Gagal mendaftar', res.message || 'Terjadi kesalahan, silakan coba lagi', 'error');
+            }).always(function () { $btn.prop('disabled', false); });
         });
-
-        let data_table  =$('#list-data').DataTable({
-            "language": {
-                "sProcessing":   "Sedang memproses...",
-                "sLengthMenu":   "_MENU_",
-                "sZeroRecords":  "Tidak ditemukan data yang sesuai",
-                "sInfo":         "Menampilkan _START_ sampai _END_ dari _TOTAL_ entri",
-                "sInfoEmpty":    "Menampilkan 0 sampai 0 dari 0 entri",
-                "sInfoFiltered": "(disaring dari _MAX_ entri keseluruhan)",
-                "sInfoPostFix":  "",
-                "sUrl":          "",
-                "oPaginate": {
-                    "sFirst":    "Pertama",
-                    "sPrevious": "Sebelumnya",
-                    "sNext":     "Selanjutnya",
-                    "sLast":     "Terakhir"
-                }
-            },
-            "processing": true,
-
-            // "columnDefs": [
-            //     { "width": "30px", "targets": 0},
-            //     { "width": "100px", "targets": 1}
-            // ],
-        });
-
-        data_table.on( 'draw.dt', function () {
-            let PageInfo = $('#list-data').DataTable().page.info();
-            data_table.column(0, { page: 'current' }).nodes().each( function (cell, i) {
-                cell.innerHTML = i + 1 + PageInfo.start;
-            });
-        });
-
 
     </script>
 </body>

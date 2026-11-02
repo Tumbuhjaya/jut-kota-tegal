@@ -15,7 +15,8 @@ var cek_vendor = require('./dashboard_vendor.js').cek_vendor;
 var helper = require('../helpper/permohonan.js');
 var dbgeo = require("dbgeo");
 var multer = require("multer");
-var st = require('knex-postgis')(sql_enak);
+var svgCaptcha = require('svg-captcha');
+var st =require('knex-postgis')(sql_enak);
 path.join(__dirname, '/public/foto')
   router.use(bodyParser.json());
   router.use(bodyParser.urlencoded({ extended: true }));
@@ -63,8 +64,74 @@ router.get('/login', function(req, res) {
   res.render('content/login_pemohon'); 
 });
 
+// ---------------- daftar akun vendor (is_admin = 3) ----------------
+// Captcha disimpan terpisah dari captcha login agar dua tab tidak saling menimpa
+function captchaDaftar(req) {
+  var captcha = svgCaptcha.createMathExpr({ mathMin: 1, mathMax: 9, mathOperator: '+' });
+  req.session.captcha_daftar = captcha.text;
+  return captcha;
+}
+
+// Sama dengan syarat password di LocalStrategy (isine/login.js) agar akun bisa langsung login:
+// angka 1-9, huruf besar, huruf kecil, dan karakter lain
+function passwordValid(pwd) {
+  var ada = { angka: 0, besar: 0, kecil: 0, lain: 0 };
+  for (var i = 0; i < pwd.length; i++) {
+    var c = pwd.charCodeAt(i);
+    if (c >= 49 && c <= 57) ada.angka++;
+    else if (c >= 65 && c <= 90) ada.besar++;
+    else if (c >= 97 && c <= 122) ada.kecil++;
+    else ada.lain++;
+  }
+  return pwd.length >= 8 && ada.angka && ada.besar && ada.kecil && ada.lain;
+}
+
 router.get('/daftar_akun', function(req, res) {
-  res.render('content/daftar_akun'); 
+  res.render('content/daftar_akun', { captcha: captchaDaftar(req) });
+});
+
+router.get('/daftar_akun/captcha', function(req, res) {
+  res.type('svg').send(captchaDaftar(req).data);
+});
+
+// body: { username, password, konfirmasi_password, fullname, alamat, telp, email, captcha }
+router.post('/daftar_akun', async function(req, res) {
+  var b = req.body || {};
+  var data = {
+    username: String(b.username || '').trim(),
+    fullname: String(b.fullname || '').trim(),
+    alamat: String(b.alamat || '').trim(),
+    telp: String(b.telp || '').trim(),
+    email: String(b.email || '').trim()
+  };
+  var password = String(b.password || '');
+  var kurang = [];
+  if (!req.session.captcha_daftar || String(b.captcha || '').trim() !== String(req.session.captcha_daftar)) kurang.push('Captcha salah');
+  if (!/^[A-Za-z0-9_.]{4,50}$/.test(data.username)) kurang.push('Username 4-50 karakter, hanya huruf, angka, titik dan garis bawah');
+  if (!passwordValid(password)) kurang.push('Password minimal 8 karakter dan harus mengandung huruf besar, huruf kecil, angka (1-9) dan karakter khusus');
+  if (password !== String(b.konfirmasi_password || '')) kurang.push('Konfirmasi password tidak sama');
+  if (!data.fullname) kurang.push('Nama vendor wajib diisi');
+  if (!data.alamat) kurang.push('Alamat vendor wajib diisi');
+  if (!/^[0-9+\-\s()]{6,20}$/.test(data.telp)) kurang.push('No. telepon tidak valid');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) kurang.push('Email tidak valid');
+
+  // captcha sekali pakai: setiap percobaan wajib captcha baru
+  var captcha = captchaDaftar(req);
+  if (kurang.length) return res.status(400).json({ status: 400, message: kurang.join('\n'), data: { captcha: captcha.data } });
+
+  try {
+    var [ada] = await sql_enak.raw(`SELECT id_user FROM user WHERE username = ? LIMIT 1`, [data.username]);
+    if (ada.length) return res.status(400).json({ status: 400, message: 'Username sudah dipakai', data: { captcha: captcha.data } });
+    await sql_enak.raw(
+      `INSERT INTO user (username, pwd, is_admin, jenis_vendor, fullname, alamat, telp, email, created_date, updated)
+       VALUES (?, ?, 3, 'outsource', ?, ?, ?, ?, NOW(), NOW())`,
+      [data.username, sha1(password), data.fullname, data.alamat, data.telp, data.email]
+    );
+    res.json({ status: 200, message: 'sukses', data: null });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ status: 500, message: 'Gagal mendaftar, silakan coba lagi', data: { captcha: captcha.data } });
+  }
 });
 
 router.get('/shortcut', function(req, res) {
