@@ -2289,6 +2289,7 @@ function loadGeoJsoninovasi(data) {
                             
                   });
     </script>
+    <script src="/javascripts/digitasi_snap.js"></script>
     <script type="text/javascript">
         // ============================================================
         // Digitasi tiang / kabel satu ruas permohonan.
@@ -2435,6 +2436,9 @@ function loadGeoJsoninovasi(data) {
                 swal('Gagal', (xhr.responseJSON && xhr.responseJSON.message) || 'Gagal menyimpan data', 'error');
             });
         }
+
+        // Kabel: tiang ruas ini tampil sebagai acuan dan titik kabel ditarik ke tiang terdekat
+        if (JENIS === 'kabel') DigitasiSnap.muatTiang(map, API_DIGITASI.replace('/digitasi/kabel/', '/digitasi/tiang/'));
 
         $.get(API_DIGITASI).done(function (res) {
             isiFitur(res.data.fitur);

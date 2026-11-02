@@ -204,7 +204,8 @@ async function localsPengisian(req, p) {
     permohonan: p,
     bisa_ubah: helper.bisaUbah(p),
     atas_nama: atas_nama,
-    url_kembali: isAdmin(req) ? '/manajemen_perizinan' : '/perizinan' + JU
+    kode_wilayah: helper.KODE_WILAYAH,
+    url_kembali:isAdmin(req) ? '/manajemen_perizinan' : '/perizinan' + JU
   };
 }
 
@@ -249,6 +250,9 @@ function viewDigitasi(jenis) {
       [req.params.id_ruas, p.permohonan_id]
     );
     if (!ruas.length) return res.redirect('/perizinan' + JU + '/ruas_jalan/' + p.permohonan_id);
+    // Kabel baru bisa didigitasi setelah ruas punya tiang
+    var jumlah = await helper.hitungDigitasi(ruas[0].permohonan_ruas_id);
+    if (jenis === 'kabel' && !jumlah.tiang && !jumlah.kabel) return res.redirect('/perizinan' + JU + '/ruas_jalan/' + p.permohonan_id);
     // Jalan Lain hanya punya titik dummy: peta tidak di-zoom ke sana
     if (ruas[0].nm_ruas === helper.NAMA_RUAS_LAIN) ruas[0].ruas_id = null;
     var locals = await localsPengisian(req, p);
@@ -313,6 +317,13 @@ router.post(JU + '/api/simpan/:id_permohonan', cek_pemohon, async function (req,
     var body = req.body || {};
     var ruas = Array.isArray(body.ruas) ? body.ruas : [];
     var idRuasLain = await helper.getIdRuasLain();
+
+    // Kabel baru boleh diisi jika ruas tsb punya tiang
+    for (var k = 0; k < ruas.length; k++) {
+      if ((parseFloat(ruas[k].panjang_kabel) || 0) > 0 && !(parseInt(ruas[k].jumlah_tiang) > 0)) {
+        return gagal(res, 'Baris ke-' + (k + 1) + ': isi / digitasi tiang dulu sebelum kabel', 400);
+      }
+    }
 
     await sql_enak.raw(`UPDATE permohonan SET provider_id = ?, lastUpdateAt = NOW() WHERE permohonan_id = ?`,
       [body.provider_id || null, p.permohonan_id]);
@@ -465,6 +476,14 @@ router.post(JU + '/api/digitasi/:jenis/:id_permohonan/:id_ruas', cek_pemohon, as
 
     for (var i = 0; i < fitur.length; i++) {
       if (!cfg.geom.test(String(fitur[i].wkt || ''))) return gagal(res, 'Geometri ' + req.params.jenis + ' ke-' + (i + 1) + ' tidak valid', 400);
+    }
+    // Urutan digitasi: tiang dulu, baru kabel. fitur = seluruh isi peta setelah disimpan.
+    var jumlah = await helper.hitungDigitasi(id_r);
+    if (req.params.jenis === 'kabel' && fitur.length && !jumlah.tiang) {
+      return gagal(res, 'Digitasi tiang pada ruas ini terlebih dahulu sebelum menambah kabel', 400);
+    }
+    if (req.params.jenis === 'tiang' && !fitur.length && jumlah.kabel) {
+      return gagal(res, 'Ruas ini masih punya kabel. Hapus kabelnya dulu sebelum menghapus semua tiang', 400);
     }
     if (hapus.length) {
       await sql_enak.raw(

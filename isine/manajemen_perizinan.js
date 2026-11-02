@@ -61,6 +61,7 @@ async function localsPengisian(p) {
     permohonan: p,
     bisa_ubah: helper.bisaUbah(p, true),
     bisa_ajukan: helper.bisaUbah(p),
+    kode_wilayah: helper.KODE_WILAYAH,
     atas_nama: v[0] ? (v[0].fullname || v[0].username) : '-'
   };
 }
@@ -84,6 +85,9 @@ function viewDigitasi(jenis) {
       [req.params.id_ruas, p.permohonan_id]
     );
     if (!ruas.length) return res.redirect('/manajemen_perizinan/edit/' + p.permohonan_id);
+    // Kabel baru bisa didigitasi setelah ruas punya tiang
+    var jumlah = await helper.hitungDigitasi(ruas[0].permohonan_ruas_id);
+    if (jenis === 'kabel' && !jumlah.tiang && !jumlah.kabel) return res.redirect('/manajemen_perizinan/edit/' + p.permohonan_id);
     // Jalan Lain hanya punya titik dummy: peta tidak di-zoom ke sana
     if (ruas[0].nm_ruas === helper.NAMA_RUAS_LAIN) ruas[0].ruas_id = null;
     var locals = await localsPengisian(p);

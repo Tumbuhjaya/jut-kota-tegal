@@ -43,6 +43,9 @@ var upload_dokumen = multer({
   }
 }).fields(Object.keys(JENIS_DOKUMEN).map(function (k) { return { name: k, maxCount: 1 }; }));
 
+// Nomor ruas SK status jalan = kode provinsi (Jawa Tengah) | kode kab/kota (Kota Tegal) | master_retribusi.no
+var KODE_WILAYAH = { prov: '33', kab: '76' };
+
 // Baris master_retribusi untuk jaringan di luar ruas SK jalan (tarif tetap ada, geometri hanya titik dummy)
 var NAMA_RUAS_LAIN = 'Jalan Lain';
 
@@ -176,6 +179,16 @@ async function getDigitasi(permohonan_id, permohonan_ruas_id) {
     list.forEach(function (f) { f.geojson = JSON.parse(f.geojson); });
   });
   return { tiang: tiang, kabel: kabel };
+}
+
+// Jumlah fitur digitasi satu ruas (kabel baru boleh didigitasi setelah ada tiang)
+async function hitungDigitasi(permohonan_ruas_id) {
+  var [rows] = await sql_enak.raw(
+    `SELECT (SELECT COUNT(*) FROM permohonan_tiang WHERE permohonan_ruas_id = ? AND deletedAt IS NULL) AS tiang,
+            (SELECT COUNT(*) FROM permohonan_kabel WHERE permohonan_ruas_id = ? AND deletedAt IS NULL) AS kabel`,
+    [permohonan_ruas_id, permohonan_ruas_id]
+  );
+  return { tiang: Number(rows[0].tiang), kabel: Number(rows[0].kabel) };
 }
 
 // Total ruas mengikuti hasil digitasi setiap kali digitasi disimpan
@@ -334,7 +347,7 @@ async function buatExcel(data) {
     ['G10:H10', 'Komponen'], ['I10:J10', 'Retribusi'], ['K10:L10', 'Jumlah Retribusi'], ['M10:M12', 'Jumlah Total Retribusi (Rp)'],
     ['F11:F12', 'Km'], ['G11', 'Jumlah Tiang'], ['H11', 'Jumlah Kabel'], ['I11', 'Tiang D ≤ 30 cm'],
     ['J11', 'Jaringan Utilitas Atas D ≤ 15cm'], ['K11', 'Tiang'], ['L11', 'Kabel'],
-    ['C12', 'No.'], ['D12', 'Titik Awal'], ['E12', 'Titik Akhir'], ['G12', 'Unit'], ['H12', 'Meter'],
+    ['C12', 'Prov'], ['D12', 'Kab/Kota'], ['E12', 'No. Ruas'], ['G12', 'Unit'], ['H12', 'Meter'],
     ['I12', 'Rp'], ['J12', 'Rp'], ['K12', 'Rp/Tahun'], ['L12', 'Rp/Tahun']
   ];
   header.forEach(function (h) {
@@ -355,9 +368,9 @@ async function buatExcel(data) {
     ws.getRow(r).values = [
       i + 1,
       luar ? 'Di luar ruas (Jalan Lain)' : (x.nm_ruas || '-'),
+      luar || !x.no ? '-' : KODE_WILAYAH.prov,
+      luar || !x.no ? '-' : KODE_WILAYAH.kab,
       luar ? '-' : (x.no || '-'),
-      luar ? '-' : (x.tk_ruas_aw || '-'),
-      luar ? '-' : (x.tk_ruas_ak || '-'),
       luar || x.panjang == null ? null : Number(x.panjang),
       Number(x.jumlah_tiang),
       Number(x.panjang_kabel),
@@ -427,6 +440,7 @@ module.exports = {
   JENIS_DOKUMEN: JENIS_DOKUMEN,
   DOKUMEN_WAJIB: DOKUMEN_WAJIB,
   upload_dokumen: upload_dokumen,
+  KODE_WILAYAH: KODE_WILAYAH,
   NAMA_RUAS_LAIN: NAMA_RUAS_LAIN,
   getIdRuasLain: getIdRuasLain,
   getDataSk: getDataSk,
@@ -439,6 +453,7 @@ module.exports = {
   getDokumen: getDokumen,
   getDetail: getDetail,
   getDigitasi: getDigitasi,
+  hitungDigitasi: hitungDigitasi,
   sinkronTotalRuas: sinkronTotalRuas,
   salinKeDataUtama: salinKeDataUtama,
   hapusDariDataUtama: hapusDariDataUtama,

@@ -862,6 +862,7 @@
         var API = rooturl + '/perizinan/jaringan_utilitas/api/';
         var URL_KEMBALI = '<%= url_kembali %>';
         var JUMLAH_DOKUMEN_WAJIB = 8; // semua kecuali surat kuasa
+        var KODE_WILAYAH = <%- JSON.stringify(kode_wilayah) %>;
 
         var masterRuas = {};      // id -> data master_retribusi
         var opsiRuas = '';        // <option> ruas, dibangun sekali
@@ -895,9 +896,9 @@
                     (BISA_UBAH ? '<button type="button" class="btn btn-danger btn-hapus" title="Hapus"><i class="fas fa-trash"></i></button>' : '') +
                 '</div></td>' +
                 '<td><select class="form-control pilih-ruas" ' + dis + '><option value="' + idRuasLain + '">-- Di luar ruas (Jalan Lain) --</option>' + opsiRuas + '</select></td>' +
+                '<td class="text-center c-prov"></td>' +
+                '<td class="text-center c-kab"></td>' +
                 '<td class="text-center c-no"></td>' +
-                '<td class="text-center c-aw"></td>' +
-                '<td class="text-center c-ak"></td>' +
                 '<td class="text-center c-panjang"></td>' +
                 '<td><input type="number" min="0" step="1" class="form-control in-tiang" ' + tiangKunci + '>' +
                     (row.digitasi_tiang > 0 ? '<small class="text-muted">digitasi: ' + row.digitasi_tiang + ' titik</small>' : '') + '</td>' +
@@ -936,9 +937,12 @@
             var tarif = tarifBaris($tr);
             var tiang = Number($tr.find('.in-tiang').val() || 0);
             var kabel = Number($tr.find('.in-kabel').val() || 0);
+            // Kabel baru bisa diisi setelah ada tiang (kecuali panjangnya sudah dari digitasi)
+            if (BISA_UBAH && !(($tr.data('row') || {}).digitasi_kabel > 0)) $tr.find('.in-kabel').prop('readonly', tiang <= 0);
+            // Nomor ruas SK SD: kode provinsi | kode kab/kota | no ruas (di luar ruas tidak punya nomor)
+            $tr.find('.c-prov').text(m.no ? KODE_WILAYAH.prov : '-');
+            $tr.find('.c-kab').text(m.no ? KODE_WILAYAH.kab : '-');
             $tr.find('.c-no').text(m.no || '-');
-            $tr.find('.c-aw').text(m.tk_ruas_aw || '-');
-            $tr.find('.c-ak').text(m.tk_ruas_ak || '-');
             $tr.find('.c-panjang').text(m.panjang != null ? angka(m.panjang) : '-');
             $tr.find('.c-tarif-tiang').text(rupiah(tarif.tiang));
             $tr.find('.c-tarif-kabel').text(rupiah(tarif.kabel));
@@ -1008,6 +1012,9 @@
             }
             var row = rows ? rows[index] : $tr.data('row');
             if (!row || !row.permohonan_ruas_id) return;
+            if (jenis === 'kabel' && !(row.digitasi_tiang > 0) && !(row.digitasi_kabel > 0)) {
+                return swal('Tiang belum ada', 'Digitasi tiang pada ruas ini terlebih dahulu, baru kemudian kabel.', 'warning');
+            }
             window.location.href = rooturl + '/perizinan/jaringan_utilitas/ruas_jalan/' + jenis + '/' + ID_PERMOHONAN + '/' + row.permohonan_ruas_id;
         });
 
