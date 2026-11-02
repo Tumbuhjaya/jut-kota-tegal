@@ -38,6 +38,26 @@ router.get('/', cek_admin, function (req, res) {
   res.render('content-backoffice/manajemen_perizinan/list', { user: getUser(req) });
 });
 
+router.get('/insert', cek_admin, function (req, res) {
+  res.render('content-backoffice/manajemen_perizinan/insert', { user: getUser(req) });
+});
+
+router.get('/edit/:id', cek_admin, function (req, res) {
+  res.render('content-backoffice/manajemen_perizinan/edit', { user: getUser(req) });
+});
+
+router.get('/tiang/:id', cek_admin, function (req, res) {
+  res.render('content-backoffice/manajemen_perizinan/tiang', { user: getUser(req) });
+});
+
+router.get('/kabel/:id', cek_admin, function (req, res) {
+  res.render('content-backoffice/manajemen_perizinan/kabel', { user: getUser(req) });
+});
+
+router.get('/export_excel/:id', cek_admin, function (req, res) {
+  res.render('content-backoffice/manajemen_perizinan/export_excel', { user: getUser(req) });
+});
+
 router.get('/detail/:id', cek_admin, async function (req, res) {
   var p = await helper.getPermohonan(req.params.id);
   if (!p || p.status === 'draft') return res.redirect('/manajemen_perizinan');

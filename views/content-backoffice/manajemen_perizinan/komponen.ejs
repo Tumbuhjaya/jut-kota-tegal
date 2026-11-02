@@ -1,0 +1,125 @@
+<div class="section-body">
+  <div class="row">
+    <div class="col-12 col-lg-12 col-xl-12">
+      <div class="card">
+        <div class="card-body">
+          <div class="form-group row">
+            <label class="col-sm-2 col-form-label">Vendor</label>
+            <div class="col-sm-10">
+              <select name="" id="" class="form-control select2">
+                <option value="">-- Pilih --</option>
+              </select>
+            </div>
+          </div>
+
+          <hr>
+
+          <div class="form-group row">
+            <label class="col-sm-2 col-form-label">Provider</label>
+            <div class="col-sm-10">
+              <select name="" id="" class="form-control select2">
+                <option value="">-- Pilih --</option>
+              </select>
+            </div>
+          </div>
+
+          <hr>
+
+          <div class="form-group row">
+            <label class="col-sm-2 col-form-label">Persyaratan Teknis</label>
+            <div class="col-sm-10">
+              <button class="btn btn-primary"><i class="fas fa-plus"></i>&nbsp;Upload Dokumen</button>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-12">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-hover table-primary table-sm">
+                        <thead>
+                            <tr>
+                                <th rowspan="3" class="text-center">No.</th>
+                                <th rowspan="3" style="min-width: 150px;" class="text-center">Option</th>
+                                <th rowspan="3" style="min-width: 250px;" class="text-center">Ruas Jalan</th>
+                                <th colspan="3" rowspan="3" class="text-center">Nomor Ruas</th>
+                                <th rowspan="2" class="text-center">Panjang SK Jalan</th>
+                                <th colspan="2" class="text-center">Komponen</th>
+                                <th colspan="2" class="text-center">Retribusi</th>
+                                <th colspan="2" class="text-center">Jumlah Retribusi</th>
+                                <th rowspan="3"class="text-center" style="min-width: 180px;">Jumlah Total Retribusi (Rp)</th>
+                            </tr>
+                             <tr>
+                                <th class="text-center">Jumlah Tiang</th>
+                                <th class="text-center">Jumlah Kabel</th>
+                                <th class="text-center">Tiang D &le; 30 cm</th>
+                                <th class="text-center">Jaringan Utilitas Atas D &le; 15cm</th>
+                                <th class="text-center">Tiang</th>
+                                <th class="text-center">Kabel</th>
+                            </tr>
+
+                            <tr>
+                                <th class="text-center">Km</th>
+                                <th class="text-center" style="min-width: 100px;">Unit</th>
+                                <th class="text-center" style="min-width: 100px;">Meter</th>
+                                <th class="text-center" style="min-width: 120px;">Rp</th>
+                                <th class="text-center" style="min-width: 120px;">Rp</th>
+                                <th class="text-center" style="min-width: 120px;">Unit/Tahun</th>
+                                <th class="text-center" style="min-width: 120px;">Meter/Tahun</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody_ruas">
+                            <tr>
+                                <td>1.</td>
+                                <td>
+                                    <div class="w-100-flex" style="justify-content: center;flex-wrap: wrap;align-items: center;gap: 5px;">
+                                        <a href="/manajemen_perizinan/tiang/1" class="btn btn-info btn-digitasi" data-jenis="tiang" title="Digitasi Tiang"><i class="fas fa-map-pin"></i></a>
+                                        <a href="/manajemen_perizinan/kabel/1" class="btn btn-dark btn-digitasi" data-jenis="kabel" title="Digitasi Kabel"><i class="fas fa-grip-lines"></i></a>
+                                        <button type="button" class="btn btn-danger btn-hapus" title="Hapus"><i class="fas fa-trash"></i></button>
+                                    </div>
+                                </td>
+                                <td>
+                                    <select name="" id="" class="form-control select2">
+                                        <option value="">-- Pilih --</option>
+                                    </select>
+                                </td>
+                                <td class="text-center">-</td>
+                                <td class="text-center">-</td>
+                                <td class="text-center">-</td>
+                                <td class="text-center">-</td>
+                                <td>
+                                    <input type="number" class="form-control" name="" id="">
+                                </td>
+                                <td>
+                                    <input type="number" class="form-control" name="" id="">
+                                </td>
+                                <td class="text-right">-</td>
+                                <td class="text-right">-</td>
+                                <td class="text-right">-</td>
+                                <td class="text-right">-</td>
+                                <td class="text-right">-</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <th colspan="7" class="text-right">Total</th>
+                                <th class="text-center" id="total_tiang">0</th>
+                                <th class="text-center" id="total_kabel">0</th>
+                                <th colspan="2"></th>
+                                <th class="text-right" id="total_ret_tiang">Rp 0,-</th>
+                                <th class="text-right" id="total_ret_kabel">Rp 0,-</th>
+                                <th class="text-right" id="total_ret">Rp 0,-</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                    <div class="w-100-flex" style="justify-content: flex-start;flex-wrap: wrap;align-items: flex-start;margin-bottom: 15px;">
+                        <button type="button" class="btn btn-warning" onclick="tambahBaris()"><i class="fas fa-plus"></i> &nbsp;&nbsp;Tambah Baris Tabel</button>
+                    </div>
+                    <small class="text-muted"><i>Ruas jalan yang dikosongkan dianggap <b>di luar ruas</b>. Jumlah tiang / kabel otomatis mengikuti hasil digitasi jika sudah didigitasi.</i></small>
+                </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
