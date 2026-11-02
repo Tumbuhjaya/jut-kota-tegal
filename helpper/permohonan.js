@@ -209,34 +209,86 @@ async function sinkronTotalRuas(permohonan_ruas_id) {
 // Salinan lama permohonan ini dihapus dulu agar persetujuan ulang tidak dobel.
 // Format kolom mengikuti data survey: kode_ruas = master_retribusi.no,
 // t_k30cm / jr_atk15cm berisi penanda kelas tarif, kd_kec/kd_kel dari poligon kelurahan.
-async function salinKeDataUtama(permohonan_id) {
-  await hapusDariDataUtama(permohonan_id);
-  var [tiang] = await sql_enak.raw(
-    `INSERT INTO tiang (SHAPE, kode_ruas, kode_gps, jumlah_tia, provider, t_k30cm, ciri_tiang, surveyor,
-                        kd_kec, kd_kel, provider_id, insertedAt, lastUpdateAt, permohonan_id, permohonan_tiang_id)
-     SELECT pt.SHAPE, mr.no, CONCAT('IZIN-', p.permohonan_id, '-', pt.permohonan_tiang_id), pt.jumlah, pr.provider,
-            't_k30cm', pt.keterangan, u.fullname,
-            (SELECT kl.kec_id FROM kelurahan kl WHERE ST_Contains(kl.SHAPE, pt.SHAPE) LIMIT 1),
-            (SELECT kl.kel_id FROM kelurahan kl WHERE ST_Contains(kl.SHAPE, pt.SHAPE) LIMIT 1),
-            p.provider_id, NOW(), NOW(), p.permohonan_id, pt.permohonan_tiang_id
+// Digitasi permohonan tersimpan SRID 0, sedangkan tiang/kabel/kelurahan SRID 1 -> dikonversi saat disalin.
+// Salin tiang permohonan ke tabel `tiang`; dipakai saat persetujuan & sinkron manual (tambah filter AND ...)
+var SQL_SALIN_TIANG = `
+  INSERT INTO tiang (SHAPE, kode_ruas, kode_gps, jumlah_tia, provider, t_k30cm, ciri_tiang, surveyor,
+                     kd_kec, kd_kel, provider_id, insertedAt, lastUpdateAt, permohonan_id, permohonan_tiang_id)
+  SELECT ST_GeomFromWKB(ST_AsWKB(pt.SHAPE), 1), mr.no, CONCAT('IZIN-', p.permohonan_id, '-', pt.permohonan_tiang_id), pt.jumlah, pr.provider,
+         't_k30cm', pt.keterangan, u.fullname,
+         (SELECT kl.kec_id FROM kelurahan kl WHERE ST_Contains(kl.SHAPE, ST_GeomFromWKB(ST_AsWKB(pt.SHAPE), 1)) LIMIT 1),
+         (SELECT kl.kel_id FROM kelurahan kl WHERE ST_Contains(kl.SHAPE, ST_GeomFromWKB(ST_AsWKB(pt.SHAPE), 1)) LIMIT 1),
+         p.provider_id, NOW(), NOW(), p.permohonan_id, pt.permohonan_tiang_id
+    FROM permohonan_tiang pt
+    JOIN permohonan_ruas r ON r.permohonan_ruas_id = pt.permohonan_ruas_id AND r.deletedAt IS NULL
+    JOIN permohonan p ON p.permohonan_id = pt.permohonan_id
+    LEFT JOIN master_retribusi mr ON mr.id = r.ruas_id
+    LEFT JOIN provider pr ON pr.provider_id = p.provider_id
+    LEFT JOIN user u ON u.id_user = p.id_user
+   WHERE pt.deletedAt IS NULL`;
+
+// Tiang permohonan (selain draft) beserta id salinannya di tabel tiang, untuk halaman sinkron
+async function daftarSinkronTiang(status) {
+  var filter = status ? ` AND p.status = ?` : ` AND p.status <> 'draft'`;
+  var [data] = await sql_enak.raw(
+    `SELECT pt.permohonan_tiang_id AS id, pt.permohonan_id, pt.jumlah, pt.keterangan,
+            ST_AsGeoJSON(pt.SHAPE) AS geojson, p.status, mr.no AS no_ruas, mr.nm_ruas,
+            pr.provider, u.fullname AS nama_vendor,
+            (SELECT t.id FROM tiang t WHERE t.permohonan_tiang_id = pt.permohonan_tiang_id AND t.deletedAt IS NULL LIMIT 1) AS tiang_id
        FROM permohonan_tiang pt
        JOIN permohonan_ruas r ON r.permohonan_ruas_id = pt.permohonan_ruas_id AND r.deletedAt IS NULL
        JOIN permohonan p ON p.permohonan_id = pt.permohonan_id
        LEFT JOIN master_retribusi mr ON mr.id = r.ruas_id
        LEFT JOIN provider pr ON pr.provider_id = p.provider_id
        LEFT JOIN user u ON u.id_user = p.id_user
-      WHERE pt.permohonan_id = ? AND pt.deletedAt IS NULL`,
-    [permohonan_id]
+      WHERE pt.deletedAt IS NULL` + filter + ` ORDER BY pt.permohonan_id DESC, pt.permohonan_tiang_id`,
+    status ? [status] : []
   );
+  data.forEach(function (d) { d.geojson = JSON.parse(d.geojson); });
+  return data;
+}
+
+// Data utama tiang di dalam kotak peta [barat, selatan, timur, utara] sebagai pembanding di halaman sinkron
+var BATAS_TIANG_AREA = 3000;
+async function tiangDalamArea(bbox) {
+  var b = (bbox || []).map(Number);
+  if (b.length !== 4 || b.some(isNaN)) return [];
+  var kotak = 'POLYGON((' + [[b[0], b[1]], [b[2], b[1]], [b[2], b[3]], [b[0], b[3]], [b[0], b[1]]]
+    .map(function (p) { return p[0] + ' ' + p[1]; }).join(', ') + '))';
+  var [data] = await sql_enak.raw(
+    `SELECT id, ST_X(SHAPE) AS lng, ST_Y(SHAPE) AS lat, kode_gps, kode_ruas, provider, jumlah_tia, permohonan_tiang_id
+       FROM tiang
+      WHERE MBRContains(ST_GeomFromText(?, 1), SHAPE) AND deletedAt IS NULL
+      LIMIT ${BATAS_TIANG_AREA + 1}`,
+    [kotak]
+  );
+  return data;
+}
+
+// Duplikat tiang permohonan terpilih ke tabel tiang; yang sudah punya salinan dilewati
+async function sinkronTiang(ids) {
+  ids = (ids || []).map(function (i) { return parseInt(i); }).filter(function (i) { return i > 0; });
+  if (!ids.length) return 0;
+  var [hasil] = await sql_enak.raw(
+    SQL_SALIN_TIANG + ` AND pt.permohonan_tiang_id IN (${ids.map(function () { return '?'; }).join(', ')})
+      AND NOT EXISTS (SELECT 1 FROM tiang t WHERE t.permohonan_tiang_id = pt.permohonan_tiang_id AND t.deletedAt IS NULL)`,
+    ids
+  );
+  return hasil.affectedRows;
+}
+
+async function salinKeDataUtama(permohonan_id) {
+  await hapusDariDataUtama(permohonan_id);
+  var [tiang] = await sql_enak.raw(SQL_SALIN_TIANG + ` AND pt.permohonan_id = ?`, [permohonan_id]);
   var [kabel] = await sql_enak.raw(
     `INSERT INTO kabel (SHAPE, kode_ruas, kode_gps_p, kode_gps_u, provider, ciri_kabel, jumlah, jr_atk15cm, surveyor, panjang,
                         kd_kec, kd_kel, provider_id, insertedAt, lastUpdateAt, permohonan_id, permohonan_kabel_id)
-     SELECT pk.SHAPE, mr.no,
+     SELECT ST_GeomFromWKB(ST_AsWKB(pk.SHAPE), 1), mr.no,
             CONCAT('IZIN-', p.permohonan_id, '-', pk.permohonan_kabel_id, '-A'),
             CONCAT('IZIN-', p.permohonan_id, '-', pk.permohonan_kabel_id, '-B'),
             pr.provider, pk.keterangan, pk.jumlah, 'jr_atk15cm', u.fullname, pk.panjang,
-            (SELECT kl.kec_id FROM kelurahan kl WHERE ST_Contains(kl.SHAPE, ST_StartPoint(pk.SHAPE)) LIMIT 1),
-            (SELECT kl.kel_id FROM kelurahan kl WHERE ST_Contains(kl.SHAPE, ST_StartPoint(pk.SHAPE)) LIMIT 1),
+            (SELECT kl.kec_id FROM kelurahan kl WHERE ST_Contains(kl.SHAPE, ST_StartPoint(ST_GeomFromWKB(ST_AsWKB(pk.SHAPE), 1))) LIMIT 1),
+            (SELECT kl.kel_id FROM kelurahan kl WHERE ST_Contains(kl.SHAPE, ST_StartPoint(ST_GeomFromWKB(ST_AsWKB(pk.SHAPE), 1))) LIMIT 1),
             IFNULL(p.provider_id, 0), NOW(), NOW(), p.permohonan_id, pk.permohonan_kabel_id
        FROM permohonan_kabel pk
        JOIN permohonan_ruas r ON r.permohonan_ruas_id = pk.permohonan_ruas_id AND r.deletedAt IS NULL
@@ -456,6 +508,10 @@ module.exports = {
   hitungDigitasi: hitungDigitasi,
   sinkronTotalRuas: sinkronTotalRuas,
   salinKeDataUtama: salinKeDataUtama,
+  daftarSinkronTiang: daftarSinkronTiang,
+  tiangDalamArea: tiangDalamArea,
+  BATAS_TIANG_AREA: BATAS_TIANG_AREA,
+  sinkronTiang: sinkronTiang,
   hapusDariDataUtama: hapusDariDataUtama,
   kirimDokumen: kirimDokumen
 };

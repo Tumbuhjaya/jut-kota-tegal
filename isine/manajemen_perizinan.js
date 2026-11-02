@@ -114,6 +114,35 @@ router.get('/export_excel/:id', cek_admin, async function (req, res) {
   } catch (err) { gagal(res, err); }
 });
 
+// Sinkron tiang permohonan ke tabel tiang: peta + list, admin memilih tiang yang diduplikat
+router.get('/sinkron_tiang', cek_admin, function (req, res) {
+  res.render('content-backoffice/manajemen_perizinan/sinkron_tiang', { user: getUser(req) });
+});
+
+router.get('/sinkron_tiang/data', cek_admin, async function (req, res) {
+  try {
+    res.json({ status: 200, message: 'sukses', data: await helper.daftarSinkronTiang(req.query.status) });
+  } catch (err) { gagal(res, err); }
+});
+
+// ?bbox=barat,selatan,timur,utara -> data utama tiang di area peta (penuh = melebihi batas)
+router.get('/sinkron_tiang/tiang', cek_admin, async function (req, res) {
+  try {
+    var data = await helper.tiangDalamArea(String(req.query.bbox || '').split(','));
+    var penuh = data.length > helper.BATAS_TIANG_AREA;
+    res.json({ status: 200, message: 'sukses', data: { tiang: data.slice(0, helper.BATAS_TIANG_AREA), penuh: penuh } });
+  } catch (err) { gagal(res, err); }
+});
+
+// body: { ids: [permohonan_tiang_id, ...] }
+router.post('/sinkron_tiang', cek_admin, async function (req, res) {
+  try {
+    var ids = (req.body && req.body.ids) || [];
+    if (!ids.length) return gagal(res, 'Pilih tiang yang akan diduplikat', 400);
+    res.json({ status: 200, message: 'sukses', data: { masuk: await helper.sinkronTiang(ids) } });
+  } catch (err) { gagal(res, err); }
+});
+
 router.get('/detail/:id', cek_admin, async function (req, res) {
   var p = await helper.getPermohonan(req.params.id);
   if (!p || p.status === 'draft') return res.redirect('/manajemen_perizinan');

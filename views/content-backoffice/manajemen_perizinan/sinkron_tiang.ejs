@@ -1,0 +1,304 @@
+<% include ../../template-backoffice/header.ejs %>
+  <style>
+    #tabel_sinkron tbody tr { cursor: pointer; }
+    #tabel_sinkron tbody tr.aktif td { background-color: #ffe0de !important; }
+    .wadah-list { height: 520px; overflow-y: auto; }
+    .legenda-sinkron span { display: inline-flex; align-items: center; gap: 5px; margin-right: 15px; }
+    .legenda-sinkron i.bulat { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+  </style>
+  <div class="main-content">
+    <section class="section">
+      <div class="w-100" style="padding: 0 30px;">
+        <div class="section-header" style="border-radius: 0.25rem;">
+          <h1>Sinkron Tiang Perizinan</h1>
+          <div class="section-header-breadcrumb">
+            <div class="breadcrumb-item active"><a href="/backoffice">Dashboard</a></div>
+            <div class="breadcrumb-item">Perizinan</div>
+            <div class="breadcrumb-item">Sinkron Tiang</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-body">
+        <div class="row">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-body">
+                <div class="alert alert-info" role="alert">
+                  Tiang hasil digitasi permohonan izin. Klik baris untuk melihat tiangnya di peta, centang tiang yang
+                  akan diduplikat lalu klik <strong>Duplikat ke Tiang</strong>. Tiang yang sudah ada di data utama tidak ikut diduplikat lagi.
+                </div>
+                <div class="row">
+                  <div class="col-12 col-lg-7 mb-3">
+                    <div style="width: 100%;height: 560px;background-color: whitesmoke;" id="map"></div>
+                    <div class="legenda-sinkron mt-2">
+                      <span><i class="bulat" style="background:#2a5a8c"></i> Belum di data tiang</span>
+                      <span><i class="bulat" style="background:#ef8e2d"></i> Dicentang</span>
+                      <span><i class="bulat" style="background:#70a12f"></i> Sudah di data tiang</span>
+                      <span><i class="bulat" style="background:#a23336"></i> Dipilih</span>
+                      <span><i class="bulat" style="background:#8e44ad;width:9px;height:9px;border:1px solid #fff;"></i> Data tiang (tabel tiang)</span>
+                    </div>
+                    <small class="text-muted" id="info_peta"></small>
+                  </div>
+                  <div class="col-12 col-lg-5">
+                    <div class="w-100-flex mb-2" style="gap: 8px;flex-wrap: wrap;">
+                      <select class="form-control form-control-sm" id="filter_status" style="width: auto;">
+                        <option value="">Semua status (kecuali draft)</option>
+                        <option value="diajukan">Diajukan</option>
+                        <option value="revisi">Revisi</option>
+                        <option value="disetujui">Disetujui</option>
+                        <option value="ditolak">Ditolak</option>
+                      </select>
+                      <select class="form-control form-control-sm" id="filter_sinkron" style="width: auto;">
+                        <option value="">Semua tiang</option>
+                        <option value="belum">Belum di data tiang</option>
+                        <option value="sudah">Sudah di data tiang</option>
+                      </select>
+                      <input type="text" class="form-control form-control-sm" id="filter_cari" placeholder="Cari vendor / provider / ruas" style="flex: 1;min-width: 150px;">
+                    </div>
+                    <div class="wadah-list">
+                      <table class="table table-bordered table-hover table-sm" id="tabel_sinkron">
+                        <thead>
+                          <tr>
+                            <th class="text-center" style="width: 30px;"><input type="checkbox" id="centang_semua" title="Centang semua yang belum di data tiang"></th>
+                            <th class="text-center">Permohonan</th>
+                            <th class="text-center">Ruas</th>
+                            <th class="text-center" style="width: 55px;">Jml</th>
+                            <th class="text-center" style="width: 80px;">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody></tbody>
+                      </table>
+                    </div>
+                    <hr>
+                    <div class="w-100-flex" style="justify-content: space-between;align-items: center;gap: 10px;">
+                      <small id="info_sinkron"></small>
+                      <button type="button" class="btn btn-primary" id="btn_duplikat" disabled><i class="fas fa-copy"></i>&nbsp;&nbsp;Duplikat ke Tiang (<span id="jumlah_centang">0</span>)</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="main-footer">
+    <div class="footer-left">
+      <% include ../../template-backoffice/copyright-left.ejs %>
+    </div>
+    <div class="footer-right">
+      <% include ../../template-backoffice/copyright-right.ejs %>
+    </div>
+  </footer>
+
+<% include ../../template-backoffice/footer.ejs %>
+    <script type="text/javascript">
+        var API = '/manajemen_perizinan/sinkron_tiang';
+        var STATUS_LABEL = { diajukan: 'Diajukan', revisi: 'Revisi', disetujui: 'Disetujui', ditolak: 'Ditolak' };
+
+        function ikon(warna) {
+            return L.ExtraMarkers.icon({ icon: 'fa-map-pin', markerColor: warna, prefix: 'fa', iconColor: 'white', shape: 'circle' });
+        }
+        var IKON = { belum: ikon('blue-dark'), centang: ikon('orange'), sudah: ikon('green'), aktif: ikon('red') };
+
+        var map = L.map('map', { center: [-6.87, 109.13], zoom: 13, maxZoom: 22, fullscreenControl: true });
+        var google_hybrid = L.gridLayer.googleMutant({ type: 'hybrid', maxZoom: 22 });
+        var osm = L.tileLayer('https://{s}.tile.osm.org/{z}/{x}/{y}.png', { maxZoom: 22, maxNativeZoom: 19 });
+        map.addLayer(google_hybrid);
+        var layerTiang = L.featureGroup().addTo(map);
+        var layerUtama = L.featureGroup().addTo(map);   // data tabel tiang, dimuat per area peta
+        L.control.layers({ 'Google Hybrid': google_hybrid, 'OpenStreetMap': osm },
+            { 'Tiang perizinan': layerTiang, 'Data tiang (tabel tiang)': layerUtama }).addTo(map);
+
+        // Tabel tiang berisi puluhan ribu titik: hanya dimuat untuk area yang terlihat saat zoom cukup dekat
+        var ZOOM_UTAMA = 15;
+        var renderUtama = L.canvas({ padding: 0.5 });
+        var urutMuatUtama = 0, jedaUtama = null;
+
+        function muatUtama() {
+            var urut = ++urutMuatUtama;
+            if (map.getZoom() < ZOOM_UTAMA) {
+                layerUtama.clearLayers();
+                $('#info_peta').text('Perbesar peta (zoom ' + ZOOM_UTAMA + '+) untuk menampilkan data tabel tiang.');
+                return;
+            }
+            var b = map.getBounds();
+            $.get(API + '/tiang', { bbox: [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()].join(',') }).done(function (res) {
+                if (urut !== urutMuatUtama) return;   // respons lama, area peta sudah berubah
+                layerUtama.clearLayers();
+                res.data.tiang.forEach(function (t) {
+                    L.circleMarker([t.lat, t.lng], {
+                        renderer: renderUtama, radius: 5, color: '#ffffff', weight: 1, fillColor: '#8e44ad', fillOpacity: 0.9
+                    }).bindPopup('<b>Data tiang #' + t.id + '</b><br/>' +
+                        'Kode GPS: ' + esc(t.kode_gps || '-') + '<br/>' +
+                        'Kode ruas: ' + esc(t.kode_ruas || '-') + '<br/>' +
+                        'Provider: ' + esc(t.provider || '-') + '<br/>' +
+                        'Jumlah: ' + (t.jumlah_tia == null ? '-' : t.jumlah_tia) +
+                        (t.permohonan_tiang_id ? '<br/><i>Salinan dari tiang perizinan</i>' : '')).addTo(layerUtama);
+                });
+                $('#info_peta').text(res.data.tiang.length + ' data tabel tiang di area ini' +
+                    (res.data.penuh ? ' (dibatasi, perbesar peta untuk melihat semua)' : '') + '.');
+            });
+        }
+
+        map.on('moveend', function () {
+            clearTimeout(jedaUtama);
+            jedaUtama = setTimeout(muatUtama, 300);
+        });
+
+        var data = [];          // baris dari server, masing-masing diberi .marker & .$tr
+        var centang = {};       // permohonan_tiang_id -> true
+        var aktif = null;       // baris yang sedang dipilih
+
+        function esc(t) {
+            return $('<div>').text(t == null ? '' : t).html();
+        }
+
+        function warnaMarker(d) {
+            if (aktif === d) return IKON.aktif;
+            if (d.tiang_id) return IKON.sudah;
+            return centang[d.id] ? IKON.centang : IKON.belum;
+        }
+
+        function segarkanMarker(d) {
+            d.marker.setIcon(warnaMarker(d));
+            d.marker.setZIndexOffset(aktif === d ? 1000 : 0);
+        }
+
+        function pilih(d, dariPeta) {
+            var lama = aktif;
+            aktif = d;
+            if (lama) { segarkanMarker(lama); lama.$tr.removeClass('aktif'); }
+            segarkanMarker(d);
+            d.$tr.addClass('aktif');
+            d.marker.openPopup();
+            if (dariPeta) {
+                // gulir list ke baris yang diklik di peta
+                var $w = $('.wadah-list');
+                if (d.$tr.is(':visible')) $w.scrollTop($w.scrollTop() + d.$tr.position().top - $w.height() / 2);
+            } else {
+                map.setView(d.marker.getLatLng(), Math.max(map.getZoom(), 19));
+            }
+        }
+
+        function popup(d) {
+            return '<b>Permohonan #' + d.permohonan_id + '</b><br/>' +
+                'Vendor: ' + esc(d.nama_vendor || '-') + '<br/>' +
+                'Provider: ' + esc(d.provider || '-') + '<br/>' +
+                'Ruas: ' + esc(d.nm_ruas || 'Jalan Lain') + '<br/>' +
+                'Jumlah tiang: ' + d.jumlah + (d.keterangan ? '<br/>Ket: ' + esc(d.keterangan) : '') + '<br/>' +
+                (d.tiang_id ? '<span style="color:#3c8d2f">Sudah di data tiang (id ' + d.tiang_id + ')</span>' : '<i>Belum di data tiang</i>');
+        }
+
+        function render() {
+            var $tb = $('#tabel_sinkron tbody').empty();
+            layerTiang.clearLayers();
+            data.forEach(function (d) {
+                var c = d.geojson.coordinates;
+                d.marker = L.marker([c[1], c[0]], { icon: warnaMarker(d) }).bindPopup(popup(d));
+                d.marker.on('click', function () { pilih(d, true); });
+                layerTiang.addLayer(d.marker);
+
+                d.$tr = $('<tr>' +
+                    '<td class="text-center"><input type="checkbox" class="cek" ' + (d.tiang_id ? 'disabled title="Sudah di data tiang"' : '') + '></td>' +
+                    '<td>#' + d.permohonan_id + ' ' + esc(d.nama_vendor || '-') + '<br/><small class="text-muted">' + esc(d.provider || '-') + '</small></td>' +
+                    '<td>' + (d.no_ruas ? '<small class="text-muted">' + esc(d.no_ruas) + '</small> ' : '') + esc(d.nm_ruas || 'Jalan Lain') + '</td>' +
+                    '<td class="text-center">' + d.jumlah + '</td>' +
+                    '<td class="text-center"><small>' + (STATUS_LABEL[d.status] || d.status) + '</small><br/>' +
+                        (d.tiang_id ? '<span class="badge badge-success">Tersalin</span>' : '<span class="badge badge-light">Belum</span>') + '</td>' +
+                    '</tr>');
+                d.$tr.find('.cek').prop('checked', !!centang[d.id]);
+                d.$tr.data('d', d);
+                $tb.append(d.$tr);
+            });
+            if (!data.length) $tb.append('<tr><td colspan="5" class="text-center"><i>Tidak ada tiang permohonan</i></td></tr>');
+            saring();
+            if (layerTiang.getLayers().length) map.fitBounds(layerTiang.getBounds(), { padding: [30, 30], maxZoom: 18 });
+        }
+
+        // Filter sinkron & teks hanya menyembunyikan baris dan marker (data tidak dimuat ulang)
+        function saring() {
+            var sinkron = $('#filter_sinkron').val();
+            var cari = $('#filter_cari').val().toLowerCase();
+            var tampil = 0;
+            data.forEach(function (d) {
+                var teks = [d.permohonan_id, d.nama_vendor, d.provider, d.nm_ruas, d.no_ruas, d.keterangan].join(' ').toLowerCase();
+                var ok = (!sinkron || (sinkron === 'sudah') === !!d.tiang_id) && (!cari || teks.indexOf(cari) !== -1);
+                d.$tr.toggle(ok);
+                if (ok) { tampil++; if (!layerTiang.hasLayer(d.marker)) layerTiang.addLayer(d.marker); }
+                else layerTiang.removeLayer(d.marker);
+            });
+            var belum = data.filter(function (d) { return !d.tiang_id; }).length;
+            $('#info_sinkron').text('Tampil ' + tampil + ' dari ' + data.length + ' titik, ' + belum + ' belum di data tiang');
+            hitungCentang();
+        }
+
+        function hitungCentang() {
+            var n = Object.keys(centang).length;
+            $('#jumlah_centang').text(n);
+            $('#btn_duplikat').prop('disabled', !n);
+        }
+
+        function muat() {
+            $.get(API + '/data', { status: $('#filter_status').val() }).done(function (res) {
+                data = res.data;
+                aktif = null;
+                centang = {};
+                $('#centang_semua').prop('checked', false);
+                render();
+            }).fail(function (xhr) {
+                swal('Gagal', (xhr.responseJSON && xhr.responseJSON.message) || 'Gagal memuat data tiang', 'error');
+            });
+        }
+
+        $('#tabel_sinkron').on('click', 'tbody tr', function (e) {
+            var d = $(this).data('d');
+            if (!d) return;
+            if ($(e.target).is('.cek')) {
+                if (e.target.checked) centang[d.id] = true; else delete centang[d.id];
+                segarkanMarker(d);
+                hitungCentang();
+                return;
+            }
+            pilih(d, false);
+        });
+
+        // Centang semua baris yang tampil dan belum di data tiang
+        $('#centang_semua').on('change', function () {
+            var on = this.checked;
+            data.forEach(function (d) {
+                if (d.tiang_id || !d.$tr.is(':visible')) return;
+                if (on) centang[d.id] = true; else delete centang[d.id];
+                d.$tr.find('.cek').prop('checked', on);
+                segarkanMarker(d);
+            });
+            hitungCentang();
+        });
+
+        $('#filter_status').on('change', muat);
+        $('#filter_sinkron').on('change', saring);
+        $('#filter_cari').on('keyup', saring);
+
+        $('#btn_duplikat').on('click', async function () {
+            var ids = Object.keys(centang);
+            var yakin = await swal({
+                title: 'Duplikat ke Tiang',
+                text: ids.length + ' titik tiang akan disalin ke data utama tiang. Lanjutkan?',
+                icon: 'warning', buttons: ['Batal', 'Ya, duplikat']
+            });
+            if (!yakin) return;
+            $.ajax({ url: API, type: 'POST', contentType: 'application/json', data: JSON.stringify({ ids: ids }) })
+                .done(function (res) {
+                    swal('Berhasil', res.data.masuk + ' titik tiang masuk ke data tiang', 'success');
+                    muat();
+                })
+                .fail(function (xhr) {
+                    swal('Gagal', (xhr.responseJSON && xhr.responseJSON.message) || 'Gagal menduplikat tiang', 'error');
+                });
+        });
+
+        $(document).ready(function () { muat(); muatUtama(); });
+    </script>
