@@ -11,10 +11,15 @@
             Permohonan berstatus <strong><%= permohonan.status %></strong> dan tidak bisa diubah.
             <% if (permohonan.no_sk) { %><br/>No. SK: <strong><%= permohonan.no_sk %></strong><% } %>
             <% if (permohonan.keterangan) { %><br/>Keterangan: <%= permohonan.keterangan %><% } %>
+            <br/><small><i>Untuk mengubah data, proses permohonan menjadi <b>Perlu Revisi</b> terlebih dahulu di halaman detail.</i></small>
           </div>
           <% } else if (permohonan.status === 'revisi') { %>
           <div class="alert alert-warning" role="alert">
             <strong>Perlu revisi:</strong> <%= permohonan.keterangan %>
+          </div>
+          <% } else if (!bisa_ajukan) { %>
+          <div class="alert alert-info" role="alert">
+            Permohonan berstatus <strong><%= permohonan.status %></strong>. Perubahan yang disimpan tidak mengubah status permohonan.
           </div>
           <% } %>
 
@@ -104,6 +109,8 @@
                 <a href="/manajemen_perizinan" class="btn btn-secondary"><i class="fas fa-arrow-left"></i>&nbsp;&nbsp;Kembali</a>
                 <% if (bisa_ubah) { %>
                 <button type="button" class="btn btn-primary" style="padding-left: 60px;padding-right: 60px;" onclick="simpan(true)"><i class="fas fa-save"></i>&nbsp;&nbsp;Simpan</button>
+                <% } %>
+                <% if (bisa_ajukan) { %>
                 <button type="button" class="btn btn-warning" onclick="ajukan()"><i class="fas fa-paper-plane"></i>&nbsp;&nbsp;Ajukan Permohonan</button>
                 <% } %>
               </div>

@@ -59,7 +59,8 @@ async function localsPengisian(p) {
   var [v] = await sql_enak.raw(`SELECT fullname, username FROM user WHERE id_user = ?`, [p.id_user]);
   return {
     permohonan: p,
-    bisa_ubah: helper.bisaUbah(p),
+    bisa_ubah: helper.bisaUbah(p, true),
+    bisa_ajukan: helper.bisaUbah(p),
     atas_nama: v[0] ? (v[0].fullname || v[0].username) : '-'
   };
 }
@@ -124,7 +125,10 @@ router.post('/list', cek_admin, async function (req, res) {
     if (req.body.status) { sql += ` AND p.status = ?`; val.push(req.body.status); }
     else sql += ` AND p.status <> 'draft'`;
     var [data] = await sql_enak.raw(sql + ` ORDER BY FIELD(p.status, 'diajukan') DESC, IFNULL(p.diajukanAt, p.insertedAt) DESC`, val);
-    data.forEach(function (d) { d.bisa_ubah = helper.bisaUbah(d); });
+    data.forEach(function (d) {
+      d.bisa_ubah = helper.bisaUbah(d);
+      d.bisa_edit = helper.bisaUbah(d, true);
+    });
     res.json({ status: 200, message: 'sukses', data: data });
   } catch (err) { gagal(res, err); }
 });

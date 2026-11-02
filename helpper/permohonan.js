@@ -53,8 +53,12 @@ async function getIdRuasLain() {
 
 // Pengisi permohonan (vendor sendiri / admin atas nama vendor) hanya boleh mengubah
 // permohonan yang belum diajukan atau dikembalikan untuk revisi
-function bisaUbah(permohonan) {
-  return !!permohonan && (permohonan.status === 'draft' || permohonan.status === 'revisi');
+// Admin boleh mengubah permohonan di status apa pun kecuali yang sudah disetujui
+// (SK terbit & digitasi sudah disalin ke data utama; kembalikan ke revisi dulu lewat proses)
+function bisaUbah(permohonan, admin) {
+  if (!permohonan) return false;
+  if (admin) return permohonan.status !== 'disetujui';
+  return permohonan.status === 'draft' || permohonan.status === 'revisi';
 }
 
 // Rekap ruas per permohonan (dipakai list vendor & list backoffice)

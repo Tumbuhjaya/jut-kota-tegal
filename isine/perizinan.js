@@ -109,7 +109,7 @@ function gagal(res, err, status) {
 async function ambilMilik(req, res, wajibBisaUbah) {
   var p = await helper.getPermohonan(req.params.id_permohonan, idPemilik(req));
   if (!p) { gagal(res, 'Permohonan tidak ditemukan', 404); return null; }
-  if (wajibBisaUbah && !helper.bisaUbah(p)) { gagal(res, 'Permohonan sudah diajukan / diproses dan tidak bisa diubah', 400); return null; }
+  if (wajibBisaUbah && !helper.bisaUbah(p, isAdmin(req))) { gagal(res, 'Permohonan sudah diajukan / diproses dan tidak bisa diubah', 400); return null; }
   return p;
 }
 
@@ -323,8 +323,9 @@ router.get(JU + '/dokumen/:id_permohonan/:id_dokumen', cek_pemohon, async functi
 // Ajukan ke admin: wajib provider, pemohon, minimal 1 ruas, dan dokumen wajib lengkap
 router.post(JU + '/api/ajukan/:id_permohonan', cek_pemohon, async function (req, res) {
   try {
-    var p = await ambilMilik(req, res, true);
+    var p = await ambilMilik(req, res, false);
     if (!p) return;
+    if (!helper.bisaUbah(p)) return gagal(res, 'Hanya permohonan draft / revisi yang bisa diajukan', 400);
     var kurang = [];
     if (!p.provider_id) kurang.push('Provider belum dipilih');
     if (!p.nama_pemohon) kurang.push('Nama pemohon belum diisi');
@@ -344,10 +345,12 @@ router.post(JU + '/api/ajukan/:id_permohonan', cek_pemohon, async function (req,
   } catch (err) { gagal(res, err); }
 });
 
+// Hapus permohonan hanya untuk draft / revisi, juga bagi admin
 router.get(JU + '/api/hapus/:id_permohonan', cek_pemohon, async function (req, res) {
   try {
-    var p = await ambilMilik(req, res, true);
+    var p = await ambilMilik(req, res, false);
     if (!p) return;
+    if (!helper.bisaUbah(p)) return gagal(res, 'Permohonan sudah diajukan / diproses dan tidak bisa dihapus', 400);
     await sql_enak.raw(`UPDATE permohonan SET deletedAt = NOW() WHERE permohonan_id = ?`, [p.permohonan_id]);
     res.json({ status: 200, message: 'sukses', data: null });
   } catch (err) { gagal(res, err); }
