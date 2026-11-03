@@ -205,6 +205,7 @@ async function localsPengisian(req, p) {
     bisa_ubah: helper.bisaUbah(p),
     atas_nama: atas_nama,
     kode_wilayah: helper.KODE_WILAYAH,
+    komponen: helper.KOMPONEN_RETRIBUSI,
     url_kembali:isAdmin(req) ? '/manajemen_perizinan' : '/perizinan' + JU
   };
 }
@@ -283,7 +284,7 @@ router.get(JU + '/api/provider', cek_pemohon, async function (req, res) {
 router.get(JU + '/api/master_ruas', cek_pemohon, async function (req, res) {
   try {
     var [data] = await sql_enak.raw(
-      `SELECT id, no, nm_ruas, tk_ruas_aw, tk_ruas_ak, panjang, t_k30cm, jr_atk15cm, (nm_ruas = ?) AS luar_ruas
+      `SELECT id, ${helper.KOLOM_SALINAN_RUAS.join(', ')}, t_k30cm, jr_atk15cm, (nm_ruas = ?) AS luar_ruas
          FROM master_retribusi ORDER BY nm_ruas ASC`,
       [helper.NAMA_RUAS_LAIN]
     );
@@ -309,7 +310,8 @@ router.get(JU + '/api/detail/:id_permohonan', cek_pemohon, async function (req, 
 });
 
 // Simpan provider + baris ruas.
-// body: { provider_id, ruas: [{ permohonan_ruas_id?, ruas_id ('' = luar ruas), jumlah_tiang, panjang_kabel }] }
+// body: { provider_id, ruas: [{ permohonan_ruas_id?, ruas_id ('' = luar ruas),
+//                              <kolom jumlah tiap komponen: jml_t_k30cm, jml_t_l30cm, ..., panjang_kabel, jml_jr_atl15cm> }] }
 router.post(JU + '/api/simpan/:id_permohonan', cek_pemohon, async function (req, res) {
   try {
     var p = await ambilMilik(req, res, true);
@@ -317,13 +319,6 @@ router.post(JU + '/api/simpan/:id_permohonan', cek_pemohon, async function (req,
     var body = req.body || {};
     var ruas = Array.isArray(body.ruas) ? body.ruas : [];
     var idRuasLain = await helper.getIdRuasLain();
-
-    // Kabel baru boleh diisi jika ruas tsb punya tiang
-    for (var k = 0; k < ruas.length; k++) {
-      if ((parseFloat(ruas[k].panjang_kabel) || 0) > 0 && !(parseInt(ruas[k].jumlah_tiang) > 0)) {
-        return gagal(res, 'Baris ke-' + (k + 1) + ': isi / digitasi tiang dulu sebelum kabel', 400);
-      }
-    }
 
     await sql_enak.raw(`UPDATE permohonan SET provider_id = ?, lastUpdateAt = NOW() WHERE permohonan_id = ?`,
       [body.provider_id || null, p.permohonan_id]);
@@ -338,21 +333,30 @@ router.post(JU + '/api/simpan/:id_permohonan', cek_pemohon, async function (req,
         if (!mr.length) return gagal(res, 'Ruas jalan baris ke-' + (i + 1) + ' tidak ditemukan', 400);
         tarif = mr[0];
       }
-      var nilai = [ruas_id, Math.max(0, parseInt(r.jumlah_tiang) || 0), Math.max(0, parseFloat(r.panjang_kabel) || 0),
-                   tarif.t_k30cm || 0, tarif.jr_atk15cm || 0];
+      // Unit = bilangan bulat, meter = desimal; tarif lain (t_l30cm, jr_*) disalin dari master lewat salinDataRuas
+      var kolom = ['ruas_id', 'tarif_tiang', 'tarif_kabel'];
+      var nilai = [ruas_id, tarif.t_k30cm || 0, tarif.jr_atk15cm || 0];
+      helper.KOMPONEN_RETRIBUSI.forEach(function (k) {
+        kolom.push(k.jumlah);
+        nilai.push(Math.max(0, (k.satuan === 'Unit' ? parseInt(r[k.jumlah]) : parseFloat(r[k.jumlah])) || 0));
+      });
+      var id_ruas_tersimpan = null;
       if (r.permohonan_ruas_id) {
-        await sql_enak.raw(
-          `UPDATE permohonan_ruas SET ruas_id = ?, jumlah_tiang = ?, panjang_kabel = ?, tarif_tiang = ?, tarif_kabel = ?, lastUpdateAt = NOW()
+        var [ubah] = await sql_enak.raw(
+          `UPDATE permohonan_ruas SET ${kolom.map(function (k) { return k + ' = ?'; }).join(', ')}, lastUpdateAt = NOW()
             WHERE permohonan_ruas_id = ? AND permohonan_id = ? AND deletedAt IS NULL`,
           nilai.concat([r.permohonan_ruas_id, p.permohonan_id])
         );
+        if (ubah.affectedRows) id_ruas_tersimpan = r.permohonan_ruas_id;
       } else {
-        await sql_enak.raw(
-          `INSERT INTO permohonan_ruas (ruas_id, jumlah_tiang, panjang_kabel, tarif_tiang, tarif_kabel, permohonan_id, insertedAt, lastUpdateAt)
-           VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+        var [baru] = await sql_enak.raw(
+          `INSERT INTO permohonan_ruas (${kolom.join(', ')}, permohonan_id, insertedAt, lastUpdateAt)
+           VALUES (${kolom.map(function () { return '?'; }).join(', ')}, ?, NOW(), NOW())`,
           nilai.concat([p.permohonan_id])
         );
+        id_ruas_tersimpan = baru.insertId;
       }
+      if (id_ruas_tersimpan) await helper.salinDataRuas(id_ruas_tersimpan);
     }
     res.json({ status: 200, message: 'sukses', data: await helper.getRuas(p.permohonan_id) });
   } catch (err) { gagal(res, err); }

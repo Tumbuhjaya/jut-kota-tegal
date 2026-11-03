@@ -62,6 +62,7 @@ async function localsPengisian(p) {
     bisa_ubah: helper.bisaUbah(p, true),
     bisa_ajukan: helper.bisaUbah(p),
     kode_wilayah: helper.KODE_WILAYAH,
+    komponen: helper.KOMPONEN_RETRIBUSI,
     atas_nama: v[0] ? (v[0].fullname || v[0].username) : '-'
   };
 }
@@ -146,7 +147,7 @@ router.post('/sinkron_tiang', cek_admin, async function (req, res) {
 router.get('/detail/:id', cek_admin, async function (req, res) {
   var p = await helper.getPermohonan(req.params.id);
   if (!p || p.status === 'draft') return res.redirect('/manajemen_perizinan');
-  res.render('content-backoffice/manajemen_perizinan/detail', { user: getUser(req), permohonan_id: p.permohonan_id });
+  res.render('content-backoffice/manajemen_perizinan/detail', { user: getUser(req), permohonan_id: p.permohonan_id, komponen: helper.KOMPONEN_RETRIBUSI });
 });
 
 // ---------------- API ----------------

@@ -61,18 +61,22 @@
                   <table class="table table-bordered table-sm" id="tabel_ruas">
                     <thead>
                       <tr>
-                        <th class="text-center">No.</th>
-                        <th class="text-center">Ruas Jalan</th>
-                        <th class="text-center">No. Ruas</th>
-                        <th class="text-center">Panjang SK (Km)</th>
-                        <th class="text-center">Tiang (Unit)</th>
-                        <th class="text-center">Kabel (m)</th>
-                        <th class="text-center">Tarif Tiang (Rp)</th>
-                        <th class="text-center">Tarif Kabel (Rp)</th>
-                        <th class="text-center">Retribusi Tiang</th>
-                        <th class="text-center">Retribusi Kabel</th>
-                        <th class="text-center">Total Retribusi</th>
-                        <th class="text-center">Peta</th>
+                        <th rowspan="2" class="text-center">No.</th>
+                        <th rowspan="2" class="text-center" style="min-width: 200px;">Ruas Jalan</th>
+                        <th rowspan="2" class="text-center">No. Ruas</th>
+                        <th rowspan="2" class="text-center">Panjang SK (Km)</th>
+                        <% komponen.forEach(function (k) { %>
+                        <th colspan="3" class="text-center"><%= k.label %></th>
+                        <% }) %>
+                        <th rowspan="2" class="text-center">Total Retribusi</th>
+                        <th rowspan="2" class="text-center">Peta</th>
+                      </tr>
+                      <tr>
+                        <% komponen.forEach(function (k) { %>
+                        <th class="text-center">Jumlah (<%= k.satuan %>)</th>
+                        <th class="text-center">Nilai Retribusi (Rp)</th>
+                        <th class="text-center">Total (Rp)</th>
+                        <% }) %>
                       </tr>
                     </thead>
                     <tbody></tbody>
@@ -148,6 +152,7 @@
 <script type="text/javascript">
   var rooturl = ''
   var ID_PERMOHONAN = <%= permohonan_id %>;
+  var KOMPONEN = <%- JSON.stringify(komponen) %>; // komponen retribusi per ruas (helpper/permohonan.js)
   var STATUS = {
     diajukan:  { label: 'Menunggu Verifikasi', badge: 'info' },
     revisi:    { label: 'Perlu Revisi', badge: 'warning' },
@@ -236,30 +241,44 @@
         '<a class="btn btn-sm btn-primary" target="_blank" href="' + rooturl + '/manajemen_perizinan/dokumen/' + d.permohonan_dokumen_id + '"><i class="fas fa-download"></i></a></li>');
     });
 
-    var t = { tiang: 0, kabel: 0, rt: 0, rk: 0 };
+    // Data fisik ruas tersimpan: titik awal-akhir, kelurahan/kecamatan, lebar perkerasan
+    function infoRuas(r) {
+      var b = [];
+      if (r.tk_ruas_aw || r.tk_ruas_ak) b.push(esc(r.tk_ruas_aw || '?') + ' &rarr; ' + esc(r.tk_ruas_ak || '?'));
+      if (r.kelurahan || r.kecamatan) b.push(esc([r.kelurahan, r.kecamatan].filter(Boolean).join(', ')));
+      if (r.lbr_keras != null) b.push('lebar ' + angka(r.lbr_keras) + ' m');
+      return b.length ? '<br/><small class="text-muted">' + b.join(' &middot; ') + '</small>' : '';
+    }
+    // Jumlah kabel yang berasal dari digitasi
+    var keteranganDigitasi = { panjang_kabel: ['digitasi_kabel', 'garis'] };
+    var t = { total: 0 };
+    KOMPONEN.forEach(function (k) { t[k.kode] = { jumlah: 0, retribusi: 0 }; });
     var $tb = $('#tabel_ruas tbody').empty();
     data.ruas.forEach(function (r, i) {
-      t.tiang += Number(r.jumlah_tiang); t.kabel += Number(r.panjang_kabel);
-      t.rt += Number(r.retribusi_tiang); t.rk += Number(r.retribusi_kabel);
+      var selKomponen = KOMPONEN.map(function (k) {
+        var d = keteranganDigitasi[k.jumlah];
+        t[k.kode].jumlah += Number(r[k.jumlah] || 0);
+        t[k.kode].retribusi += Number(r['retribusi_' + k.kode] || 0);
+        return '<td class="text-center">' + angka(r[k.jumlah]) + (d ? ' <small class="text-muted">(' + r[d[0]] + ' ' + d[1] + ')</small>' : '') + '</td>' +
+          '<td class="text-right">' + rupiah(r[k.tarif]) + '</td>' +
+          '<td class="text-right">' + rupiah(r['retribusi_' + k.kode]) + '</td>';
+      }).join('');
+      t.total += Number(r.retribusi_total);
       $tb.append('<tr>' +
         '<td class="text-center">' + (i + 1) + '.</td>' +
-        '<td>' + esc(Number(r.luar_ruas) ? 'Di luar ruas (Jalan Lain)' : r.nm_ruas) + '</td>' +
+        '<td>' + esc(r.label_ruas) + infoRuas(r) + '</td>' +
         '<td class="text-center">' + esc(r.no) + '</td>' +
         '<td class="text-center">' + (r.panjang != null ? angka(r.panjang) : '-') + '</td>' +
-        '<td class="text-center">' + r.jumlah_tiang + ' <small class="text-muted">(' + r.digitasi_tiang + ' titik)</small></td>' +
-        '<td class="text-center">' + angka(r.panjang_kabel) + ' <small class="text-muted">(' + r.digitasi_kabel + ' garis)</small></td>' +
-        '<td class="text-right">' + rupiah(r.tarif_tiang) + '</td>' +
-        '<td class="text-right">' + rupiah(r.tarif_kabel) + '</td>' +
-        '<td class="text-right">' + rupiah(r.retribusi_tiang) + '</td>' +
-        '<td class="text-right">' + rupiah(r.retribusi_kabel) + '</td>' +
+        selKomponen +
         '<td class="text-right">' + rupiah(r.retribusi_total) + '</td>' +
         '<td class="text-center"><button type="button" class="btn btn-sm btn-info" onclick="zoomRuas(' + r.permohonan_ruas_id + ')"><i class="fas fa-search-location"></i></button></td>' +
         '</tr>');
     });
     $('#tabel_ruas tfoot').html('<tr><th colspan="4" class="text-right">Total</th>' +
-      '<th class="text-center">' + t.tiang + '</th><th class="text-center">' + angka(t.kabel) + '</th><th colspan="2"></th>' +
-      '<th class="text-right">' + rupiah(t.rt) + '</th><th class="text-right">' + rupiah(t.rk) + '</th>' +
-      '<th class="text-right">' + rupiah(t.rt + t.rk) + '</th><th></th></tr>');
+      KOMPONEN.map(function (k) {
+        return '<th class="text-center">' + angka(t[k.kode].jumlah) + '</th><th></th><th class="text-right">' + rupiah(t[k.kode].retribusi) + '</th>';
+      }).join('') +
+      '<th class="text-right">' + rupiah(t.total) + '</th><th></th></tr>');
 
     $('#btn_cetak').attr('href', rooturl + '/manajemen_perizinan/cetak_sk/' + ID_PERMOHONAN).toggle(p.status === 'disetujui');
     $('#btn_edit').attr('href', rooturl + '/manajemen_perizinan/edit/' + ID_PERMOHONAN).toggle(p.status !== 'disetujui');

@@ -49,6 +49,27 @@ var KODE_WILAYAH = { prov: '33', kab: '76' };
 // Baris master_retribusi untuk jaringan di luar ruas SK jalan (tarif tetap ada, geometri hanya titik dummy)
 var NAMA_RUAS_LAIN = 'Jalan Lain';
 
+// Komponen retribusi per baris ruas. kode = kolom tarif master_retribusi; jumlah & tarif = kolom permohonan_ruas.
+// Kabel atas tanah D <= 15 cm memakai panjang_kabel karena jumlahnya diisi dari digitasi kabel;
+// jumlah_tiang tetap hasil digitasi tiang dan tidak masuk hitungan retribusi.
+var KOMPONEN_RETRIBUSI = [
+  { kode: 't_k30cm',    jumlah: 'jml_t_k30cm',    tarif: 'tarif_tiang', satuan: 'Unit',  label: 'Tiang D ≤ 30 cm' },
+  { kode: 't_l30cm',    jumlah: 'jml_t_l30cm',    tarif: 't_l30cm',     satuan: 'Unit',  label: 'Tiang D > 30 cm' },
+  { kode: 'jr_btk15cm', jumlah: 'jml_jr_btk15cm', tarif: 'jr_btk15cm',  satuan: 'Meter', label: 'Jaringan Utilitas Bawah Tanah D ≤ 15 cm' },
+  { kode: 'jr_btl15cm', jumlah: 'jml_jr_btl15cm', tarif: 'jr_btl15cm',  satuan: 'Meter', label: 'Jaringan Utilitas Bawah Tanah D > 15 cm' },
+  { kode: 'jr_atk15cm', jumlah: 'panjang_kabel',  tarif: 'tarif_kabel', satuan: 'Meter', label: 'Jaringan Utilitas Atas Tanah D ≤ 15 cm' },
+  { kode: 'jr_atl15cm', jumlah: 'jml_jr_atl15cm', tarif: 'jr_atl15cm',  satuan: 'Meter', label: 'Jaringan Utilitas Atas Tanah D > 15 cm' }
+];
+
+// Ekspresi SQL retribusi satu komponen / seluruh komponen baris permohonan_ruas (a = alias tabel)
+function sqlRetribusiKomponen(k, a) {
+  var p = a ? a + '.' : '';
+  return p + k.jumlah + ' * IFNULL(' + p + k.tarif + ', 0)';
+}
+function sqlRetribusi(a) {
+  return KOMPONEN_RETRIBUSI.map(function (k) { return sqlRetribusiKomponen(k, a); }).join(' + ');
+}
+
 async function getIdRuasLain() {
   var [rows] = await sql_enak.raw(`SELECT id FROM master_retribusi WHERE nm_ruas = ? ORDER BY id LIMIT 1`, [NAMA_RUAS_LAIN]);
   return rows.length ? rows[0].id : null;
@@ -82,7 +103,7 @@ var SQL_REKAP = `
              COUNT(*) AS jml_ruas,
              SUM(jumlah_tiang) AS jml_tiang,
              SUM(panjang_kabel) AS jml_kabel,
-             SUM(jumlah_tiang * tarif_tiang + panjang_kabel * tarif_kabel) AS retribusi
+             SUM(${sqlRetribusi()}) AS retribusi
         FROM permohonan_ruas
        WHERE deletedAt IS NULL
        GROUP BY permohonan_id
@@ -110,19 +131,28 @@ async function getPermohonan(permohonan_id, id_user) {
 async function getRuas(permohonan_id) {
   var [rows] = await sql_enak.raw(
     `SELECT r.permohonan_ruas_id, r.ruas_id, r.jumlah_tiang, r.panjang_kabel, r.tarif_tiang, r.tarif_kabel,
-            r.jumlah_tiang * r.tarif_tiang AS retribusi_tiang,
+            ${KOMPONEN_RETRIBUSI.map(function (k) { return 'r.' + k.jumlah + ', ' + sqlRetribusiKomponen(k, 'r') + ' AS retribusi_' + k.kode; }).join(', ')},
+            r.jml_t_k30cm * r.tarif_tiang AS retribusi_tiang,
             r.panjang_kabel * r.tarif_kabel AS retribusi_kabel,
-            r.jumlah_tiang * r.tarif_tiang + r.panjang_kabel * r.tarif_kabel AS retribusi_total,
-            mr.no, mr.nm_ruas, mr.tk_ruas_aw, mr.tk_ruas_ak, mr.panjang,
+            ${sqlRetribusi('r')} AS retribusi_total,
+            ${KOLOM_SALINAN_RUAS.map(function (k) { return 'IFNULL(r.' + k + ', mr.' + k + ') AS ' + k; }).join(', ')},
+            kc.kecamatan, kl.desa AS kelurahan,
             (r.ruas_id IS NULL OR mr.nm_ruas = '${NAMA_RUAS_LAIN}') AS luar_ruas,
             (SELECT COUNT(*) FROM permohonan_tiang pt WHERE pt.permohonan_ruas_id = r.permohonan_ruas_id AND pt.deletedAt IS NULL) AS digitasi_tiang,
             (SELECT COUNT(*) FROM permohonan_kabel pk WHERE pk.permohonan_ruas_id = r.permohonan_ruas_id AND pk.deletedAt IS NULL) AS digitasi_kabel
        FROM permohonan_ruas r
        LEFT JOIN master_retribusi mr ON mr.id = r.ruas_id
+       LEFT JOIN kecamatan kc ON kc.kec_id = IFNULL(r.id_kec, mr.id_kec)
+       LEFT JOIN kelurahan kl ON kl.kel_id = IFNULL(r.id_kel, mr.id_kel)
       WHERE r.permohonan_id = ? AND r.deletedAt IS NULL
       ORDER BY r.permohonan_ruas_id ASC`,
     [permohonan_id]
   );
+  // Label tampilan: luar ruas memakai nama jalan isian pengisi bila ada
+  rows.forEach(function (r) {
+    var nama = r.nm_ruas && r.nm_ruas !== NAMA_RUAS_LAIN ? r.nm_ruas : '';
+    r.label_ruas = Number(r.luar_ruas) ? 'Di luar ruas' + (nama ? ': ' + nama : ' (Jalan Lain)') : (nama || '-');
+  });
   return rows;
 }
 
@@ -189,6 +219,21 @@ async function hitungDigitasi(permohonan_ruas_id) {
     [permohonan_ruas_id, permohonan_ruas_id]
   );
   return { tiang: Number(rows[0].tiang), kabel: Number(rows[0].kabel) };
+}
+
+// Kolom master_retribusi yang disalin ke permohonan_ruas agar data ruas saat permohonan tetap utuh walau master berubah
+// (tarif t_k30cm & jr_atk15cm disimpan sebagai tarif_tiang & tarif_kabel)
+var KOLOM_SALINAN_RUAS = ['no', 'nm_ruas', 'tk_ruas_aw', 'tk_ruas_ak', 'lbr_keras', 'panjang', 'id_kec', 'id_kel']
+  .concat(KOMPONEN_RETRIBUSI.filter(function (k) { return k.tarif === k.kode; }).map(function (k) { return k.kode; }));
+
+async function salinDataRuas(permohonan_ruas_id) {
+  await sql_enak.raw(
+    `UPDATE permohonan_ruas r
+       JOIN master_retribusi mr ON mr.id = r.ruas_id
+        SET ${KOLOM_SALINAN_RUAS.map(function (k) { return 'r.' + k + ' = mr.' + k; }).join(', ')}
+      WHERE r.permohonan_ruas_id = ?`,
+    [permohonan_ruas_id]
+  );
 }
 
 // Total ruas mengikuti hasil digitasi setiap kali digitasi disimpan
@@ -340,9 +385,14 @@ function terbilang(n) {
 // Data untuk halaman cetak SK (hanya permohonan yang sudah disetujui)
 async function getDataSk(permohonan) {
   var detail = await getDetail(permohonan);
-  var total = { tiang: 0, kabel: 0, retribusi_tiang: 0, retribusi_kabel: 0, retribusi: 0 };
+  var total = { tiang: 0, kabel: 0, retribusi_tiang: 0, retribusi_kabel: 0, retribusi: 0, komponen: {} };
+  KOMPONEN_RETRIBUSI.forEach(function (k) { total.komponen[k.kode] = { jumlah: 0, retribusi: 0 }; });
   detail.ruas.forEach(function (r) {
-    total.tiang += Number(r.jumlah_tiang);
+    KOMPONEN_RETRIBUSI.forEach(function (k) {
+      total.komponen[k.kode].jumlah += Number(r[k.jumlah] || 0);
+      total.komponen[k.kode].retribusi += Number(r['retribusi_' + k.kode] || 0);
+    });
+    total.tiang += Number(r.jml_t_k30cm);
     total.kabel += Number(r.panjang_kabel);
     total.retribusi_tiang += Number(r.retribusi_tiang);
     total.retribusi_kabel += Number(r.retribusi_kabel);
@@ -368,12 +418,19 @@ function tglIndo(d) {
 // data = hasil getDataSk()
 async function buatExcel(data) {
   var p = data.permohonan;
+  var K = KOMPONEN_RETRIBUSI;
+  var nKolom = 6 + K.length * 3 + 1;           // No..Panjang, 3 kolom per komponen, total
+  function huruf(n) { var h = ''; while (n > 0) { var m = (n - 1) % 26; h = String.fromCharCode(65 + m) + h; n = (n - m - 1) / 26; } return h; }
+  function kolKomponen(i, j) { return huruf(7 + i * 3 + j); }   // j: 0 jumlah, 1 nilai retribusi, 2 total
+  var AKHIR = huruf(nKolom);
+
   var wb = new ExcelJS.Workbook();
   wb.calcProperties.fullCalcOnLoad = true;
   var ws = wb.addWorksheet('Permohonan ' + p.permohonan_id);
-  ws.columns = [6, 35, 10, 18, 18, 12, 12, 12, 15, 18, 16, 16, 20].map(function (w) { return { width: w }; });
+  ws.columns = [6, 35, 10, 18, 18, 12].concat(K.reduce(function (a) { return a.concat([12, 15, 16]); }, []), [20])
+    .map(function (w) { return { width: w }; });
 
-  ws.mergeCells('A1:M1');
+  ws.mergeCells('A1:' + AKHIR + '1');
   ws.getCell('A1').value = 'Rincian Permohonan Izin Jaringan Utilitas';
   ws.getCell('A1').font = { bold: true, size: 14 };
   [
@@ -389,19 +446,23 @@ async function buatExcel(data) {
     ws.getCell('A' + r).value = info[0];
     ws.mergeCells('A' + r + ':B' + r);
     ws.getCell('C' + r).value = ': ' + info[1];
-    ws.mergeCells('C' + r + ':M' + r);
+    ws.mergeCells('C' + r + ':' + AKHIR + r);
   });
 
   // Header tabel 3 baris (baris 10-12)
   var H = 10;
   var header = [
     ['A10:A12', 'No.'], ['B10:B12', 'Ruas Jalan'], ['C10:E11', 'Nomor Ruas'], ['F10', 'Panjang SK Jalan'],
-    ['G10:H10', 'Komponen'], ['I10:J10', 'Retribusi'], ['K10:L10', 'Jumlah Retribusi'], ['M10:M12', 'Jumlah Total Retribusi (Rp)'],
-    ['F11:F12', 'Km'], ['G11', 'Jumlah Tiang'], ['H11', 'Jumlah Kabel'], ['I11', 'Tiang D ≤ 30 cm'],
-    ['J11', 'Jaringan Utilitas Atas D ≤ 15cm'], ['K11', 'Tiang'], ['L11', 'Kabel'],
-    ['C12', 'Prov'], ['D12', 'Kab/Kota'], ['E12', 'No. Ruas'], ['G12', 'Unit'], ['H12', 'Meter'],
-    ['I12', 'Rp'], ['J12', 'Rp'], ['K12', 'Rp/Tahun'], ['L12', 'Rp/Tahun']
+    [AKHIR + '10:' + AKHIR + '12', 'Jumlah Total Retribusi (Rp)'],
+    ['F11:F12', 'Km'], ['C12', 'Prov'], ['D12', 'Kab/Kota'], ['E12', 'No. Ruas']
   ];
+  K.forEach(function (k, i) {
+    header.push(
+      [kolKomponen(i, 0) + '10:' + kolKomponen(i, 2) + '10', k.label],
+      [kolKomponen(i, 0) + '11', 'Jumlah'], [kolKomponen(i, 1) + '11', 'Nilai Retribusi'], [kolKomponen(i, 2) + '11', 'Total'],
+      [kolKomponen(i, 0) + '12', k.satuan], [kolKomponen(i, 1) + '12', 'Rp/' + k.satuan + '/Tahun'], [kolKomponen(i, 2) + '12', 'Rp/Tahun']
+    );
+  });
   header.forEach(function (h) {
     if (h[0].indexOf(':') > -1) ws.mergeCells(h[0]);
     ws.getCell(h[0].split(':')[0]).value = h[1];
@@ -417,27 +478,26 @@ async function buatExcel(data) {
   var awal = H + 3, r = awal;
   data.ruas.forEach(function (x, i) {
     var luar = Number(x.luar_ruas);
-    ws.getRow(r).values = [
+    var nilai = [
       i + 1,
-      luar ? 'Di luar ruas (Jalan Lain)' : (x.nm_ruas || '-'),
+      x.label_ruas,
       luar || !x.no ? '-' : KODE_WILAYAH.prov,
       luar || !x.no ? '-' : KODE_WILAYAH.kab,
       luar ? '-' : (x.no || '-'),
-      luar || x.panjang == null ? null : Number(x.panjang),
-      Number(x.jumlah_tiang),
-      Number(x.panjang_kabel),
-      Number(x.tarif_tiang),
-      Number(x.tarif_kabel),
-      { formula: 'G' + r + '*I' + r, result: Number(x.retribusi_tiang) },
-      { formula: 'H' + r + '*J' + r, result: Number(x.retribusi_kabel) },
-      { formula: 'K' + r + '+L' + r, result: Number(x.retribusi_total) }
+      luar || x.panjang == null ? null : Number(x.panjang)
     ];
+    K.forEach(function (k, j) {
+      nilai.push(Number(x[k.jumlah] || 0), Number(x[k.tarif] || 0),
+        { formula: kolKomponen(j, 0) + r + '*' + kolKomponen(j, 1) + r, result: Number(x['retribusi_' + k.kode] || 0) });
+    });
+    nilai.push({ formula: K.map(function (k, j) { return kolKomponen(j, 2) + r; }).join('+'), result: Number(x.retribusi_total) });
+    ws.getRow(r).values = nilai;
     ws.getCell('A' + r).alignment = { horizontal: 'center' };
     ['C', 'D', 'E'].forEach(function (k) { ws.getCell(k + r).alignment = { horizontal: 'center' }; });
     r++;
   });
   if (!data.ruas.length) {
-    ws.mergeCells('A' + r + ':M' + r);
+    ws.mergeCells('A' + r + ':' + AKHIR + r);
     ws.getCell('A' + r).value = 'Belum ada ruas jalan';
     ws.getCell('A' + r).alignment = { horizontal: 'center' };
     r++;
@@ -449,11 +509,11 @@ async function buatExcel(data) {
   ws.mergeCells('A' + r + ':F' + r);
   ws.getCell('A' + r).value = 'Total';
   ws.getCell('A' + r).alignment = { horizontal: 'right' };
-  ws.getCell('G' + r).value = jumlah('G', t.tiang);
-  ws.getCell('H' + r).value = jumlah('H', t.kabel);
-  ws.getCell('K' + r).value = jumlah('K', t.retribusi_tiang);
-  ws.getCell('L' + r).value = jumlah('L', t.retribusi_kabel);
-  ws.getCell('M' + r).value = jumlah('M', t.retribusi);
+  K.forEach(function (k, i) {
+    ws.getCell(kolKomponen(i, 0) + r).value = jumlah(kolKomponen(i, 0), t.komponen[k.kode].jumlah);
+    ws.getCell(kolKomponen(i, 2) + r).value = jumlah(kolKomponen(i, 2), t.komponen[k.kode].retribusi);
+  });
+  ws.getCell(AKHIR + r).value = jumlah(AKHIR, t.retribusi);
   ws.getRow(r).eachCell({ includeEmpty: true }, function (c) {
     c.font = { bold: true };
     c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF2CC' } };
@@ -462,20 +522,23 @@ async function buatExcel(data) {
   ws.mergeCells('A' + r + ':B' + r);
   ws.getCell('A' + r).value = 'Terbilang';
   ws.getCell('A' + r).font = { bold: true };
-  ws.mergeCells('C' + r + ':M' + r);
+  ws.mergeCells('C' + r + ':' + AKHIR + r);
   ws.getCell('C' + r).value = t.terbilang;
   ws.getCell('C' + r).font = { italic: true };
 
   for (var b = H; b <= r; b++) {
-    for (var k = 1; k <= 13; k++) {
-      ws.getRow(b).getCell(k).border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+    for (var c = 1; c <= nKolom; c++) {
+      ws.getRow(b).getCell(c).border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
     }
   }
   for (var n = awal; n < r; n++) {
     ws.getCell('F' + n).numFmt = '#,##0.00';
-    ws.getCell('G' + n).numFmt = '#,##0';
-    ws.getCell('H' + n).numFmt = '#,##0.00';
-    ['I', 'J', 'K', 'L', 'M'].forEach(function (k) { ws.getCell(k + n).numFmt = '#,##0'; });
+    K.forEach(function (k, i) {
+      ws.getCell(kolKomponen(i, 0) + n).numFmt = k.satuan === 'Unit' ? '#,##0' : '#,##0.00';
+      ws.getCell(kolKomponen(i, 1) + n).numFmt = '#,##0';
+      ws.getCell(kolKomponen(i, 2) + n).numFmt = '#,##0';
+    });
+    ws.getCell(AKHIR + n).numFmt = '#,##0';
   }
   ws.views = [{ state: 'frozen', ySplit: H + 2 }];
   return wb;
@@ -507,6 +570,9 @@ module.exports = {
   getDigitasi: getDigitasi,
   hitungDigitasi: hitungDigitasi,
   sinkronTotalRuas: sinkronTotalRuas,
+  salinDataRuas: salinDataRuas,
+  KOLOM_SALINAN_RUAS: KOLOM_SALINAN_RUAS,
+  KOMPONEN_RETRIBUSI: KOMPONEN_RETRIBUSI,
   salinKeDataUtama: salinKeDataUtama,
   daftarSinkronTiang: daftarSinkronTiang,
   tiangDalamArea: tiangDalamArea,

@@ -217,6 +217,7 @@
         var URL_KEMBALI = rooturl + '/manajemen_perizinan';
         var JUMLAH_DOKUMEN_WAJIB = 8; // semua kecuali surat kuasa
         var KODE_WILAYAH = <%- JSON.stringify(kode_wilayah) %>;
+        var KOMPONEN = <%- JSON.stringify(komponen) %>; // komponen retribusi per ruas (helpper/permohonan.js)
 
         var masterRuas = {};      // id -> data master_retribusi
         var opsiRuas = '';        // <option> ruas, dibangun sekali
@@ -240,8 +241,17 @@
         function tambahBaris(row) {
             row = row || {};
             var dis = BISA_UBAH ? '' : 'disabled';
-            var tiangKunci = row.digitasi_tiang > 0 || !BISA_UBAH ? 'readonly' : '';
-            var kabelKunci = row.digitasi_kabel > 0 || !BISA_UBAH ? 'readonly' : '';
+            // Panjang kabel yang sudah didigitasi mengikuti hasil digitasi
+            var digitasi = { panjang_kabel: [row.digitasi_kabel, 'garis'] };
+            // Tiap komponen: jumlah (isian) | nilai retribusi (tarif) | total
+            var selKomponen = KOMPONEN.map(function (k) {
+                var d = digitasi[k.jumlah];
+                var kunci = !BISA_UBAH || (d && d[0] > 0) ? 'readonly' : '';
+                return '<td><input type="number" min="0" step="' + (k.satuan === 'Unit' ? '1' : '0.01') + '" class="form-control in-jml" data-kolom="' + k.jumlah + '" ' + kunci + '>' +
+                        (d && d[0] > 0 ? '<small class="text-muted">digitasi: ' + d[0] + ' ' + d[1] + '</small>' : '') + '</td>' +
+                    '<td class="text-right c-tarif" data-kode="' + k.kode + '"></td>' +
+                    '<td class="text-right c-ret" data-kode="' + k.kode + '"></td>';
+            }).join('');
             var $tr = $('<tr>' +
                 '<td class="no"></td>' +
                 '<td><div class="w-100-flex" style="justify-content: center;flex-wrap: wrap;align-items: center;gap: 5px;">' +
@@ -254,20 +264,12 @@
                 '<td class="text-center c-kab"></td>' +
                 '<td class="text-center c-no"></td>' +
                 '<td class="text-center c-panjang"></td>' +
-                '<td><input type="number" min="0" step="1" class="form-control in-tiang" ' + tiangKunci + '>' +
-                    (row.digitasi_tiang > 0 ? '<small class="text-muted">digitasi: ' + row.digitasi_tiang + ' titik</small>' : '') + '</td>' +
-                '<td><input type="number" min="0" step="0.01" class="form-control in-kabel" ' + kabelKunci + '>' +
-                    (row.digitasi_kabel > 0 ? '<small class="text-muted">digitasi: ' + row.digitasi_kabel + ' garis</small>' : '') + '</td>' +
-                '<td class="text-right c-tarif-tiang"></td>' +
-                '<td class="text-right c-tarif-kabel"></td>' +
-                '<td class="text-right c-ret-tiang"></td>' +
-                '<td class="text-right c-ret-kabel"></td>' +
+                selKomponen +
                 '<td class="text-right c-ret-total"></td>' +
                 '</tr>');
             $tr.data('row', row);
             $tr.find('.pilih-ruas').val(row.ruas_id || idRuasLain);
-            $tr.find('.in-tiang').val(row.jumlah_tiang || 0);
-            $tr.find('.in-kabel').val(row.panjang_kabel || 0);
+            KOMPONEN.forEach(function (k) { $tr.find('.in-jml[data-kolom=' + k.jumlah + ']').val(row[k.jumlah] || 0); });
             $('#tbody_ruas').append($tr);
             $tr.find('.pilih-ruas').select2({ width: '100%' });
             if (!row.permohonan_ruas_id) adaPerubahan = true;
@@ -275,52 +277,54 @@
             hitungTotal();
         }
 
-        // Tarif yang sudah tersimpan dipakai selama ruasnya tidak diganti
-        function tarifBaris($tr) {
+        // Data & tarif ruas yang sudah tersimpan dipakai selama ruasnya tidak diganti, selain itu dari master.
+        // Hasil: { no, panjang, total, komponen: { kode: { jumlah, tarif, retribusi } } }
+        function hitungRuas($tr) {
             var row = $tr.data('row') || {};
             var ruas_id = $tr.find('.pilih-ruas').val();
-            if (row.permohonan_ruas_id && String(row.ruas_id || '') === String(ruas_id)) {
-                return { tiang: Number(row.tarif_tiang), kabel: Number(row.tarif_kabel) };
-            }
-            var m = masterRuas[ruas_id];
-            return { tiang: m ? Number(m.t_k30cm || 0) : 0, kabel: m ? Number(m.jr_atk15cm || 0) : 0 };
+            var tersimpan = row.permohonan_ruas_id && String(row.ruas_id || '') === String(ruas_id);
+            var d = tersimpan ? row : (masterRuas[ruas_id] || {});
+            var hasil = { no: d.no, panjang: d.panjang, total: 0, komponen: {} };
+            KOMPONEN.forEach(function (k) {
+                var tarif = Number((tersimpan ? d[k.tarif] : d[k.kode]) || 0);
+                var jumlah = Number($tr.find('.in-jml[data-kolom=' + k.jumlah + ']').val() || 0);
+                hasil.komponen[k.kode] = { jumlah: jumlah, tarif: tarif, retribusi: jumlah * tarif };
+                hasil.total += jumlah * tarif;
+            });
+            return hasil;
         }
 
         function hitungBaris($tr) {
-            var m = masterRuas[$tr.find('.pilih-ruas').val()] || {};
-            var tarif = tarifBaris($tr);
-            var tiang = Number($tr.find('.in-tiang').val() || 0);
-            var kabel = Number($tr.find('.in-kabel').val() || 0);
-            // Kabel baru bisa diisi setelah ada tiang (kecuali panjangnya sudah dari digitasi)
-            if (BISA_UBAH && !(($tr.data('row') || {}).digitasi_kabel > 0)) $tr.find('.in-kabel').prop('readonly', tiang <= 0);
+            var h = hitungRuas($tr);
             // Nomor ruas SK SD: kode provinsi | kode kab/kota | no ruas (di luar ruas tidak punya nomor)
-            $tr.find('.c-prov').text(m.no ? KODE_WILAYAH.prov : '-');
-            $tr.find('.c-kab').text(m.no ? KODE_WILAYAH.kab : '-');
-            $tr.find('.c-no').text(m.no || '-');
-            $tr.find('.c-panjang').text(m.panjang != null ? angka(m.panjang) : '-');
-            $tr.find('.c-tarif-tiang').text(rupiah(tarif.tiang));
-            $tr.find('.c-tarif-kabel').text(rupiah(tarif.kabel));
-            $tr.find('.c-ret-tiang').text(rupiah(tiang * tarif.tiang));
-            $tr.find('.c-ret-kabel').text(rupiah(kabel * tarif.kabel));
-            $tr.find('.c-ret-total').text(rupiah(tiang * tarif.tiang + kabel * tarif.kabel));
+            $tr.find('.c-prov').text(h.no ? KODE_WILAYAH.prov : '-');
+            $tr.find('.c-kab').text(h.no ? KODE_WILAYAH.kab : '-');
+            $tr.find('.c-no').text(h.no || '-');
+            $tr.find('.c-panjang').text(h.panjang != null ? angka(h.panjang) : '-');
+            KOMPONEN.forEach(function (k) {
+                $tr.find('.c-tarif[data-kode=' + k.kode + ']').text(rupiah(h.komponen[k.kode].tarif));
+                $tr.find('.c-ret[data-kode=' + k.kode + ']').text(rupiah(h.komponen[k.kode].retribusi));
+            });
+            $tr.find('.c-ret-total').text(rupiah(h.total));
         }
 
         function hitungTotal() {
-            var t = { tiang: 0, kabel: 0, rt: 0, rk: 0 };
+            var t = { total: 0 };
+            KOMPONEN.forEach(function (k) { t[k.kode] = { jumlah: 0, retribusi: 0 }; });
             $('#tbody_ruas tr').each(function (i) {
-                var $tr = $(this);
-                var tarif = tarifBaris($tr);
-                var tiang = Number($tr.find('.in-tiang').val() || 0);
-                var kabel = Number($tr.find('.in-kabel').val() || 0);
-                $tr.find('.no').text((i + 1) + '.');
-                t.tiang += tiang; t.kabel += kabel;
-                t.rt += tiang * tarif.tiang; t.rk += kabel * tarif.kabel;
+                var h = hitungRuas($(this));
+                $(this).find('.no').text((i + 1) + '.');
+                KOMPONEN.forEach(function (k) {
+                    t[k.kode].jumlah += h.komponen[k.kode].jumlah;
+                    t[k.kode].retribusi += h.komponen[k.kode].retribusi;
+                });
+                t.total += h.total;
             });
-            $('#total_tiang').text(angka(t.tiang));
-            $('#total_kabel').text(angka(t.kabel) + ' m');
-            $('#total_ret_tiang').text(rupiah(t.rt));
-            $('#total_ret_kabel').text(rupiah(t.rk));
-            $('#total_ret').text(rupiah(t.rt + t.rk));
+            KOMPONEN.forEach(function (k) {
+                $('#total_jml_' + k.kode).text(angka(t[k.kode].jumlah) + (k.satuan === 'Meter' ? ' m' : ''));
+                $('#total_ret_' + k.kode).text(rupiah(t[k.kode].retribusi));
+            });
+            $('#total_ret').text(rupiah(t.total));
         }
 
         function isiTabel(rows) {
@@ -331,7 +335,7 @@
             hitungTotal();
         }
 
-        $('#tbody_ruas').on('change input', '.pilih-ruas, .in-tiang, .in-kabel', function () {
+        $('#tbody_ruas').on('change input', '.pilih-ruas, .in-jml', function () {
             adaPerubahan = true;
             hitungBaris($(this).closest('tr'));
             hitungTotal();
@@ -377,12 +381,12 @@
             var ruas = [];
             $('#tbody_ruas tr').each(function () {
                 var $tr = $(this);
-                ruas.push({
+                var baris = {
                     permohonan_ruas_id: ($tr.data('row') || {}).permohonan_ruas_id || null,
-                    ruas_id: $tr.find('.pilih-ruas').val() || null,
-                    jumlah_tiang: $tr.find('.in-tiang').val(),
-                    panjang_kabel: $tr.find('.in-kabel').val()
-                });
+                    ruas_id: $tr.find('.pilih-ruas').val() || null
+                };
+                $tr.find('.in-jml').each(function () { baris[$(this).data('kolom')] = this.value; });
+                ruas.push(baris);
             });
             try {
                 var res = await $.ajax({

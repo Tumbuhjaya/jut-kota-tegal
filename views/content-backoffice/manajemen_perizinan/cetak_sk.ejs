@@ -107,9 +107,9 @@
         <% ruas.forEach(function (r, i) { %>
         <tr>
           <td class="c"><%= i + 1 %></td>
-          <td><%= r.luar_ruas ? 'Di luar ruas SK jalan' : (r.nm_ruas || '-') %></td>
+          <td><%= r.label_ruas %></td>
           <td class="c"><%= r.no || '-' %></td>
-          <td class="c"><%= angka(r.jumlah_tiang) %></td>
+          <td class="c"><%= angka(r.jml_t_k30cm) %></td>
           <td class="c"><%= angka(r.panjang_kabel, 2) %></td>
           <td class="r"><%= angka(r.retribusi_tiang) %></td>
           <td class="r"><%= angka(r.retribusi_kabel) %></td>
