@@ -4,12 +4,17 @@
  */
 // import database
 
- var mysql      = require('mysql');
+ var mysql      = require('mysql2');
 
 module.exports.connection = mysql.createPool({
   host     : '147.139.167.33',
   user     : 'root',
-  port	   : '3306',
-  password : 'Grafika9',
+  port: '33061',
+  password : 'grafika9',
   database : '2026_jut_tegal'
+});
+
+// samakan sql_mode dengan server lama (MySQL 5.7), default MySQL 8.4 jauh lebih ketat
+module.exports.connection.on('connection', function (conn) {
+  conn.query("SET SESSION sql_mode = 'IGNORE_SPACE'");
 });

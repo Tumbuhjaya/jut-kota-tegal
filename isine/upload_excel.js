@@ -283,10 +283,10 @@ router.post('/sumber_air', upload.fields([{ name: 'excel', maxCount: 1 }]), asyn
         console.log(result[i]);
         if(result[i]["x"]&&result[i]["y"]){
           a += 'SHAPE,'
-          b += `ST_GeomFromText('POINT(${result[i]["x"]?result[i]["x"]:0} ${result[i]["y"]?result[i]["y"]:0})', 4326) ,`
+          b += `ST_GeomFromText('POINT(${result[i]["x"]?result[i]["x"]:0} ${result[i]["y"]?result[i]["y"]:0})', 4326, 'axis-order=long-lat') ,`
         }else{
           a += 'SHAPE,'
-          b += `ST_GeomFromText('POINT(0 0)', 4326) ,`
+          b += `ST_GeomFromText('POINT(0 0)', 4326, 'axis-order=long-lat') ,`
         
         }
         if (result[i]["no"]) {

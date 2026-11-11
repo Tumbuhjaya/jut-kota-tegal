@@ -30,10 +30,10 @@ router.use(function timeLog(req, res, next) {
 router.get('/json_kec', function (req, res) {
   //connection.connect();
   //console.log(req.query)
-  connection.query("SELECT x(centroid(a.SHAPE)) as x, y(centroid(a.SHAPE)) as y, a.kecamatan as kec FROM kecamatan a", function (err, rows, fields) {
+  connection.query("SELECT ST_X(ST_Centroid(a.SHAPE)) as x, ST_Y(ST_Centroid(a.SHAPE)) as y, a.kecamatan as kec FROM kecamatan a", function (err, rows, fields) {
     if (err) throw err;
 
-    //console.log("SELECT asWkt(admin_kec.SHAPE) as geometry FROM admin_kec WHERE MBRContains(GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.SHAPE");
+    //console.log("SELECT ST_AsText(admin_kec.SHAPE) as geometry FROM admin_kec WHERE MBRContains(ST_GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.SHAPE");
 
     //res.end(JSON.stringify(rows))
 
@@ -49,7 +49,7 @@ router.get('/json_center_kel', function (req, res) {
   if (req.query.kel) {
     kel = ' where a.id_kelurahan = '+req.query.kel
   }
-  connection.query("SELECT x(centroid(a.SHAPE)) as x, y(centroid(a.SHAPE)) as y, a.desa as kel  , a.id_kelurahan  FROM kelurahan  a"+kel, function (err, rows, fields) {
+  connection.query("SELECT ST_X(ST_Centroid(a.SHAPE)) as x, ST_Y(ST_Centroid(a.SHAPE)) as y, a.desa as kel  , a.id_kelurahan  FROM kelurahan  a"+kel, function (err, rows, fields) {
     if (err) throw err;
     res.send(JSON.stringify(rows))
   });
@@ -59,7 +59,7 @@ router.get('/sk_jalan', function (req, res) {
   if (req.query.no) {
      tambahan += "where no= '" + req.query.no + "'";
   }
-  connection.query("SELECT asWkt(SHAPE) as geometry , id , no , nm_ruas, tk_ruas_aw, tk_ruas_ak, lbr_keras, t_k30cm, t_l30cm, tower_tele, jr_btk15cm, jr_btl15cm, jr_atk15cm, jr_atl15cm, kbbt_k15cm, kbbt_l15cm, jl_pribadi, usaha_kcl, usaha_mngh, usaha_bsr, brng_lain  FROM master_retribusi " + tambahan, function (err, rows, fields) {
+  connection.query("SELECT ST_AsText(SHAPE) as geometry , id , no , nm_ruas, tk_ruas_aw, tk_ruas_ak, lbr_keras, t_k30cm, t_l30cm, tower_tele, jr_btk15cm, jr_btl15cm, jr_atk15cm, jr_atl15cm, kbbt_k15cm, kbbt_l15cm, jl_pribadi, usaha_kcl, usaha_mngh, usaha_bsr, brng_lain  FROM master_retribusi " + tambahan, function (err, rows, fields) {
     if (err) throw err;
     dbgeo.parse({
       "data": rows,
@@ -79,7 +79,7 @@ router.get('/ruas_kabel', function (req, res) {
     id, no, kode_ruas, kode_gps_p, kode_gps_u, provider, 
     ciri_kabel, jumlah, jr_atk15cm, jr_atl15cm, kode_foto, 
     kode_fot_1, surveyor, panjang, kd_kec, kd_kel,provider_id,
-    asWkt(SHAPE) as geometry  `
+    ST_AsText(SHAPE) as geometry  `
  
   let tambahan = ' where SHAPE IS NOT NULL  '
   if (req.query.no) {
@@ -125,7 +125,7 @@ console.log(sql+tambahan);
   });
 })
 router.get('/tiang', function (req, res) {
-  let a =   ` asWkt(t.SHAPE) as geometry ,SUM(t.id ) as total_tiang , CONCAT(t.kode_ruas ,t.kode_gps) as kode_x
+  let a =   ` ST_AsText(t.SHAPE) as geometry ,SUM(t.id ) as total_tiang , CONCAT(t.kode_ruas ,t.kode_gps) as kode_x
 , mr.t_k30cm , mr.t_l30cm , t.id,  kode_ruas, kode_gps, jumlah_tia, provider, kd_foto_1, kd_foto_2, kd_foto_3, kondisi, ciri_tiang, surveyor, kd_kec, kd_kel , k.kecamatan ,k2.desa `
 let tambahan = ' where t.SHAPE IS NOT NULL  '
 
@@ -200,9 +200,9 @@ let setup = `MBRIntersects(ST_GeomFromGeoJSON('${JSON.stringify(req.body.geojson
 if (req.query.id_jln) {
   setup =    `(MBRIntersects(ST_GeomFromGeoJSON('${JSON.stringify(req.body.geojsonpoint)}',1,4326), a.SHAPE) = 1`+" or a.id='" + req.query.id + "')";
 }
-connection.query(`SELECT asWkt(a.SHAPE) as geometry  from drainase a  WHERE ${setup} and a.deletedAt is null order by a.id asc`, function (err, rows, fields) {
+connection.query(`SELECT ST_AsText(a.SHAPE) as geometry  from drainase a  WHERE ${setup} and a.deletedAt is null order by a.id asc`, function (err, rows, fields) {
     if (err) throw err;
-    //console.log("SELECT asWkt(admin_kec.SHAPE) as geometry FROM admin_kec WHERE MBRContains(GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.SHAPE");
+    //console.log("SELECT ST_AsText(admin_kec.SHAPE) as geometry FROM admin_kec WHERE MBRContains(ST_GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.SHAPE");
 
     //res.end(JSON.stringify(rows))
 
@@ -233,7 +233,7 @@ router.get('/drainase_permasalahan', function (req, res) {
     var tambahan = "";
 
   }
-  connection.query("SELECT *,asWkt(SHAPE) as geometry  FROM drainase_permasalahan " + tambahan, function (err, rows, fields) {
+  connection.query("SELECT *,ST_AsText(SHAPE) as geometry  FROM drainase_permasalahan " + tambahan, function (err, rows, fields) {
     if (err) throw err;
     dbgeo.parse({
       "data": rows,
@@ -255,7 +255,7 @@ router.get('/drainase_bangunan', function (req, res) {
     var tambahan = "";
 
   }
-  connection.query("SELECT *,asWkt(SHAPE) as geometry  FROM drainase_bangunan " + tambahan, function (err, rows, fields) {
+  connection.query("SELECT *,ST_AsText(SHAPE) as geometry  FROM drainase_bangunan " + tambahan, function (err, rows, fields) {
     if (err) throw err;
     dbgeo.parse({
       "data": rows,
@@ -279,10 +279,10 @@ router.get('/topojson_kec', function (req, res) {
     var tambahan = "";
 
   }
-  connection.query("SELECT asWkt(SHAPE) as geometry, kecamatan FROM kecamatan " + tambahan, function (err, rows, fields) {
+  connection.query("SELECT ST_AsText(SHAPE) as geometry, kecamatan FROM kecamatan " + tambahan, function (err, rows, fields) {
     if (err) throw err;
 
-    //console.log("SELECT asWkt(admin_kec.SHAPE) as geometry FROM admin_kec WHERE MBRContains(GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.SHAPE");
+    //console.log("SELECT ST_AsText(admin_kec.SHAPE) as geometry FROM admin_kec WHERE MBRContains(ST_GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.SHAPE");
 
     //res.end(JSON.stringify(rows))
 
@@ -307,7 +307,7 @@ router.get('/topojson_kec', function (req, res) {
 })
 
 router.get('/topojson_desa', function (req, res) {
-  connection.query("SELECT asWkt(a.SHAPE) as geometry, a.desa, a.kel_id FROM kelurahan a  WHERE mbrIntersects(a.SHAPE,  GeomFromText('POLYGON((" + req.query.kiri_lng + " " + req.query.kiri_lat + "," + req.query.kiri_lng + " " + req.query.kanan_lat + "," + req.query.kanan_lng + " " + req.query.kanan_lat + "," + req.query.kanan_lng + " " + req.query.kiri_lat + "," + req.query.kiri_lng + " " + req.query.kiri_lat + "))', 1))", function (err, rows, fields) {
+  connection.query("SELECT ST_AsText(a.SHAPE) as geometry, a.desa, a.kel_id FROM kelurahan a  WHERE mbrIntersects(a.SHAPE,  ST_GeomFromText('POLYGON((" + req.query.kiri_lng + " " + req.query.kiri_lat + "," + req.query.kiri_lng + " " + req.query.kanan_lat + "," + req.query.kanan_lng + " " + req.query.kanan_lat + "," + req.query.kanan_lng + " " + req.query.kiri_lat + "," + req.query.kiri_lng + " " + req.query.kiri_lat + "))', 1))", function (err, rows, fields) {
     if (err) throw err;
     dbgeo.parse({
       "data": rows,
@@ -345,10 +345,10 @@ router.get('/jalan', function (req, res) {
   }
   //  console.log(tambahan)
 
-  connection.query("SELECT asWkt(a.SHAPE) as geometry, a.id_jln, a.km_awal, a.km_akhir, a.p_ruas, a.prkrsn, a.l_ruas, a.kdns, a.foto_awal, a.foto_akhir, a.id, b.status from drainase a join daftar_induk2 b on a.id_jln = b.id_jln  " + tambahan, function (err, rows, fields) {
+  connection.query("SELECT ST_AsText(a.SHAPE) as geometry, a.id_jln, a.km_awal, a.km_akhir, a.p_ruas, a.prkrsn, a.l_ruas, a.kdns, a.foto_awal, a.foto_akhir, a.id, b.status from drainase a join daftar_induk2 b on a.id_jln = b.id_jln  " + tambahan, function (err, rows, fields) {
     if (err) throw err;
 
-    //console.log("SELECT asWkt(admin_kec.SHAPE) as geometry FROM admin_kec WHERE MBRContains(GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.SHAPE");
+    //console.log("SELECT ST_AsText(admin_kec.SHAPE) as geometry FROM admin_kec WHERE MBRContains(ST_GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.SHAPE");
 
     //res.end(JSON.stringify(rows))
 
@@ -398,7 +398,7 @@ let setup = `MBRIntersects(ST_GeomFromGeoJSON('${JSON.stringify(req.body.geojson
 if (req.query.id_jln) {
   setup =    `(MBRIntersects(ST_GeomFromGeoJSON('${JSON.stringify(req.body.geojsonpoint)}', 1, 1), a.SHAPE) = 1`+" or a.id_jln='" + req.query.id_jln + "')";
 }
-connection.query(`SELECT asWkt(a.SHAPE) as geometry, a.id_jln, a.km_awal, a.km_akhir, a.p_ruas, a.prkrsn, a.l_ruas, a.kdns, a.foto_awal, a.foto_akhir, a.id, b.status, b.nm_ruas, b.kd_ruas from drainase a join daftar_induk2 b on a.id_jln = b.id_jln WHERE ${setup} and b.deleted =0 order by a.id_jln asc`, function (err, rows, fields) {
+connection.query(`SELECT ST_AsText(a.SHAPE) as geometry, a.id_jln, a.km_awal, a.km_akhir, a.p_ruas, a.prkrsn, a.l_ruas, a.kdns, a.foto_awal, a.foto_akhir, a.id, b.status, b.nm_ruas, b.kd_ruas from drainase a join daftar_induk2 b on a.id_jln = b.id_jln WHERE ${setup} and b.deleted =0 order by a.id_jln asc`, function (err, rows, fields) {
     if (err) throw err;
     for (let i = 0; i < rows.length; i++) {
       if(rows[i].status=='JALAN LINGKUNGAN'){
@@ -416,7 +416,7 @@ connection.query(`SELECT asWkt(a.SHAPE) as geometry, a.id_jln, a.km_awal, a.km_a
       }
       
     }
-    //console.log("SELECT asWkt(admin_kec.SHAPE) as geometry FROM admin_kec WHERE MBRContains(GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.SHAPE");
+    //console.log("SELECT ST_AsText(admin_kec.SHAPE) as geometry FROM admin_kec WHERE MBRContains(ST_GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.SHAPE");
 
     //res.end(JSON.stringify(rows))
 
@@ -459,12 +459,12 @@ router.get('/drainase_radius', function (req, res) {
       jarak = req.query.jarak;
   }
   //  console.log(tambahan)
-let setup = `(ST_Distance_Sphere(ST_GeomFromText('POINT(${long} ${lat})', 1), ST_StartPoint(a.SHAPE)) < ${jarak} or ST_Distance_Sphere(ST_GeomFromText('POINT(${long} ${lat})', 1), ST_EndPoint(a.SHAPE)) < ${jarak})`
+let setup = `(ST_Distance_Sphere(ST_GeomFromText('POINT(${long} ${lat})', 0), ST_SRID(ST_StartPoint(a.SHAPE), 0)) < ${jarak} or ST_Distance_Sphere(ST_GeomFromText('POINT(${long} ${lat})', 0), ST_SRID(ST_EndPoint(a.SHAPE), 0)) < ${jarak})`
 // let setup = `MBRIntersects(ST_GeomFromGeoJSON('${JSON.stringify(req.body.geojsonpoint)}', 1, 1), a.SHAPE) = 1`  
 // if (req.query.id_jln) {
 //   setup =    `(MBRIntersects(ST_GeomFromGeoJSON('${JSON.stringify(req.body.geojsonpoint)}', 1, 1), a.SHAPE) = 1`+" or a.id_jln='" + req.query.id_jln + "')";
 // }
-connection.query(`SELECT asWkt(a.SHAPE) as geometry, a.id_jln, a.km_awal, a.km_akhir, a.p_ruas, a.prkrsn, a.l_ruas, a.kdns, a.foto_awal, a.foto_akhir, a.id, b.status, b.nm_ruas, b.kd_ruas from drainase a join daftar_induk2 b on a.id_jln = b.id_jln WHERE ${setup} and b.deleted =0 order by a.id_jln asc`, function (err, rows, fields) {
+connection.query(`SELECT ST_AsText(a.SHAPE) as geometry, a.id_jln, a.km_awal, a.km_akhir, a.p_ruas, a.prkrsn, a.l_ruas, a.kdns, a.foto_awal, a.foto_akhir, a.id, b.status, b.nm_ruas, b.kd_ruas from drainase a join daftar_induk2 b on a.id_jln = b.id_jln WHERE ${setup} and b.deleted =0 order by a.id_jln asc`, function (err, rows, fields) {
     if (err) throw err;
     for (let i = 0; i < rows.length; i++) {
       if(rows[i].status=='JALAN LINGKUNGAN'){
@@ -482,7 +482,7 @@ connection.query(`SELECT asWkt(a.SHAPE) as geometry, a.id_jln, a.km_awal, a.km_a
       }
       
     }
-    //console.log("SELECT asWkt(admin_kec.SHAPE) as geometry FROM admin_kec WHERE MBRContains(GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.SHAPE");
+    //console.log("SELECT ST_AsText(admin_kec.SHAPE) as geometry FROM admin_kec WHERE MBRContains(ST_GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.SHAPE");
 
     //res.end(JSON.stringify(rows))
 
@@ -545,7 +545,7 @@ if (req.query.tahun) {
 
 }
 
-connection.query(`SELECT lj.*,di.status, di.nm_ruas ,di.kd_ruas,u.fullname , k.desa, k2.kecamatan ,k3.desa as user_kel , k4.kecamatan as user_kec,  asWkt(jl.SHAPE) as geometry, jl.km_awal, jl.km_akhir, jl.p_ruas, jl.prkrsn, jl.l_ruas, jl.kdns, jl.foto_awal, jl.foto_akhir FROM lapor_jali lj  left join daftar_induk2 di on di.id_jln = lj.id_jln left join user u on u.id_user = lj.id_user  left join kelurahan k on k.id_kelurahan = di.id_kel left join kecamatan k2 on k2.id_kecamatan = k.id_kec   left join kelurahan k3 on k3.id_kelurahan = u.kel_id left join kecamatan k4 on k4.id_kecamatan = k3.id_kec join drainase jl on  di.id_jln = jl.id_jln WHERE ISNULL(lj.deletedAt) ${a}  order by lj.lapor_jali_id desc`, function (err, rows, fields) {
+connection.query(`SELECT lj.*,di.status, di.nm_ruas ,di.kd_ruas,u.fullname , k.desa, k2.kecamatan ,k3.desa as user_kel , k4.kecamatan as user_kec,  ST_AsText(jl.SHAPE) as geometry, jl.km_awal, jl.km_akhir, jl.p_ruas, jl.prkrsn, jl.l_ruas, jl.kdns, jl.foto_awal, jl.foto_akhir FROM lapor_jali lj  left join daftar_induk2 di on di.id_jln = lj.id_jln left join user u on u.id_user = lj.id_user  left join kelurahan k on k.id_kelurahan = di.id_kel left join kecamatan k2 on k2.id_kecamatan = k.id_kec   left join kelurahan k3 on k3.id_kelurahan = u.kel_id left join kecamatan k4 on k4.id_kecamatan = k3.id_kec join drainase jl on  di.id_jln = jl.id_jln WHERE ISNULL(lj.deletedAt) ${a}  order by lj.lapor_jali_id desc`, function (err, rows, fields) {
     if (err) throw err;
     for (let i = 0; i < rows.length; i++) {
       if(rows[i].status=='JALAN LINGKUNGAN'){
@@ -563,7 +563,7 @@ connection.query(`SELECT lj.*,di.status, di.nm_ruas ,di.kd_ruas,u.fullname , k.d
       }
       
     }
-    //console.log("SELECT asWkt(admin_kec.SHAPE) as geometry FROM admin_kec WHERE MBRContains(GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.SHAPE");
+    //console.log("SELECT ST_AsText(admin_kec.SHAPE) as geometry FROM admin_kec WHERE MBRContains(ST_GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.SHAPE");
 
     //res.end(JSON.stringify(rows))
 
@@ -611,7 +611,7 @@ connection.query(`SELECT lj.*,di.status, di.nm_ruas ,di.kd_ruas,u.fullname , k.d
 
 //   }
 
-// connection.query(`SELECT uj.* , u.fullname ,k.desa ,k2.kecamatan, asWkt(uj.SHAPE) as geometry  FROM usulan_jali uj left join user u on u.id_user = uj.id_user left join  kelurahan k on k.id_kelurahan = u.kel_id left join kecamatan k2 on k2.id_kecamatan = k.id_kec  WHERE ISNULL(uj.deletedAt) and uj.SHAPE is not null ${a}  ORDER BY uj.usulan_jali_id DESC  `, function (err, rows, fields) {
+// connection.query(`SELECT uj.* , u.fullname ,k.desa ,k2.kecamatan, ST_AsText(uj.SHAPE) as geometry  FROM usulan_jali uj left join user u on u.id_user = uj.id_user left join  kelurahan k on k.id_kelurahan = u.kel_id left join kecamatan k2 on k2.id_kecamatan = k.id_kec  WHERE ISNULL(uj.deletedAt) and uj.SHAPE is not null ${a}  ORDER BY uj.usulan_jali_id DESC  `, function (err, rows, fields) {
 //     if (err) throw err;
 //     for (let i = 0; i < rows.length; i++) {
 //       if(rows[i].status=='JALAN LINGKUNGAN'){
@@ -629,7 +629,7 @@ connection.query(`SELECT lj.*,di.status, di.nm_ruas ,di.kd_ruas,u.fullname , k.d
 //       }
       
 //     }
-//     //console.log("SELECT asWkt(admin_kec.SHAPE) as geometry FROM admin_kec WHERE MBRContains(GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.SHAPE");
+//     //console.log("SELECT ST_AsText(admin_kec.SHAPE) as geometry FROM admin_kec WHERE MBRContains(ST_GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.SHAPE");
 
 //     //res.end(JSON.stringify(rows))
 
@@ -678,8 +678,8 @@ router.get('/usulan_jalan', function (req, res) {
 
   }
 
-// connection.query(`SELECT uj.* , u.fullname ,k.desa ,k2.kecamatan, asWkt(uj.SHAPE) as geometry  FROM survey uj left join user u on u.id_user = uj.id_user left join  kelurahan k on k.id_kelurahan = u.kel_id left join kecamatan k2 on k2.id_kecamatan = k.id_kec  WHERE ISNULL(uj.deletedAt) and uj.SHAPE is not null ${a}  ORDER BY uj.usulan_jali_id DESC  `, function (err, rows, fields) {
-connection.query(`SELECT  uj.* , u.fullname ,k.desa ,k2.kecamatan, asWkt(uj.SHAPE) as geometry  FROM survey uj left join pembangunan_jali pj on uj.pembangunan_jali_id = pj.pembangunan_jali_id left join user u  on u.id_user = uj.id_user  left join  kelurahan k on k.id_kelurahan = u.kel_id left join kecamatan k2 on k2.id_kecamatan = k.id_kec   WHERE ISNULL(uj.deletedAt) and uj.SHAPE is not null ${a}  ORDER BY uj.pembangunan_jali_id DESC   `, function (err, rows, fields) {
+// connection.query(`SELECT uj.* , u.fullname ,k.desa ,k2.kecamatan, ST_AsText(uj.SHAPE) as geometry  FROM survey uj left join user u on u.id_user = uj.id_user left join  kelurahan k on k.id_kelurahan = u.kel_id left join kecamatan k2 on k2.id_kecamatan = k.id_kec  WHERE ISNULL(uj.deletedAt) and uj.SHAPE is not null ${a}  ORDER BY uj.usulan_jali_id DESC  `, function (err, rows, fields) {
+connection.query(`SELECT  uj.* , u.fullname ,k.desa ,k2.kecamatan, ST_AsText(uj.SHAPE) as geometry  FROM survey uj left join pembangunan_jali pj on uj.pembangunan_jali_id = pj.pembangunan_jali_id left join user u  on u.id_user = uj.id_user  left join  kelurahan k on k.id_kelurahan = u.kel_id left join kecamatan k2 on k2.id_kecamatan = k.id_kec   WHERE ISNULL(uj.deletedAt) and uj.SHAPE is not null ${a}  ORDER BY uj.pembangunan_jali_id DESC   `, function (err, rows, fields) {
 if (err) throw err;
     for (let i = 0; i < rows.length; i++) {
       if(rows[i].status=='JALAN LINGKUNGAN'){
@@ -697,7 +697,7 @@ if (err) throw err;
       }
       
     }
-    //console.log("SELECT asWkt(admin_kec.SHAPE) as geometry FROM admin_kec WHERE MBRContains(GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.SHAPE");
+    //console.log("SELECT ST_AsText(admin_kec.SHAPE) as geometry FROM admin_kec WHERE MBRContains(ST_GeomFromText( 'POLYGON(("+req.query.kiri_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kanan_lat+","+req.query.kanan_lng+" "+req.query.kiri_lat+","+req.query.kiri_lng+" "+req.query.kiri_lat+"))' ),admin_kec.SHAPE");
 
     //res.end(JSON.stringify(rows))
 
@@ -730,7 +730,7 @@ router.get('/json_kecamatan',async function (req, res) {
   }
   console.log(str);
   
-  let rows =  await sql_enak.raw(`SELECT a.*,asWkt(a.SHAPE) as geometry FROM kecamatan a where  deleted = 0 `+str,val)
+  let rows =  await sql_enak.raw(`SELECT a.*,ST_AsText(a.SHAPE) as geometry FROM kecamatan a where  deleted = 0 `+str,val)
   dbgeo.parse({
     "data": rows[0],
     "outputFormat": "geojson",
@@ -765,7 +765,7 @@ router.get('/json_kelurahan',async function (req, res) {
   
   console.log(str);
   
-  let rows =  await sql_enak.raw(`SELECT a.*,asWkt(a.SHAPE) as geometry FROM kelurahan a where deleted = 0 `+str,val)
+  let rows =  await sql_enak.raw(`SELECT a.*,ST_AsText(a.SHAPE) as geometry FROM kelurahan a where deleted = 0 `+str,val)
   dbgeo.parse({
     "data": rows[0],
     "outputFormat": "geojson",
@@ -787,7 +787,7 @@ router.get('/json_kelurahan',async function (req, res) {
 })
 /* =========================================================
  *  JOIN LAYER: master_retribusi + tiang + kabel
- *  SHAPE = MySQL GEOMETRY → pakai asWkt() + dbgeo.parse
+ *  SHAPE = MySQL GEOMETRY → pakai ST_AsText() + dbgeo.parse
  *  outputFormat = geojson (karena geometri campur)
  * ========================================================= */
 
@@ -808,7 +808,7 @@ router.get('/master_retribusi_join', function (req, res) {
       m.panjang, m.id_kec, m.id_kel,
       (SELECT IFNULL(SUM(t.jumlah_tia),0) FROM tiang t WHERE t.kode_ruas = m.no) AS jml_tiang,
       (SELECT IFNULL(SUM(k.jumlah),0)     FROM kabel k WHERE k.kode_ruas = m.no) AS jml_kabel,
-      asWkt(m.SHAPE) AS geometry
+      ST_AsText(m.SHAPE) AS geometry
     FROM master_retribusi m
     WHERE ${where.join(' AND ')}
   `;
@@ -842,7 +842,7 @@ router.get('/tiang_join', function (req, res) {
       t.kd_kec, t.kd_kel, t.surveyor,
       m.nm_ruas, m.tk_ruas_aw, m.tk_ruas_ak, m.panjang AS panjang_ruas,
       k.kecamatan, k2.desa,
-      asWkt(t.SHAPE) AS geometry
+      ST_AsText(t.SHAPE) AS geometry
     FROM tiang t
     LEFT JOIN master_retribusi m ON m.no       = t.kode_ruas
     LEFT JOIN kecamatan k        ON k.kec_id   = t.kd_kec
@@ -879,7 +879,7 @@ router.get('/kabel_join', function (req, res) {
       k.jr_atk15cm, k.jr_atl15cm, k.panjang,
       k.kd_kec, k.kd_kel, k.surveyor,
       m.nm_ruas, m.tk_ruas_aw, m.tk_ruas_ak,
-      asWkt(k.SHAPE) AS geometry
+      ST_AsText(k.SHAPE) AS geometry
     FROM kabel k
     LEFT JOIN master_retribusi m ON m.no = k.kode_ruas
     WHERE ${where.join(' AND ')}

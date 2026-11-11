@@ -106,7 +106,7 @@ router.get('/ruas_jalan_detail/:id', function (req, res) {
   var sqlMaster = `
     SELECT
       m.*,
-      asWkt(m.SHAPE) AS geometry,
+      ST_AsText(m.SHAPE) AS geometry,
       k.kecamatan,
       kl.desa AS kelurahan
     FROM master_retribusi m
@@ -130,7 +130,7 @@ router.get('/ruas_jalan_detail/:id', function (req, res) {
         t.t_k30cm, t.t_l30cm,  t.kondisi, t.ciri_tiang,t.kd_foto_1,
 t.kd_foto_2,
 t.kd_foto_3,
-        asWkt(t.SHAPE) AS geometry
+        ST_AsText(t.SHAPE) AS geometry
       FROM tiang t left join provider p on t.provider_id = p.provider_id
       WHERE t.kode_ruas = ${connection.escape(no)}
         AND t.deletedAt IS NULL
@@ -142,7 +142,7 @@ t.kd_foto_3,
         k.id, k.no, k.kode_ruas, k.kode_gps_p, k.kode_gps_u,
         k.provider, k.ciri_kabel, k.jumlah,
         k.jr_atk15cm, k.jr_atl15cm, k.panjang,
-        asWkt(k.SHAPE) AS geometry
+        ST_AsText(k.SHAPE) AS geometry
       FROM kabel k
       WHERE k.kode_ruas = ${connection.escape(no)}
         AND k.deletedAt IS NULL
@@ -243,7 +243,7 @@ router.get('/provider_detail/:id', function (req, res) {
   // 1) MASTER
   // =====================================================
   var sqlMaster = `
-    SELECT m.*, asWkt(m.SHAPE) AS geometry
+    SELECT m.*, ST_AsText(m.SHAPE) AS geometry
     FROM master_retribusi m    
     WHERE 1 ${whereKecMaster}
   `;
@@ -269,7 +269,7 @@ console.log(sqlMaster);
         t.id, t.kode_ruas, t.kode_gps, t.jumlah_tia, t.provider,
         t.t_k30cm, t.t_l30cm, t.kondisi, t.ciri_tiang,
         t.kd_foto_1, t.kd_foto_2, t.kd_foto_3,
-        asWkt(t.SHAPE) AS geometry
+        ST_AsText(t.SHAPE) AS geometry
       FROM tiang t
       WHERE t.provider_id = ${id}
         AND t.deletedAt IS NULL
@@ -285,7 +285,7 @@ console.log(sqlTiang);
         k.id, k.no, k.kode_ruas, k.kode_gps_p, k.kode_gps_u,
         k.provider, k.ciri_kabel, k.jumlah,
         k.jr_atk15cm, k.jr_atl15cm, k.panjang,
-        asWkt(k.SHAPE) AS geometry
+        ST_AsText(k.SHAPE) AS geometry
       FROM kabel k
       WHERE k.provider_id = ${id}
         AND k.deletedAt IS NULL
@@ -366,7 +366,7 @@ router.get('/ruas_jalan/tiang_provider_detail/:id', cek_login_all, function (req
   var sqlMaster = `
     SELECT
       m.id, m.no, m.nm_ruas,
-      asWkt(m.SHAPE) AS geometry,
+      ST_AsText(m.SHAPE) AS geometry,
       k.kecamatan,
       kl.desa AS kelurahan
     FROM master_retribusi m
@@ -394,7 +394,7 @@ router.get('/ruas_jalan/tiang_provider_detail/:id', cek_login_all, function (req
         t.id, t.kode_ruas, t.kode_gps, t.jumlah_tia, t.provider,
         t.t_k30cm, t.t_l30cm, t.kondisi, t.ciri_tiang,
         t.kd_foto_1, t.kd_foto_2, t.kd_foto_3,
-        asWkt(t.SHAPE) AS geometry
+        ST_AsText(t.SHAPE) AS geometry
       FROM tiang t
       WHERE t.kode_ruas = ${connection.escape(noRuas)}
         AND t.deletedAt IS NULL
@@ -480,7 +480,7 @@ router.get('/ruas_jalan/tiang_provider_detail/:id', cek_login_all, function (req
   var sqlMaster = `
     SELECT
       m.id, m.no, m.nm_ruas,
-      asWkt(m.SHAPE) AS geometry,
+      ST_AsText(m.SHAPE) AS geometry,
       k.kecamatan,
       kl.desa AS kelurahan
     FROM master_retribusi m
@@ -509,7 +509,7 @@ console.log(sqlMaster);
         t.id, t.kode_ruas, t.kode_gps, t.jumlah_tia, t.provider,
         t.t_k30cm, t.t_l30cm, t.kondisi, t.ciri_tiang,
         t.kd_foto_1, t.kd_foto_2, t.kd_foto_3,
-        asWkt(t.SHAPE) AS geometry
+        ST_AsText(t.SHAPE) AS geometry
       FROM tiang t left join  master_retribusi m on m.no = t.kode_ruas
       WHERE t.provider_id = ${id} and t.deletedAt IS NULL ${whereKecTiang}
       ORDER BY t.kode_gps ASC, t.id ASC
