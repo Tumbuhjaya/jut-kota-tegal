@@ -565,14 +565,25 @@
                                         <ul class="list-inline mb-0">
                                             <li class="list-inline-item"><a href="/perizinan/shortcut" style="color: #0c1e35;font-weight: 300;">Beranda</a></li>
                                             <li class="list-inline-item"><i class="fas fa-chevron-right" style="color: #0c1e35;"></i></li>
-                                            <li class="list-inline-item"><a href="#" style="color: #0c1e35;font-weight: 300;">Data Permohonan Izin</a></li>
+                                            <li class="list-inline-item"><a href="<%= url_kembali %>" style="color: #0c1e35;font-weight: 300;">Data Permohonan Izin</a></li>
                                             <li class="list-inline-item"><i class="fas fa-chevron-right" style="color: #0c1e35;"></i></li>
-                                            <li class="list-inline-item"><a href="#" style="color: #0c1e35;font-weight: 300;">Data Ruas Jalan</a></li>
+                                            <li class="list-inline-item"><a href="/perizinan/reklame/ruas_jalan/<%= reklame.reklame_id %>" style="color: #0c1e35;font-weight: 300;">Data Ruas Jalan</a></li>
                                             <li class="list-inline-item"><i class="fas fa-chevron-right" style="color: #0c1e35;"></i></li>
 
                                             <li class="list-inline-item"><span style="color: #0c1e35;">Digitasi Data</span></li>
                                         </ul>
                                         <hr>
+                                    </div>
+                                </div>
+
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <div class="alert alert-success mb-0" role="alert">
+                                            Ruas: <strong><%= ruas.ruas_id ? ruas.nm_ruas : 'Di luar ruas (Jalan Lain)' %></strong>
+                                            <% if (bisa_ubah) { %>
+                                            <br/><small><i>Gunakan tombol marker di kiri atas peta untuk menambah titik reklame, tombol edit untuk menggeser, lalu klik Simpan.</i></small>
+                                            <% } %>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -594,21 +605,14 @@
                                                         <th class="text-center" style="width: 110px;">Option</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody>
+                                                <tbody></tbody>
+                                                <tfoot>
                                                     <tr>
-                                                        <td>1.</td>
-                                                        <td>Value Koordinat</td>
-                                                        <td>
-                                                            <input type="text" class="form-control" name="" id="">
-                                                        </td>
-                                                        <td>
-                                                            <div class="w-100-flex" style="justify-content: center;flex-wrap: wrap;align-items: center;gap: 5px;">
-                                                                <button type="button" class="btn btn-info btn-digitasi" title="Lihat Peta"><i class="fas fa-search-location"></i></button>
-                                                                <button type="button" class="btn btn-danger btn-hapus" title="Hapus Digitasi & Data"><i class="fas fa-trash"></i></button>
-                                                            </div>
-                                                        </td>
+                                                        <th colspan="2" class="text-right">Total</th>
+                                                        <th class="text-center" id="total_digitasi">0 titik</th>
+                                                        <th></th>
                                                     </tr>
-                                                </tbody>
+                                                </tfoot>
                                             </table>
                                         </div>
                                     </div>
@@ -618,8 +622,10 @@
                                     <div class="col-12">
                                         <hr>
                                         <div class="w-100-flex" style="justify-content: center;flex-wrap: wrap;gap: 10px;">
-                                            <a href="#" class="btn btn-secondary" style="padding: 0.85rem 40px;border-radius: 12px;"><i class="fas fa-arrow-left"></i>&nbsp;&nbsp;Kembali</a>
-                                            <button type="button" class="btn btn-gradient" style="padding-left: 90px;padding-right: 90px;"><i class="fas fa-save"></i>&nbsp;&nbsp;Simpan</button>
+                                            <a href="/perizinan/reklame/ruas_jalan/<%= reklame.reklame_id %>" class="btn btn-secondary" style="padding: 0.85rem 40px;border-radius: 12px;"><i class="fas fa-arrow-left"></i>&nbsp;&nbsp;Kembali</a>
+                                            <% if (bisa_ubah) { %>
+                                            <button type="button" class="btn btn-gradient" style="padding-left: 90px;padding-right: 90px;" onclick="simpanDigitasi()"><i class="fas fa-save"></i>&nbsp;&nbsp;Simpan</button>
+                                            <% } %>
                                         </div>
                                     </div>
                                 </div>
@@ -642,6 +648,13 @@
     <!-- End Plugins This Page -->
     <script type="text/javascript">
         var rooturl = '';
+
+        // Konfigurasi digitasi (dipakai kontrol gambar di bawah & script digitasi di akhir halaman)
+        var ID_REKLAME = <%= reklame.reklame_id %>;
+        var ID_RUAS = <%= ruas.reklame_ruas_id %>;
+        var RUAS_MASTER_ID = <%= ruas.ruas_id || 'null' %>;
+        var BISA_UBAH = <%= bisa_ubah ? 'true' : 'false' %>;
+        var API_DIGITASI = rooturl + '/perizinan/reklame/api/digitasi/' + ID_REKLAME + '/' + ID_RUAS;
 
         $(document).ready(function () {
             // Init Select2
@@ -1205,7 +1218,7 @@
                           }; 
                            
                           var drawControl = new L.Control.Draw(options); 
-                          map.addControl(drawControl); 
+                          if (BISA_UBAH) map.addControl(drawControl); 
                            
                            map.on(L.Draw.Event.CREATED, function (event) { digitasiBaru(event.layer); });
                            map.on(L.Draw.Event.EDITED, function (event) { event.layers.eachLayer(digitasiDiubah); });
@@ -2234,6 +2247,135 @@ function loadGeoJsoninovasi(data) {
                     
                             
                   });
+    </script>
+    <script type="text/javascript">
+        // ============================================================
+        // Digitasi titik reklame satu ruas permohonan.
+        // Memakai variabel global halaman peta: map, drawnItems, sk_jalan_layer, toWKT.
+        // ============================================================
+        var fiturHapus = [];        // id tersimpan yang dihapus, dikirim saat Simpan
+        var adaPerubahan = false;
+        var ikonReklame = L.ExtraMarkers.icon({ icon: 'fa-ad', markerColor: 'orange-dark', prefix: 'fa', iconColor: 'white', shape: 'square' });
+
+        function esc(t) {
+            return $('<div>').text(t == null ? '' : t).html();
+        }
+
+        // Zoom ke ruas yang dipilih; jika di luar ruas, peta zoom ke titik yang sudah ada
+        function zoomKeRuas() {
+            if (!RUAS_MASTER_ID) {
+                if (drawnItems.getLayers().length) map.fitBounds(drawnItems.getBounds(), { padding: [30, 30], maxZoom: 19 });
+                return;
+            }
+            sk_jalan_layer.eachLayer(function (layer) {
+                if (layer.feature && String(layer.feature.properties.id) === String(RUAS_MASTER_ID)) {
+                    layer.setStyle({ color: '#f7ca18', weight: 7, opacity: 1 });
+                    layer.bringToFront();
+                    map.fitBounds(layer.getBounds(), { padding: [30, 30], maxZoom: 19 });
+                }
+            });
+        }
+
+        function buatLayer(f) {
+            var c = f.geojson.coordinates;
+            var layer = L.marker([c[1], c[0]], { icon: ikonReklame });
+            layer.fitur = { id: f.id, keterangan: f.keterangan || '' };
+            return layer;
+        }
+
+        function isiFitur(list) {
+            drawnItems.clearLayers();
+            list.forEach(function (f) { drawnItems.addLayer(buatLayer(f)); });
+            fiturHapus = [];
+            adaPerubahan = false;
+            renderTabel();
+        }
+
+        function digitasiBaru(layer) {
+            layer.setIcon(ikonReklame);
+            layer.fitur = { id: null, keterangan: '' };
+            drawnItems.addLayer(layer);
+            adaPerubahan = true;
+            renderTabel();
+        }
+
+        function digitasiDiubah(layer) {
+            if (!layer.fitur) return;
+            adaPerubahan = true;
+            renderTabel();
+        }
+
+        function renderTabel() {
+            var $tb = $('#tabel_digitasi tbody').empty();
+            var dis = BISA_UBAH ? '' : 'disabled';
+            var layers = drawnItems.getLayers();
+            layers.forEach(function (layer, i) {
+                var ll = layer.getLatLng();
+                var $tr = $('<tr>' +
+                    '<td class="text-center">' + (i + 1) + '.</td>' +
+                    '<td class="text-center">' + ll.lat.toFixed(6) + ', ' + ll.lng.toFixed(6) + '</td>' +
+                    '<td><input type="text" class="form-control form-control-sm in-ket" ' + dis + '></td>' +
+                    '<td class="text-center"><div class="w-100-flex" style="justify-content: center;gap: 5px;">' +
+                        '<button type="button" class="btn btn-info btn-sm btn-zoom" title="Lihat di peta"><i class="fas fa-search-location"></i></button>' +
+                        (BISA_UBAH ? '<button type="button" class="btn btn-danger btn-sm btn-hapus" title="Hapus"><i class="fas fa-trash"></i></button>' : '') +
+                    '</div></td></tr>');
+                $tr.find('.in-ket').val(layer.fitur.keterangan);
+                $tr.data('layer', layer);
+                $tb.append($tr);
+                layer.bindTooltip('Titik reklame ' + (i + 1));
+            });
+            if (!layers.length) {
+                $tb.append('<tr><td colspan="4" class="text-center"><i>Belum ada titik reklame</i></td></tr>');
+            }
+            $('#total_digitasi').text(layers.length + ' titik');
+        }
+
+        $('#tabel_digitasi').on('change', '.in-ket', function () {
+            $(this).closest('tr').data('layer').fitur.keterangan = this.value;
+            adaPerubahan = true;
+        });
+
+        $('#tabel_digitasi').on('click', '.btn-zoom', function () {
+            var layer = $(this).closest('tr').data('layer');
+            map.setView(layer.getLatLng(), 19);
+            layer.openTooltip();
+        });
+
+        $('#tabel_digitasi').on('click', '.btn-hapus', async function () {
+            var layer = $(this).closest('tr').data('layer');
+            var yakin = await swal({ title: 'Hapus titik reklame', text: 'Data ini akan dihapus setelah klik Simpan. Lanjutkan?', icon: 'warning', dangerMode: true, buttons: ['Tidak', 'Ya'] });
+            if (!yakin) return;
+            if (layer.fitur.id) fiturHapus.push(layer.fitur.id);
+            drawnItems.removeLayer(layer);
+            adaPerubahan = true;
+            renderTabel();
+        });
+
+        function simpanDigitasi() {
+            var fitur = drawnItems.getLayers().map(function (layer) {
+                return { id: layer.fitur.id, wkt: toWKT(layer), keterangan: layer.fitur.keterangan };
+            });
+            $.ajax({
+                url: API_DIGITASI,
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ fitur: fitur, hapus: fiturHapus })
+            }).done(function (res) {
+                isiFitur(res.data.fitur);
+                swal('Berhasil', 'Titik reklame berhasil disimpan', 'success');
+            }).fail(function (xhr) {
+                swal('Gagal', (xhr.responseJSON && xhr.responseJSON.message) || 'Gagal menyimpan data', 'error');
+            });
+        }
+
+        $.get(API_DIGITASI).done(function (res) {
+            isiFitur(res.data.fitur);
+            if (!RUAS_MASTER_ID) zoomKeRuas();
+        });
+
+        window.addEventListener('beforeunload', function (e) {
+            if (BISA_UBAH && adaPerubahan) { e.preventDefault(); e.returnValue = ''; }
+        });
     </script>
 </body>
 </html>

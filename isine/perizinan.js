@@ -13,6 +13,7 @@ var cek_login = require('./login').cek_login;
 var cek_login_google = require('./login').cek_login_google;
 var cek_vendor = require('./dashboard_vendor.js').cek_vendor;
 var helper = require('../helpper/permohonan.js');
+var reklame = require('../helpper/reklame.js');
 var dbgeo = require("dbgeo");
 var multer = require("multer");
 var svgCaptcha = require('svg-captcha');
@@ -523,16 +524,296 @@ router.post(JU + '/api/digitasi/:jenis/:id_permohonan/:id_ruas', cek_pemohon, as
 });
 
 
-// reklame
-router.get('/reklame', cek_pemohon, function(req, res) {
-  res.render('content/reklame/dashboard' , { user: getUser(req) }); 
+// ============================================================
+// REKLAME — permohonan izin reklame oleh vendor (is_admin = 3)
+// Alur: daftar permohonan -> ruas jalan (+ dokumen persyaratan)
+//       -> digitasi titik reklame per ruas -> ajukan -> diproses admin
+// Tabel: database/reklame.sql
+// ============================================================
+var RK = '/reklame';
+
+async function ambilReklame(req, res, wajibBisaUbah) {
+  var k = await reklame.getReklame(req.params.id_reklame, idPemilik(req));
+  if (!k) { gagal(res, 'Permohonan tidak ditemukan', 404); return null; }
+  if (wajibBisaUbah && !helper.bisaUbah(k, isAdmin(req))) { gagal(res, 'Permohonan sudah diajukan / diproses dan tidak bisa diubah', 400); return null; }
+  return k;
+}
+
+async function ambilRuasReklame(req, res, wajibBisaUbah) {
+  var k = await ambilReklame(req, res, wajibBisaUbah);
+  if (!k) return null;
+  var [rows] = await sql_enak.raw(
+    `SELECT r.*, IFNULL(r.nm_ruas, mr.nm_ruas) AS nm_ruas FROM reklame_ruas r LEFT JOIN master_retribusi mr ON mr.id = r.ruas_id
+      WHERE r.reklame_ruas_id = ? AND r.reklame_id = ? AND r.deletedAt IS NULL`,
+    [req.params.id_ruas, k.reklame_id]
+  );
+  if (!rows.length) { gagal(res, 'Ruas tidak ditemukan', 404); return null; }
+  return { reklame: k, ruas: rows[0] };
+}
+
+function localsReklame(req, k) {
+  return {
+    user: getUser(req),
+    reklame: k,
+    bisa_ubah: helper.bisaUbah(k, isAdmin(req)),
+    kode_wilayah: helper.KODE_WILAYAH,
+    url_kembali: '/perizinan' + RK
+  };
+}
+
+// ---------------- VIEW ----------------
+router.get(RK, cek_pemohon, function (req, res) {
+  res.render('content/reklame/dashboard', { user: getUser(req) });
 });
 
-router.get('/reklame/baru', cek_pemohon, function(req, res) {
-  res.render('content/reklame/ruas_jalan' , { user: getUser(req) }); 
+// Tombol "Tambah Data": buat draft lalu langsung ke halaman ruas jalan
+router.get(RK + '/baru', cek_vendor, async function (req, res) {
+  try {
+    var user = getUser(req);
+    var id = await reklame.buatDraft(user, user.id_user);
+    res.redirect('/perizinan' + RK + '/ruas_jalan/' + id);
+  } catch (err) {
+    console.log(err);
+    res.redirect('/perizinan' + RK);
+  }
 });
 
-router.get('/reklame/digitasi/:id_ruas', cek_pemohon, function(req, res) {
-  res.render('content/reklame/digitasi' , { user: getUser(req) }); 
+router.get(RK + '/ruas_jalan/:id_reklame', cek_pemohon, async function (req, res) {
+  var k = await reklame.getReklame(req.params.id_reklame, idPemilik(req));
+  if (!k) return res.redirect('/perizinan' + RK);
+  res.render('content/reklame/ruas_jalan', localsReklame(req, k));
 });
+
+router.get(RK + '/digitasi/:id_reklame/:id_ruas', cek_pemohon, async function (req, res) {
+  var k = await reklame.getReklame(req.params.id_reklame, idPemilik(req));
+  if (!k) return res.redirect('/perizinan' + RK);
+  var [ruas] = await sql_enak.raw(
+    `SELECT r.reklame_ruas_id, r.ruas_id, mr.nm_ruas FROM reklame_ruas r
+       LEFT JOIN master_retribusi mr ON mr.id = r.ruas_id
+      WHERE r.reklame_ruas_id = ? AND r.reklame_id = ? AND r.deletedAt IS NULL`,
+    [req.params.id_ruas, k.reklame_id]
+  );
+  if (!ruas.length) return res.redirect('/perizinan' + RK + '/ruas_jalan/' + k.reklame_id);
+  // Jalan Lain hanya punya titik dummy: peta tidak di-zoom ke sana
+  if (ruas[0].nm_ruas === helper.NAMA_RUAS_LAIN) ruas[0].ruas_id = null;
+  var locals = localsReklame(req, k);
+  locals.ruas = ruas[0];
+  res.render('content/reklame/digitasi', locals);
+});
+
+router.get(RK + '/dokumen/:id_reklame/:id_dokumen', cek_pemohon, async function (req, res) {
+  try {
+    var k = await ambilReklame(req, res, false);
+    if (!k) return;
+    var [rows] = await sql_enak.raw(
+      `SELECT * FROM reklame_dokumen WHERE reklame_dokumen_id = ? AND reklame_id = ?`,
+      [req.params.id_dokumen, k.reklame_id]
+    );
+    reklame.kirimDokumen(res, rows[0]);
+  } catch (err) { gagal(res, err); }
+});
+
+// ---------------- API ----------------
+// Baris "Jalan Lain" ditandai luar_ruas = 1; di form dipakai sebagai pilihan "Di luar ruas"
+router.get(RK + '/api/master_ruas', cek_pemohon, async function (req, res) {
+  try {
+    var [data] = await sql_enak.raw(
+      `SELECT id, no, nm_ruas, ${reklame.KOLOM_TARIF} AS tarif, (nm_ruas = ?) AS luar_ruas
+         FROM master_retribusi ORDER BY nm_ruas ASC`,
+      [helper.NAMA_RUAS_LAIN]
+    );
+    res.json({ status: 200, message: 'sukses', data: data });
+  } catch (err) { gagal(res, err); }
+});
+
+router.post(RK + '/api/list', cek_pemohon, async function (req, res) {
+  try {
+    var sql = reklame.SQL_REKAP, val = [];
+    if (idPemilik(req)) { sql += ` AND k.id_user = ?`; val.push(idPemilik(req)); }
+    var [data] = await sql_enak.raw(sql + ` ORDER BY k.reklame_id DESC`, val);
+    data.forEach(function (d) { d.bisa_ubah = helper.bisaUbah(d, isAdmin(req)); });
+    res.json({ status: 200, message: 'sukses', data: data });
+  } catch (err) { gagal(res, err); }
+});
+
+router.get(RK + '/api/detail/:id_reklame', cek_pemohon, async function (req, res) {
+  try {
+    var k = await ambilReklame(req, res, false);
+    if (!k) return;
+    res.json({ status: 200, message: 'sukses', data: await reklame.getDetail(k) });
+  } catch (err) { gagal(res, err); }
+});
+
+// Simpan baris ruas.
+// body: { ruas: [{ reklame_ruas_id?, ruas_id ('' = luar ruas), jumlah_titik, jangka_waktu }] }
+router.post(RK + '/api/simpan/:id_reklame', cek_pemohon, async function (req, res) {
+  try {
+    var k = await ambilReklame(req, res, true);
+    if (!k) return;
+    var ruas = Array.isArray((req.body || {}).ruas) ? req.body.ruas : [];
+    var idRuasLain = await helper.getIdRuasLain();
+
+    for (var i = 0; i < ruas.length; i++) {
+      var r = ruas[i];
+      // ruas kosong = di luar ruas -> pakai tarif baris Jalan Lain
+      var ruas_id = r.ruas_id ? Number(r.ruas_id) : idRuasLain;
+      var mr = { no: null, nm_ruas: null, tarif: 0 };
+      if (ruas_id) {
+        var [rows] = await sql_enak.raw(`SELECT no, nm_ruas, ${reklame.KOLOM_TARIF} AS tarif FROM master_retribusi WHERE id = ?`, [ruas_id]);
+        if (!rows.length) return gagal(res, 'Ruas jalan baris ke-' + (i + 1) + ' tidak ditemukan', 400);
+        mr = rows[0];
+      }
+      var nilai = [ruas_id, mr.no, mr.nm_ruas, mr.tarif || 0,
+        Math.max(0, parseInt(r.jumlah_titik) || 0), Math.max(1, parseInt(r.jangka_waktu) || 1)];
+      var id_tersimpan = null;
+      if (r.reklame_ruas_id) {
+        var [ubah] = await sql_enak.raw(
+          `UPDATE reklame_ruas SET ruas_id = ?, no = ?, nm_ruas = ?, tarif = ?, jumlah_titik = ?, jangka_waktu = ?, lastUpdateAt = NOW()
+            WHERE reklame_ruas_id = ? AND reklame_id = ? AND deletedAt IS NULL`,
+          nilai.concat([r.reklame_ruas_id, k.reklame_id])
+        );
+        if (ubah.affectedRows) id_tersimpan = r.reklame_ruas_id;
+      } else {
+        var [baru] = await sql_enak.raw(
+          `INSERT INTO reklame_ruas (ruas_id, no, nm_ruas, tarif, jumlah_titik, jangka_waktu, reklame_id, insertedAt, lastUpdateAt)
+           VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+          nilai.concat([k.reklame_id])
+        );
+        id_tersimpan = baru.insertId;
+      }
+      // Ruas yang sudah didigitasi: jumlah titik tetap mengikuti hasil digitasi
+      if (id_tersimpan && (await reklame.getTitik(id_tersimpan)).length) await reklame.sinkronJumlahTitik(id_tersimpan);
+    }
+    await sql_enak.raw(`UPDATE reklame SET lastUpdateAt = NOW() WHERE reklame_id = ?`, [k.reklame_id]);
+    res.json({ status: 200, message: 'sukses', data: await reklame.getRuas(k.reklame_id) });
+  } catch (err) { gagal(res, err); }
+});
+
+// Data pemohon + upload dokumen persyaratan (modal "Upload")
+router.post(RK + '/api/syarat/:id_reklame', cek_pemohon, function (req, res) {
+  reklame.upload_dokumen(req, res, async function (errUpload) {
+    if (errUpload) return gagal(res, errUpload, 400);
+    try {
+      var k = await ambilReklame(req, res, true);
+      if (!k) return;
+      var b = req.body || {};
+      await sql_enak.raw(
+        `UPDATE reklame SET nama_pemohon = ?, alamat_pemohon = ?, telp_pemohon = ?, email_pemohon = ?, lastUpdateAt = NOW()
+          WHERE reklame_id = ?`,
+        [b.nama_pemohon || null, b.alamat_pemohon || null, b.telp_pemohon || null, b.email_pemohon || null, k.reklame_id]
+      );
+      var files = req.files || {};
+      for (var jenis in files) {
+        var f = files[jenis][0];
+        await sql_enak.raw(
+          `INSERT INTO reklame_dokumen (reklame_id, jenis_dokumen, nama_file, nama_asli, insertedAt, lastUpdateAt)
+           VALUES (?, ?, ?, ?, NOW(), NOW())
+           ON DUPLICATE KEY UPDATE nama_file = VALUES(nama_file), nama_asli = VALUES(nama_asli), lastUpdateAt = NOW()`,
+          [k.reklame_id, jenis, f.filename, f.originalname]
+        );
+      }
+      res.json({ status: 200, message: 'sukses', data: await reklame.getDokumen(k.reklame_id) });
+    } catch (err) { gagal(res, err); }
+  });
+});
+
+// Ajukan ke admin: wajib nama pemohon, minimal 1 ruas bertitik, dan dokumen wajib lengkap
+router.post(RK + '/api/ajukan/:id_reklame', cek_pemohon, async function (req, res) {
+  try {
+    var k = await ambilReklame(req, res, false);
+    if (!k) return;
+    if (!helper.bisaUbah(k)) return gagal(res, 'Hanya permohonan draft / revisi yang bisa diajukan', 400);
+    var kurang = [];
+    if (!k.nama_pemohon) kurang.push('Nama pemohon belum diisi');
+    var ruas = await reklame.getRuas(k.reklame_id);
+    if (!ruas.length) kurang.push('Belum ada ruas jalan');
+    ruas.forEach(function (r, i) {
+      if (!(r.jumlah_titik > 0)) kurang.push('Ruas baris ke-' + (i + 1) + ' belum punya titik reklame');
+    });
+    var ada = (await reklame.getDokumen(k.reklame_id)).map(function (d) { return d.jenis_dokumen; });
+    reklame.DOKUMEN_WAJIB.forEach(function (j) {
+      if (ada.indexOf(j) === -1) kurang.push('Dokumen belum diupload: ' + reklame.JENIS_DOKUMEN[j]);
+    });
+    if (kurang.length) return res.status(400).json({ status: 400, message: kurang.join('\n'), data: kurang });
+
+    await sql_enak.raw(
+      `UPDATE reklame SET status = 'diajukan', diajukanAt = NOW(), lastUpdateAt = NOW() WHERE reklame_id = ?`,
+      [k.reklame_id]
+    );
+    res.json({ status: 200, message: 'sukses', data: null });
+  } catch (err) { gagal(res, err); }
+});
+
+// Hapus permohonan hanya untuk draft / revisi, juga bagi admin
+router.get(RK + '/api/hapus/:id_reklame', cek_pemohon, async function (req, res) {
+  try {
+    var k = await ambilReklame(req, res, false);
+    if (!k) return;
+    if (!helper.bisaUbah(k)) return gagal(res, 'Permohonan sudah diajukan / diproses dan tidak bisa dihapus', 400);
+    await sql_enak.raw(`UPDATE reklame SET deletedAt = NOW() WHERE reklame_id = ?`, [k.reklame_id]);
+    res.json({ status: 200, message: 'sukses', data: null });
+  } catch (err) { gagal(res, err); }
+});
+
+// Hapus satu baris ruas beserta titik reklamenya
+router.get(RK + '/api/ruas/hapus/:id_reklame/:id_ruas', cek_pemohon, async function (req, res) {
+  try {
+    var x = await ambilRuasReklame(req, res, true);
+    if (!x) return;
+    var id = x.ruas.reklame_ruas_id;
+    await sql_enak.raw(`UPDATE reklame_ruas SET deletedAt = NOW() WHERE reklame_ruas_id = ?`, [id]);
+    await sql_enak.raw(`UPDATE reklame_titik SET deletedAt = NOW() WHERE reklame_ruas_id = ? AND deletedAt IS NULL`, [id]);
+    res.json({ status: 200, message: 'sukses', data: null });
+  } catch (err) { gagal(res, err); }
+});
+
+// ---------------- API: digitasi titik reklame ----------------
+router.get(RK + '/api/digitasi/:id_reklame/:id_ruas', cek_pemohon, async function (req, res) {
+  try {
+    var x = await ambilRuasReklame(req, res, false);
+    if (!x) return;
+    res.json({ status: 200, message: 'sukses', data: { ruas: x.ruas, fitur: await reklame.getTitik(x.ruas.reklame_ruas_id) } });
+  } catch (err) { gagal(res, err); }
+});
+
+// body: { fitur: [{ id?, wkt, keterangan }], hapus: [id, ...] }
+router.post(RK + '/api/digitasi/:id_reklame/:id_ruas', cek_pemohon, async function (req, res) {
+  try {
+    var x = await ambilRuasReklame(req, res, true);
+    if (!x) return;
+    var id_k = x.reklame.reklame_id, id_r = x.ruas.reklame_ruas_id;
+    var fitur = Array.isArray(req.body.fitur) ? req.body.fitur : [];
+    var hapus = Array.isArray(req.body.hapus) ? req.body.hapus : [];
+
+    for (var i = 0; i < fitur.length; i++) {
+      if (!/^POINT\s*\(/i.test(String(fitur[i].wkt || ''))) return gagal(res, 'Geometri titik ke-' + (i + 1) + ' tidak valid', 400);
+    }
+    if (hapus.length) {
+      await sql_enak.raw(
+        `UPDATE reklame_titik SET deletedAt = NOW() WHERE reklame_titik_id IN (${hapus.map(function () { return '?'; }).join(',')})
+            AND reklame_ruas_id = ? AND deletedAt IS NULL`,
+        hapus.concat([id_r])
+      );
+    }
+    for (var j = 0; j < fitur.length; j++) {
+      var f = fitur[j];
+      if (f.id) {
+        await sql_enak.raw(
+          `UPDATE reklame_titik SET SHAPE = ST_GeomFromText(?), keterangan = ?, lastUpdateAt = NOW()
+            WHERE reklame_titik_id = ? AND reklame_ruas_id = ? AND deletedAt IS NULL`,
+          [f.wkt, f.keterangan || null, f.id, id_r]
+        );
+      } else {
+        await sql_enak.raw(
+          `INSERT INTO reklame_titik (reklame_id, reklame_ruas_id, SHAPE, keterangan, insertedAt, lastUpdateAt)
+           VALUES (?, ?, ST_GeomFromText(?), ?, NOW(), NOW())`,
+          [id_k, id_r, f.wkt, f.keterangan || null]
+        );
+      }
+    }
+    await reklame.sinkronJumlahTitik(id_r);
+    res.json({ status: 200, message: 'sukses', data: { fitur: await reklame.getTitik(id_r) } });
+  } catch (err) { gagal(res, err); }
+});
+
 module.exports = router;
