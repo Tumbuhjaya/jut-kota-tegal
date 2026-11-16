@@ -202,7 +202,7 @@ router.post('/login',
     }
     // akun vendor ke daftar permohonan izin jaringan utilitas
     if (Number(req.user[0].is_admin) === 3) {
-      return res.redirect(rooturl+'/perizinan/jaringan_utilitas')
+      return res.redirect(rooturl+'/perizinan/shortcut')
     }
     res.redirect(req.user[0].tujuan)}
 );

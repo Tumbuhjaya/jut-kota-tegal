@@ -522,4 +522,17 @@ router.post(JU + '/api/digitasi/:jenis/:id_permohonan/:id_ruas', cek_pemohon, as
   } catch (err) { gagal(res, err); }
 });
 
+
+// reklame
+router.get('/reklame', cek_pemohon, function(req, res) {
+  res.render('content/reklame/dashboard' , { user: getUser(req) }); 
+});
+
+router.get('/reklame/baru', cek_pemohon, function(req, res) {
+  res.render('content/reklame/ruas_jalan' , { user: getUser(req) }); 
+});
+
+router.get('/reklame/digitasi/:id_ruas', cek_pemohon, function(req, res) {
+  res.render('content/reklame/digitasi' , { user: getUser(req) }); 
+});
 module.exports = router;
