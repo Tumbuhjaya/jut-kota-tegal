@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cetak SK Provider</title>
+
+    <style type="text/css">
+        body {
+            font-family: 'Arial', sans-serif !important;
+            font-size: 9pt;
+            line-height: 1.2em;
+            margin: 0;
+        }
+
+        .w-100 { width: 100%; }
+
+        .kop { text-align: center; font-weight: bold; }
+        .kop .l1 { font-size: 13pt; letter-spacing: 1px; }
+        .kop .l2 { font-size: 11pt; letter-spacing: 1px; margin-top: 1mm; }
+        .kop .l3 { font-size: 9pt; font-weight: normal; margin-top: 1mm; }
+        .kop-line { border-bottom: 3px double #000; margin: 2mm 0 4mm 0; }
+
+        .judul { text-align: center; font-weight: bold; font-size: 10pt; }
+
+        table.info td { border: none; padding: 1px 4px; vertical-align: top; }
+
+        table.data { border-collapse: collapse; width: 100%; margin-top: 3mm; }
+        table.data th, table.data td {
+            border: 1px solid #000;
+            padding: 3px 4px;
+            -webkit-print-color-adjust: exact;
+        }
+        table.data th { vertical-align: middle; text-align: center; font-weight: bold; }
+        table.data td { vertical-align: middle; }
+        table.data tr.huruf th { font-weight: normal; font-style: italic; }
+        table.data tr.total td { font-weight: bold; }
+        table.data tbody tr { page-break-inside: avoid; }
+        .c { text-align: center; }
+        .r { text-align: right; white-space: nowrap; }
+
+        .ttd { width: 75mm; margin-left: auto; margin-top: 8mm; text-align: center; }
+        .ttd .spasi { height: 20mm; }
+        .ttd .nama { font-weight: bold; text-decoration: underline; }
+
+        .catatan { margin-top: 6mm; }
+
+        /* Isian yang bisa diedit sebelum dicetak */
+        [contenteditable="true"] {
+            outline: 1px dashed #007bff;
+            background: #eef5ff;
+            min-width: 20mm;
+            display: inline-block;
+        }
+
+        #tombol-cetak {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            text-align: right;
+            z-index: 9999;
+        }
+        #tombol-cetak button {
+            margin: 4px;
+            padding: 8px 12px;
+            font-size: 11pt;
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #tombol-cetak .hint {
+            font-size: 9pt;
+            color: #555;
+            background: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        @media print {
+            @page {
+                size: A4 Portrait;
+                margin: 10mm;
+            }
+            body { background: white; padding: 0; }
+            .page { width: auto; padding: 0; }
+            .no-print { display: none !important; }
+            [contenteditable="true"] { outline: none; background: none; }
+            * {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+
+        @media screen {
+            body { background-color: #f0f0f0; padding: 20px; }
+            .page {
+                width: 210mm;
+                min-height: 297mm;
+                box-sizing: border-box;
+                padding: 10mm;
+                background: white;
+                margin: 0 auto 20px auto;
+                box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="tombol-cetak" class="no-print">
+        <button onclick="window.print()">Cetak PDF</button><br>
+        <span class="hint">Kolom bergaris biru bisa diedit sebelum dicetak</span>
+    </div>
+
+    <div class="page">
+        <div class="kop">
+            <div class="l1">P E M E R I N T A H &nbsp; K O T A &nbsp; T E G A L</div>
+            <div class="l2">D I N A S &nbsp; P E K E R J A A N &nbsp; U M U M &nbsp; D A N &nbsp; P E N A T A A N &nbsp; R U A N G</div>
+            <div class="l3">Jl. Proklamasi No 11 Telp. 356353 Tegal</div>
+        </div>
+        <div class="kop-line"></div>
+
+        <div class="judul">SURAT KETETAPAN RETRIBUSI DAERAH (SKRD) PEMANFAATAN ASET DAERAH</div>
+        <div class="judul" style="font-weight:normal; margin-top:1mm;">
+            No. <span contenteditable="true" data-key="nomor" data-scope="provider">974 / PAD / ... / <%= new Date().getFullYear() %></span>
+        </div>
+
+        <table class="info" style="margin-top:4mm;">
+            <tr>
+                <td style="width:45mm;">NAMA PEMILIK</td><td>:</td>
+                <td><b id="nama-pemilik">-</b></td>
+            </tr>
+            <tr>
+                <td>ALAMAT</td><td>:</td>
+                <td><span contenteditable="true" data-key="alamat" data-scope="provider" id="alamat"></span></td>
+            </tr>
+            <tr>
+                <td>LOKASI OBJEK RETRIBUSI</td><td>:</td>
+                <td>Kota Tegal</td>
+            </tr>
+            <tr>
+                <td>PERIODE</td><td>:</td>
+                <td><span contenteditable="true" data-key="periode">1 (satu) Tahun</span></td>
+            </tr>
+        </table>
+
+        <table class="data">
+            <thead>
+                <tr>
+                    <th rowspan="2" style="width:7mm;">No.</th>
+                    <th rowspan="2">RUAS JALAN</th>
+                    <th rowspan="2" colspan="3">Nomor Ruas</th>
+                    <th rowspan="2" style="width:13mm;">Panjang Ruas SK</th>
+                    <th colspan="2">KOMPONEN JARINGAN TELEKOMUNIKASI</th>
+                    <th colspan="2">BESARAN TARIF RETRIBUSI PEMANFAATAN ASET DAERAH</th>
+                    <th colspan="2">JUMLAH KOMPONEN RETRIBUSI</th>
+                    <th rowspan="2">JUMLAH RETRIBUSI (Rp)</th>
+                </tr>
+                <tr>
+                    <th style="width:11mm;">Jumlah Tiang</th>
+                    <th style="width:12mm;">Panjang Kabel</th>
+                    <th style="width:20mm;">PEMASANGAN TIANG TELEKOMUNIKASI DIAMETER &le; 30CM</th>
+                    <th style="width:24mm;">PEMASANGAN PIPA/KABEL/JARINGAN UTILITAS ATAS TANAH DIAMETER &le; 15CM</th>
+                    <th>PEMASANGAN TIANG</th>
+                    <th>PEMASANGAN KABEL</th>
+                </tr>
+                <tr>
+                    <th></th>
+                    <th></th>
+                    <th colspan="3"></th>
+                    <th>Km</th>
+                    <th>Unit</th>
+                    <th>Meter</th>
+                    <th>Rp.</th>
+                    <th>Rp.</th>
+                    <th>Unit/Tahun</th>
+                    <th>Meter/Tahun</th>
+                    <th>Rp.</th>
+                </tr>
+                <tr class="huruf">
+                    <th>A</th>
+                    <th>B</th>
+                    <th>C</th>
+                    <th>D</th>
+                    <th>E</th>
+                    <th>F</th>
+                    <th>G</th>
+                    <th>H</th>
+                    <th>I</th>
+                    <th>J</th>
+                    <th>K = G x I</th>
+                    <th>L = H x J</th>
+                    <th>M = K + L</th>
+                </tr>
+            </thead>
+            <tbody id="tbody-data">
+                <tr><td colspan="13" class="c">Memuat data…</td></tr>
+            </tbody>
+        </table>
+
+        <div class="ttd">
+            <div><span contenteditable="true" data-key="tempat_tanggal">Tegal, ...................... <%= new Date().getFullYear() %></span></div>
+            <div><span contenteditable="true" data-key="jabatan_1">Plt. KEPALA DINAS PEKERJAAN UMUM</span></div>
+            <div><span contenteditable="true" data-key="jabatan_2">DAN PENATAAN RUANG KOTA TEGAL</span></div>
+            <div class="spasi"></div>
+            <div class="nama"><span contenteditable="true" data-key="nama_pejabat">Heru Prasetya, S.STP</span></div>
+            <div><span contenteditable="true" data-key="pangkat">Pembina Tk.1</span></div>
+            <div>NIP. <span contenteditable="true" data-key="nip">19810503 199912 1 001</span></div>
+        </div>
+
+        <div class="catatan">
+            <div><b><span contenteditable="true" data-key="rekening">BANK JATENG NO REK. 1004 01 0431 An. RPP DPUPR KOTA TEGAL</span></b></div>
+            <div style="margin-top:2mm;">Catatan : Dalam hal wajib Retribusi tertentu tidak membayar tepat waktu atau kurang membayar,
+                Wajib Retribusi dikenakan sanksi administratif berupa bunga sebesar 1% (satu persen) perbulan
+                dari Retribusi terutang yang tidak atau kurang dibayar.</div>
+        </div>
+    </div>
+
+<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+<script>
+(function () {
+    var providerId = '<%= id %>';
+
+    function escapeHtml(s) {
+        if (s === null || s === undefined) return '';
+        return String(s).replace(/[&<>"']/g, function (c) {
+            return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+        });
+    }
+
+    function rp(n) {
+        return (Number(n) || 0).toLocaleString('id-ID');
+    }
+
+    function km(n) {
+        return (Number(n) || 0).toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+    }
+
+    function terbilang(n) {
+        var satuan = ['', 'Satu', 'Dua', 'Tiga', 'Empat', 'Lima', 'Enam', 'Tujuh', 'Delapan', 'Sembilan', 'Sepuluh', 'Sebelas'];
+        n = Math.floor(Number(n) || 0);
+        if (n < 12)            return satuan[n];
+        if (n < 20)            return terbilang(n - 10) + ' Belas';
+        if (n < 100)           return terbilang(Math.floor(n / 10)) + ' Puluh ' + terbilang(n % 10);
+        if (n < 200)           return 'Seratus ' + terbilang(n - 100);
+        if (n < 1000)          return terbilang(Math.floor(n / 100)) + ' Ratus ' + terbilang(n % 100);
+        if (n < 2000)          return 'Seribu ' + terbilang(n - 1000);
+        if (n < 1000000)       return terbilang(Math.floor(n / 1000)) + ' Ribu ' + terbilang(n % 1000);
+        if (n < 1000000000)    return terbilang(Math.floor(n / 1000000)) + ' Juta ' + terbilang(n % 1000000);
+        if (n < 1000000000000) return terbilang(Math.floor(n / 1000000000)) + ' Milyar ' + terbilang(n % 1000000000);
+        return terbilang(Math.floor(n / 1000000000000)) + ' Triliun ' + terbilang(n % 1000000000000);
+    }
+
+    // ====== Isian editable diingat di browser (nomor SK & alamat per provider) ======
+    function storageKey(el) {
+        var key = 'sk_provider_' + el.getAttribute('data-key');
+        if (el.getAttribute('data-scope') === 'provider') key += '_' + providerId;
+        return key;
+    }
+
+    function loadEditable() {
+        $('[contenteditable="true"][data-key]').each(function () {
+            var el = this;
+            try {
+                var saved = localStorage.getItem(storageKey(el));
+                if (saved !== null) el.textContent = saved;
+            } catch (e) {}
+            $(el).on('input', function () {
+                try { localStorage.setItem(storageKey(el), el.textContent); } catch (e) {}
+            });
+        });
+    }
+
+    function render(res) {
+        var p = res.provider || {};
+        $('#nama-pemilik').text((p.nama_perusahaan || p.provider || '-').toUpperCase());
+
+        var alamat = document.getElementById('alamat');
+        if (!alamat.textContent.trim() && p.alamat) alamat.textContent = p.alamat;
+
+        var rows = res.rows || [];
+        var t    = res.total || {};
+        var html = '';
+
+        rows.forEach(function (r, i) {
+            html += '<tr>' +
+                '<td class="c">' + (i + 1) + '</td>' +
+                '<td>' + escapeHtml(r.nm_ruas || '-') + '</td>' +
+                '<td class="c">33</td>' +
+                '<td class="c">76</td>' +
+                '<td class="c">' + escapeHtml(r.kode_ruas) + '</td>' +
+                '<td class="r">' + km(r.panjang_ruas_km) + '</td>' +
+                '<td class="r">' + rp(r.jumlah_tiang) + '</td>' +
+                '<td class="r">' + rp(r.panjang_kabel) + '</td>' +
+                '<td class="r">' + rp(r.tarif_tiang) + '</td>' +
+                '<td class="r">' + rp(r.tarif_kabel) + '</td>' +
+                '<td class="r">' + rp(r.retribusi_tiang) + '</td>' +
+                '<td class="r">' + rp(r.retribusi_kabel) + '</td>' +
+                '<td class="r">' + rp(r.jumlah_retribusi) + '</td>' +
+            '</tr>';
+        });
+
+        if (!rows.length) {
+            html += '<tr><td colspan="13" class="c">Tidak ada data tiang / kabel untuk provider ini</td></tr>';
+        }
+
+        html += '<tr class="total">' +
+                '<td colspan="6"></td>' +
+                '<td class="r">' + rp(t.jumlah_tiang) + '</td>' +
+                '<td class="r">' + rp(t.panjang_kabel) + '</td>' +
+                '<td colspan="2"></td>' +
+                '<td class="r">' + rp(t.retribusi_tiang) + '</td>' +
+                '<td class="r">' + rp(t.retribusi_kabel) + '</td>' +
+                '<td></td>' +
+            '</tr>' +
+            '<tr class="total">' +
+                '<td colspan="12">JUMLAH</td>' +
+                '<td class="r">' + rp(t.jumlah_retribusi) + '</td>' +
+            '</tr>' +
+            '<tr class="total">' +
+                '<td colspan="12">JUMLAH RETRIBUSI YANG HARUS DIBAYARKAN</td>' +
+                '<td class="r">' + rp(t.jumlah_retribusi) + '</td>' +
+            '</tr>' +
+            '<tr>' +
+                '<td colspan="13"><i>Terbilang : ' +
+                    escapeHtml(terbilang(t.jumlah_retribusi).replace(/\s+/g, ' ').trim() || 'Nol') +
+                ' Rupiah</i></td>' +
+            '</tr>';
+
+        document.getElementById('tbody-data').innerHTML = html;
+    }
+
+    $(function () {
+        loadEditable();
+
+        $.getJSON('/manajemen_laporan/provider/sk_detail/' + encodeURIComponent(providerId))
+            .done(render)
+            .fail(function (xhr) {
+                document.getElementById('tbody-data').innerHTML =
+                    '<tr><td colspan="13" class="c" style="color:red;">Gagal memuat data (' + xhr.status + ')</td></tr>';
+            });
+    });
+})();
+</script>
+</body>
+</html>
