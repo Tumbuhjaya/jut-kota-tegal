@@ -1,0 +1,282 @@
+<% include ../../../template-backoffice/header.ejs %>
+  <!-- Main Content -->
+  <div class="main-content">
+    <section class="section">
+      <div class="w-100" style="padding: 0 30px;">
+        <div class="section-header">
+          <h1>Data Peninjauan Lapangan</h1>
+          <div class="section-header-breadcrumb">
+            <div class="breadcrumb-item active"><a href="#">Dashboard</a></div>
+            <div class="breadcrumb-item">Data</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-body">
+        <div class="row">
+          <div class="col-lg-12 col-xl-12">
+            <div class="card">
+              <div class="card-header">
+                <!-- <a href="/manajemen_basic/insert" class="btn btn-primary custom-btn-card-header"><i class="fas fa-plus"></i> Tambah Data</a> -->
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table class="table table-bordered table-striped table-hover" id="list-data">
+                    <thead>                                 
+                      <tr>
+                        <th class="text-center" rowspan="2">No.</th>
+                        <th class="text-center" rowspan="2">Pemohon/Vendor</th>
+                        <th class="text-center" rowspan="2">Provider</th>
+                        <th class="text-center" colspan="4">Total</th>
+                        <th class="text-center" rowspan="2" style="min-width: 100px;">Tim Teknis</th>
+                        <th class="text-center" rowspan="2" style="min-width: 100px;">Option</th>
+                      </tr>
+
+                      <tr>
+                        <th class="text-center">Ruas</th>
+                        <th class="text-center">Tiang</th>
+                        <th class="text-center" style="min-width: 130px;">Panjang Kabel (m)</th>
+                        <th class="text-center" style="min-width: 130px;">Retribusi (Rp)</th>
+                      </tr>
+                    </thead>
+                    <tbody>                                 
+                      <tr>
+                        <td class="text-center">1.</td>
+                        <td>value pemohon</td>
+                        <td>value provider</td>
+                        <td class="text-center">00</td>
+                        <td class="text-center">00</td>
+                        <td class="text-center">00</td>
+                        <td class="text-right">Rp 0,-</td>
+                        <td>value tim teknis</td>
+                        <td>
+                          <div class="w-100-flex" style="justify-content: center;gap: 5px;">
+                            <button class="btn btn-warning" title="Buat Draft BA" data-toggle="modal" data-target="#modalDraft"><i class="fas fa-pen-square"></i></button>
+                            <button class="btn btn-success" title="Cetak Draft BA"><i class="fas fa-print"></i></button>
+                            <button class="btn btn-info" title="Upload BA TTD" data-toggle="modal" data-target="#modalUpload"><i class="fas fa-file-upload"></i></button>
+                          </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <footer class="main-footer">
+    <div class="footer-left">
+      <% include ../../../template-backoffice/copyright-left.ejs %>
+    </div>
+    <div class="footer-right">
+      <% include ../../../template-backoffice/copyright-right.ejs %>
+    </div>
+  </footer>
+<% include ../../../template-backoffice/footer.ejs %>
+
+<!-- Modal -->
+<div class="modal fade" id="modalDraft" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">Buat Draft Berita Acara Peninjauan Lapangan</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+         </div>
+        <div class="modal-body">
+            <div class="row">
+                <div class="col-12 col-lg-6 col-xl-6">
+                    <div class="form-group">
+                        <label for="">Nomor Berita Acara</label>
+                        <input type="text" class="form-control" id="" name="">
+                    </div>
+                </div>
+
+                <div class="col-12 col-lg-6 col-xl-6">
+                    <div class="form-group">
+                        <label for="">Tanggal Berita Acara</label>
+                        <input type="date" class="form-control" id="" name="">
+                    </div>
+                </div>
+
+                <div class="col-12 col-lg-6 col-xl-6">
+                    <div class="form-group">
+                        <label for="">Nomor Surat Permohonan</label>
+                        <input type="text" class="form-control" id="" name="" readonly>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-6 col-xl-6">
+                    <div class="form-group">
+                        <label for="">Tanggal Surat Permohonan</label>
+                        <input type="date" class="form-control" id="" name="" readonly>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                 <div class="col-12">
+                    <div class="form-group">
+                        <label for="">Hasil Peninjauan Lapangan</label>
+                        <textarea name="" id="editor1" class="form-control" rows="5"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12 col-lg-6 col-xl-6">
+                    <div class="form-group">
+                        <label for="">Upload Dokumentasi Peninjauan Lapangan</label>
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="customFile">
+                            <label class="custom-file-label" for="customFile">Pilih File</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-lg-6 col-xl-6">
+                    <div class="form-group">
+                        <label for="">Upload Dokumentasi Peninjauan Lapangan</label>
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="customFile">
+                            <label class="custom-file-label" for="customFile">Pilih File</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-lg-6 col-xl-6">
+                    <div class="form-group">
+                        <label for="">Upload Dokumentasi Peninjauan Lapangan</label>
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="customFile">
+                            <label class="custom-file-label" for="customFile">Pilih File</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-lg-6 col-xl-6">
+                    <div class="form-group">
+                        <label for="">Upload Dokumentasi Peninjauan Lapangan</label>
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="customFile">
+                            <label class="custom-file-label" for="customFile">Pilih File</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-lg-6 col-xl-6">
+                    <div class="form-group">
+                        <label for="">Upload Dokumentasi Peninjauan Lapangan</label>
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="customFile">
+                            <label class="custom-file-label" for="customFile">Pilih File</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-lg-6 col-xl-6">
+                    <div class="form-group">
+                        <label for="">Upload Dokumentasi Peninjauan Lapangan</label>
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="customFile">
+                            <label class="custom-file-label" for="customFile">Pilih File</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal"><i class="fas fa-times"></i>&nbsp;&nbsp;Tutup</button>
+        <button type="button" class="btn btn-primary"><i class="fas fa-check"></i>&nbsp;&nbsp;Simpan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="modalUpload" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">Upload Berita Acara Peninjauan Lapangan</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+         </div>
+        <div class="modal-body">
+            <div class="row">
+                <div class="col-12">
+                    <div class="form-group">
+                        <label for="">Upload BA yang sudah ditandatangani </label>
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="customFile">
+                            <label class="custom-file-label" for="customFile">Pilih File</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal"><i class="fas fa-times"></i>&nbsp;&nbsp;Tutup</button>
+        <button type="button" class="btn btn-primary"><i class="fas fa-check"></i>&nbsp;&nbsp;Simpan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript">
+    var rooturl = ''
+
+    CKEDITOR.replace('editor1', {
+        height: 300, // Mengatur tinggi editor (dalam piksel)
+        versionCheck: false, // Menonaktifkan notifikasi peringatan versi LTS di layar
+        toolbar: []
+    });
+
+    let data_table  =$('#list-data').DataTable({
+      "language": {
+          "sProcessing":   "Sedang memproses...",
+          "sLengthMenu":   "_MENU_",
+          "sZeroRecords":  "Tidak ditemukan data yang sesuai",
+          "sInfo":         "Menampilkan _START_ sampai _END_ dari _TOTAL_ entri",
+          "sInfoEmpty":    "Menampilkan 0 sampai 0 dari 0 entri",
+          "sInfoFiltered": "(disaring dari _MAX_ entri keseluruhan)",
+          "sInfoPostFix":  "",
+          "sUrl":          "",
+          "oPaginate": {
+            "sFirst":    "Pertama",
+            "sPrevious": "Sebelumnya",
+            "sNext":     "Selanjutnya",
+            "sLast":     "Terakhir"
+          }
+      },
+      "processing": true,
+      // "ajax":  `${rooturl}/api_basic/list`,
+      // "columns": [
+      //   { "data": null},
+      //   { "data": null},
+      //   { "data": null,render: function(data){
+      //     let a = ''
+      //           if (data) {
+      //             a = `
+      //             <ul class="list-inline mb-0">
+      //               <li class="list-inline-item"><a href="${rooturl}/manajemen_basic/edit/${data}" class="btn btn-warning"><i class="fas fa-edit"></i></a></li>
+      //               <li class="list-inline-item"><button onclick="hapus(${data})" class="btn btn-danger"><i class="fa fa-trash"></i></button></li>
+      //             </ul></ul>`
+      //           }
+      //           return `<td><center>${a}</center></td>`
+      //   }},
+      // ],
+      "columnDefs": [
+        { "width": "30px", "targets": 0},
+        // { "width": "200px", "targets": 8}
+      ],
+    });
+
+    data_table.on( 'draw.dt', function () {
+      let PageInfo = $('#list-data').DataTable().page.info();
+      data_table.column(0, { page: 'current' }).nodes().each( function (cell, i) {
+        cell.innerHTML = i + 1 + PageInfo.start;
+      });
+    });
+</script>

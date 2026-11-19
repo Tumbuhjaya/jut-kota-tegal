@@ -230,4 +230,23 @@ router.post('/proses/:id', cek_admin, async function (req, res) {
   } catch (err) { gagal(res, err); }
 });
 
+
+
+// Permohonan izin
+router.get('/permohonan', cek_admin, function (req, res) {
+  res.render('content-backoffice/manajemen_perizinan/permohonan/list', { user: getUser(req) });
+});
+
+router.get('/permohonan/verifikasi/:id', cek_admin, function (req, res) {
+  res.render('content-backoffice/manajemen_perizinan/permohonan/verifikasi', { user: getUser(req) });
+});
+
+router.get('/peninjauan_lapangan', cek_admin, function (req, res) {
+  res.render('content-backoffice/manajemen_perizinan/peninjauan_lapangan/list', { user: getUser(req) });
+});
+
+router.get('/persetujuan_prinsip', cek_admin, function (req, res) {
+  res.render('content-backoffice/manajemen_perizinan/persetujuan_prinsip/list', { user: getUser(req) });
+});
+
 module.exports = router;
