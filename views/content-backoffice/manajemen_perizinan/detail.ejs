@@ -282,7 +282,8 @@
 
     $('#btn_cetak').attr('href', rooturl + '/manajemen_perizinan/cetak_sk/' + ID_PERMOHONAN).toggle(p.status === 'disetujui');
     $('#btn_edit').attr('href', rooturl + '/manajemen_perizinan/edit/' + ID_PERMOHONAN).toggle(p.status !== 'disetujui');
-    $('#wrap_proses').toggle(['diajukan', 'disetujui', 'ditolak'].indexOf(p.status) !== -1);
+    // Permohonan diajukan baru diproses (SK) setelah melewati tahap persetujuan prinsip
+    $('#wrap_proses').toggle(['disetujui', 'ditolak'].indexOf(p.status) !== -1 || (p.status === 'diajukan' && p.tahap === 'penerbitan_izin'));
     $('#no_sk').val(p.no_sk || '');
     $('#tanggal_sk').val(p.tanggal_sk ? moment(p.tanggal_sk).format('YYYY-MM-DD') : '');
     $('#keterangan').val(p.keterangan || '');

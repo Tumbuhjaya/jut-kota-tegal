@@ -421,7 +421,7 @@ router.post(JU + '/api/ajukan/:id_permohonan', cek_pemohon, async function (req,
     if (kurang.length) return res.status(400).json({ status: 400, message: kurang.join('\n'), data: kurang });
 
     await sql_enak.raw(
-      `UPDATE permohonan SET status = 'diajukan', diajukanAt = NOW(), lastUpdateAt = NOW() WHERE permohonan_id = ?`,
+      `UPDATE permohonan SET status = 'diajukan', tahap = 'verifikasi', diajukanAt = NOW(), lastUpdateAt = NOW() WHERE permohonan_id = ?`,
       [p.permohonan_id]
     );
     res.json({ status: 200, message: 'sukses', data: null });

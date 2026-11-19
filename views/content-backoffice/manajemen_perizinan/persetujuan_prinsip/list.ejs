@@ -6,7 +6,7 @@
         <div class="section-header">
           <h1>Data Persetujuan Prinsip</h1>
           <div class="section-header-breadcrumb">
-            <div class="breadcrumb-item active"><a href="#">Dashboard</a></div>
+            <div class="breadcrumb-item active"><a href="/backoffice">Dashboard</a></div>
             <div class="breadcrumb-item">Data</div>
           </div>
         </div>
@@ -17,12 +17,11 @@
           <div class="col-lg-12 col-xl-12">
             <div class="card">
               <div class="card-header">
-                <!-- <a href="/manajemen_basic/insert" class="btn btn-primary custom-btn-card-header"><i class="fas fa-plus"></i> Tambah Data</a> -->
               </div>
               <div class="card-body">
                 <div class="table-responsive">
                   <table class="table table-bordered table-striped table-hover" id="list-data">
-                    <thead>                                 
+                    <thead>
                       <tr>
                         <th class="text-center" rowspan="2">No.</th>
                         <th class="text-center" rowspan="2">Pemohon/Vendor</th>
@@ -39,25 +38,7 @@
                         <th class="text-center" style="min-width: 130px;">Retribusi (Rp)</th>
                       </tr>
                     </thead>
-                    <tbody>                                 
-                      <tr>
-                        <td class="text-center">1.</td>
-                        <td>value pemohon</td>
-                        <td>value provider</td>
-                        <td class="text-center">00</td>
-                        <td class="text-center">00</td>
-                        <td class="text-center">00</td>
-                        <td class="text-right">Rp 0,-</td>
-                        <td>value tim teknis</td>
-                        <td>
-                          <div class="w-100-flex" style="justify-content: center;gap: 5px;">
-                            <button class="btn btn-warning" title="Buat Draft Persetujuan Prinsip" data-toggle="modal" data-target="#modalDraft"><i class="fas fa-pen-square"></i></button>
-                            <button class="btn btn-success" title="Cetak Draft Persetujuan Prinsip"><i class="fas fa-print"></i></button>
-                            <button class="btn btn-info" title="Upload Persetujuan Prinsip TTD" data-toggle="modal" data-target="#modalUpload"><i class="fas fa-file-upload"></i></button>
-                          </div>
-                        </td>
-                      </tr>
-                    </tbody>
+                    <tbody></tbody>
                   </table>
                 </div>
               </div>
@@ -78,11 +59,11 @@
 <% include ../../../template-backoffice/footer.ejs %>
 
 <!-- Modal -->
-<div class="modal fade" id="modalDraft" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade" id="modalDraft" tabindex="-1" aria-labelledby="judulDraft" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
     <div class="modal-content">
         <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLabel">Buat Draft Persetujuan Prinsip</h5>
+            <h5 class="modal-title" id="judulDraft">Buat Draft Persetujuan Prinsip</h5>
             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
             </button>
@@ -91,38 +72,38 @@
             <div class="row">
                 <div class="col-12 col-lg-12 col-xl-12">
                     <div class="form-group">
-                        <label for="">Tanggal Persetujuan Prinsip</label>
-                        <input type="date" class="form-control" id="" name="">
+                        <label for="tanggal_pp">Tanggal Persetujuan Prinsip</label>
+                        <input type="date" class="form-control" id="tanggal_pp">
                     </div>
 
                     <div class="form-group">
-                        <label for="">Nomor Persetujuan Prinsip</label>
-                        <input type="text" class="form-control" id="" name="">
+                        <label for="no_pp">Nomor Persetujuan Prinsip</label>
+                        <input type="text" class="form-control" id="no_pp">
                     </div>
                 </div>
             </div>
             <div class="row">
                  <div class="col-12">
                     <div class="form-group">
-                        <label for="">Persyaratan Persetujuan Prinsip</label>
-                        <textarea name="" id="editor1" class="form-control" rows="5"></textarea>
+                        <label for="editor1">Persyaratan Persetujuan Prinsip</label>
+                        <textarea id="editor1" class="form-control" rows="5"></textarea>
                     </div>
                 </div>
             </div>
         </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal"><i class="fas fa-times"></i>&nbsp;&nbsp;Tutup</button>
-        <button type="button" class="btn btn-primary"><i class="fas fa-check"></i>&nbsp;&nbsp;Simpan</button>
+        <button type="button" class="btn btn-primary" id="btn-simpan-draft" onclick="simpanDraft()"><i class="fas fa-check"></i>&nbsp;&nbsp;Simpan</button>
       </div>
     </div>
   </div>
 </div>
 
-<div class="modal fade" id="modalUpload" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade" id="modalUpload" tabindex="-1" aria-labelledby="judulUpload" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
         <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLabel">Upload Persetujuan Prinsip</h5>
+            <h5 class="modal-title" id="judulUpload">Upload Persetujuan Prinsip</h5>
             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
             </button>
@@ -131,18 +112,19 @@
             <div class="row">
                 <div class="col-12">
                     <div class="form-group">
-                        <label for="">Upload Persetujuan Prinsip yang sudah ditandatangani </label>
+                        <label for="file_ttd">Upload Persetujuan Prinsip yang sudah ditandatangani </label>
                         <div class="custom-file">
-                            <input type="file" class="custom-file-input" id="customFile">
-                            <label class="custom-file-label" for="customFile">Pilih File</label>
+                            <input type="file" class="custom-file-input" id="file_ttd" accept=".pdf,.jpg,.jpeg,.png">
+                            <label class="custom-file-label" for="file_ttd">Pilih File</label>
                         </div>
+                        <small class="text-muted">Setelah diupload, permohonan lanjut ke tahap Penerbitan Izin.</small>
                     </div>
                 </div>
             </div>
         </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal"><i class="fas fa-times"></i>&nbsp;&nbsp;Tutup</button>
-        <button type="button" class="btn btn-primary"><i class="fas fa-check"></i>&nbsp;&nbsp;Simpan</button>
+        <button type="button" class="btn btn-primary" id="btn-simpan-upload" onclick="simpanUpload()"><i class="fas fa-check"></i>&nbsp;&nbsp;Simpan</button>
       </div>
     </div>
   </div>
@@ -150,12 +132,24 @@
 
 <script type="text/javascript">
     var rooturl = ''
+    var URL_TAHAP = rooturl + '/manajemen_perizinan/persetujuan_prinsip';
+    var id_aktif = null;
 
     CKEDITOR.replace('editor1', {
         height: 300, // Mengatur tinggi editor (dalam piksel)
         versionCheck: false, // Menonaktifkan notifikasi peringatan versi LTS di layar
         toolbar: []
     });
+
+    function rupiah(n) {
+      return 'Rp ' + Number(n || 0).toLocaleString('id-ID', { maximumFractionDigits: 0 }) + ',-';
+    }
+    function esc(t) {
+      return $('<div>').text(t == null || t === '' ? '-' : t).html();
+    }
+    function pesanGagal(xhr, def) {
+      swal('Gagal', (xhr.responseJSON && xhr.responseJSON.message) || def, 'error');
+    }
 
     let data_table  =$('#list-data').DataTable({
       "language": {
@@ -175,25 +169,33 @@
           }
       },
       "processing": true,
-      // "ajax":  `${rooturl}/api_basic/list`,
-      // "columns": [
-      //   { "data": null},
-      //   { "data": null},
-      //   { "data": null,render: function(data){
-      //     let a = ''
-      //           if (data) {
-      //             a = `
-      //             <ul class="list-inline mb-0">
-      //               <li class="list-inline-item"><a href="${rooturl}/manajemen_basic/edit/${data}" class="btn btn-warning"><i class="fas fa-edit"></i></a></li>
-      //               <li class="list-inline-item"><button onclick="hapus(${data})" class="btn btn-danger"><i class="fa fa-trash"></i></button></li>
-      //             </ul></ul>`
-      //           }
-      //           return `<td><center>${a}</center></td>`
-      //   }},
-      // ],
+      "ordering": false,
+      "ajax": { url: URL_TAHAP + '/list', type: 'POST' },
+      "columns": [
+        { "data": null, "defaultContent": '', "className": 'text-center' },
+        { "data": null, "render": function (r) { return esc(r.nama_pemohon) + '<br/><small class="text-muted">' + esc(r.nama_vendor || r.username_vendor) + '</small>'; } },
+        { "data": 'provider', "render": esc },
+        { "data": 'jml_ruas', "className": 'text-center' },
+        { "data": 'jml_tiang', "className": 'text-center' },
+        { "data": 'jml_kabel', "className": 'text-center', "render": function (d) { return Number(d).toLocaleString('id-ID'); } },
+        { "data": 'retribusi', "className": 'text-right', "render": rupiah },
+        { "data": 'tim_teknis', "render": function (d) { return d ? esc(d).replace(/\n/g, '<br/>') : '-'; } },
+        { "data": null, "render": function (r) {
+            var ada = Number(r.ada_pp);
+            return '<div class="w-100-flex" style="justify-content: center;gap: 5px;">' +
+              '<a href="' + rooturl + '/manajemen_perizinan/permohonan/verifikasi/' + r.permohonan_id + '" class="btn btn-light" title="Detail Permohonan"><i class="fas fa-eye"></i></a>' +
+              (r.file_ba ? '<a href="' + rooturl + '/manajemen_perizinan/peninjauan_lapangan/file/' + r.permohonan_id + '" target="_blank" class="btn btn-secondary" title="Lihat BA Peninjauan Lapangan TTD"><i class="fas fa-file-alt"></i></a>' : '') +
+              '<button type="button" class="btn btn-warning" title="' + (ada ? 'Ubah' : 'Buat') + ' Draft Persetujuan Prinsip" onclick="bukaDraft(' + r.permohonan_id + ')"><i class="fas fa-pen-square"></i></button>' +
+              (ada
+                ? '<a href="' + URL_TAHAP + '/cetak/' + r.permohonan_id + '" target="_blank" class="btn btn-success" title="Cetak Draft Persetujuan Prinsip"><i class="fas fa-print"></i></a>' +
+                  '<button type="button" class="btn btn-info" title="Upload Persetujuan Prinsip TTD" onclick="bukaUpload(' + r.permohonan_id + ')"><i class="fas fa-file-upload"></i></button>'
+                : '<button type="button" class="btn btn-success" title="Buat draft persetujuan prinsip terlebih dahulu" disabled><i class="fas fa-print"></i></button>' +
+                  '<button type="button" class="btn btn-info" title="Buat draft persetujuan prinsip terlebih dahulu" disabled><i class="fas fa-file-upload"></i></button>') +
+              '</div>';
+        } }
+      ],
       "columnDefs": [
         { "width": "30px", "targets": 0},
-        // { "width": "200px", "targets": 8}
       ],
     });
 
@@ -203,4 +205,74 @@
         cell.innerHTML = i + 1 + PageInfo.start;
       });
     });
+
+    // Nama file terpilih tampil di label custom-file
+    $(document).on('change', '.custom-file-input', function () {
+      $(this).next('.custom-file-label').text(this.files[0] ? this.files[0].name : 'Pilih File');
+    });
+
+    function bukaDraft(id) {
+      id_aktif = id;
+      $.get(URL_TAHAP + '/data/' + id).done(function (res) {
+        var pp = res.data.persetujuan || {};
+        $('#judulDraft').text((res.data.persetujuan ? 'Ubah' : 'Buat') + ' Draft Persetujuan Prinsip');
+        $('#no_pp').val(pp.no_pp || '');
+        $('#tanggal_pp').val(pp.tanggal_pp ? moment(pp.tanggal_pp).format('YYYY-MM-DD') : '');
+        CKEDITOR.instances.editor1.setData(pp.persyaratan || '');
+        $('#modalDraft').modal('show');
+      }).fail(function (xhr) { pesanGagal(xhr, 'Gagal memuat data'); });
+    }
+
+    function simpanDraft() {
+      if (!$('#no_pp').val() || !$('#tanggal_pp').val()) return swal('Lengkapi data', 'Nomor & tanggal persetujuan prinsip wajib diisi', 'warning');
+      $('#btn-simpan-draft').prop('disabled', true);
+      $.post(URL_TAHAP + '/simpan/' + id_aktif, {
+        no_pp: $('#no_pp').val(),
+        tanggal_pp: $('#tanggal_pp').val(),
+        persyaratan: CKEDITOR.instances.editor1.getData()
+      }).done(function () {
+        $('#modalDraft').modal('hide');
+        swal({title:text_insert.title,text:text_insert.text, icon: text_insert.icon, type:text_insert.type})
+        data_table.ajax.reload(null, false);
+      }).fail(function (xhr) {
+        pesanGagal(xhr, 'Gagal menyimpan draft persetujuan prinsip');
+      }).always(function () {
+        $('#btn-simpan-draft').prop('disabled', false);
+      });
+    }
+
+    function bukaUpload(id) {
+      id_aktif = id;
+      $('#file_ttd').val('').next('.custom-file-label').text('Pilih File');
+      $('#modalUpload').modal('show');
+    }
+
+    async function simpanUpload() {
+      var f = $('#file_ttd')[0].files[0];
+      if (!f) return swal('Pilih file', 'File persetujuan prinsip yang sudah ditandatangani wajib dipilih', 'warning');
+      const yakin = await swal({
+        title: 'Upload Persetujuan Prinsip', text: 'Permohonan akan dilanjutkan ke tahap Penerbitan Izin. Lanjutkan?',
+        icon: 'warning', buttons: ['Tidak', 'Ya']
+      });
+      if (!yakin) return;
+
+      var formData = new FormData();
+      formData.append('file', f);
+      $('#btn-simpan-upload').prop('disabled', true);
+      $.ajax({
+        type: 'POST',
+        url: URL_TAHAP + '/upload/' + id_aktif,
+        data: formData,
+        processData: false,
+        contentType: false
+      }).done(function () {
+        $('#modalUpload').modal('hide');
+        swal('Berhasil', 'Persetujuan prinsip berhasil diupload, permohonan lanjut ke tahap Penerbitan Izin', 'success');
+        data_table.ajax.reload();
+      }).fail(function (xhr) {
+        pesanGagal(xhr, 'Gagal mengupload persetujuan prinsip');
+      }).always(function () {
+        $('#btn-simpan-upload').prop('disabled', false);
+      });
+    }
 </script>

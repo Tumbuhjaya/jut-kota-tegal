@@ -87,7 +87,7 @@ function bisaUbah(permohonan, admin) {
 
 // Rekap ruas per permohonan (dipakai list vendor & list backoffice)
 var SQL_REKAP = `
-  SELECT p.permohonan_id, p.id_user, p.provider_id, p.status, p.keterangan, p.no_sk, p.tanggal_sk,
+  SELECT p.permohonan_id, p.id_user, p.provider_id, p.status, p.tahap, p.keterangan, p.no_sk, p.tanggal_sk,
          p.nama_pemohon, p.insertedAt, p.diajukanAt, p.diprosesAt, p.dibuat_oleh,
          pr.provider, u.fullname AS nama_vendor, u.username AS username_vendor,
          (p.dibuat_oleh IS NOT NULL AND p.dibuat_oleh <> p.id_user) AS diisi_admin,

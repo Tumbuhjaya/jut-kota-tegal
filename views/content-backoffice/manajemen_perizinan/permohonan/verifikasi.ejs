@@ -1,3 +1,10 @@
+<%
+  /* Pembagian dokumen persyaratan (kunci = helpper/permohonan.js JENIS_DOKUMEN) */
+  var SYARAT = [
+    { judul: 'Syarat Administrasi', kunci: ['ktp', 'akta_pendirian', 'surat_kuasa', 'pernyataan_kesanggupan', 'pernyataan_retribusi'] },
+    { judul: 'Syarat Teknis', kunci: ['gambar_lokasi', 'rencana_teknis', 'jadwal_pelaksanaan', 'rencana_anggaran'] }
+  ];
+%>
 <% include ../../../template-backoffice/header.ejs %>
   <div class="main-content">
     <section class="section">
@@ -7,7 +14,7 @@
                 <div class="section-header-breadcrumb">
                     <div class="breadcrumb-item active"><a href="/backoffice">Dashboard</a></div>
                     <div class="breadcrumb-item active"><a href="/manajemen_perizinan/permohonan">Data</a></div>
-                    <div class="breadcrumb-item">Tambah Data</div>
+                    <div class="breadcrumb-item">Verifikasi</div>
                 </div>
             </div>
         </div>
@@ -21,13 +28,13 @@
                                 <div class="col-12">
                                     <h5><i class="fas fa-map-marked-alt" style="font-size: 26px;"></i>&nbsp;&nbsp;PETA DIGITASI RUAS JALAN</h5>
                                     <hr>
-                                    <div class="w-100" style="height: 500px;background-color: whitesmoke;"></div>
+                                    <div id="map" class="w-100" style="height: 500px;background-color: whitesmoke;"></div>
                                 </div>
                             </div>
                             <div class="row mt-5">
                                 <div class="col-12">
                                     <div class="table-responsive">
-                                        <table class="table table-bordered table-hover">
+                                        <table class="table table-bordered table-hover" id="tabel_ruas">
                                             <thead>
                                                 <tr>
                                                     <th rowspan="3" class="text-center">No.</th>
@@ -35,65 +42,29 @@
                                                     <th rowspan="3" style="min-width: 250px;" class="text-center">Ruas Jalan</th>
                                                     <th colspan="3" rowspan="3" class="text-center">Nomor Ruas</th>
                                                     <th rowspan="2" class="text-center">Panjang SK Jalan</th>
-                                                    <th colspan="3" class="text-center">Tiang D ≤ 30 cm</th>
-                                                    <th colspan="3" class="text-center">Tiang D > 30 cm</th>
-                                                    <th colspan="3" class="text-center">Tiang dst ...</th>
+                                                    <% komponen.forEach(function (k) { %>
+                                                    <th colspan="3" class="text-center"><%= k.label %></th>
+                                                    <% }) %>
                                                     <th rowspan="3" class="text-center" style="min-width: 180px;">Jumlah Total Retribusi (Rp)</th>
                                                 </tr>
                                                 <tr>
+                                                    <% komponen.forEach(function (k) { %>
                                                     <th class="text-center">Jumlah</th>
                                                     <th class="text-center">Nilai Retribusi</th>
                                                     <th class="text-center">Total</th>
-
-                                                    <th class="text-center">Jumlah</th>
-                                                    <th class="text-center">Nilai Retribusi</th>
-                                                    <th class="text-center">Total</th>
-
-                                                    <th class="text-center">Jumlah dst ...</th>
-                                                    <th class="text-center">Nilai Retribusi dst ..</th>
-                                                    <th class="text-center">Total dst ...</th>
+                                                    <% }) %>
                                                 </tr>
                                                 <tr>
                                                     <th class="text-center">Km</th>
-                                                    <th class="text-center">Unit</th>
-                                                    <th class="text-center">Rp/Unit/Tahun</th>
+                                                    <% komponen.forEach(function (k) { %>
+                                                    <th class="text-center"><%= k.satuan %></th>
+                                                    <th class="text-center">Rp/<%= k.satuan %>/Tahun</th>
                                                     <th class="text-center">Rp/Tahun</th>
-
-                                                    <th class="text-center">Unit</th>
-                                                    <th class="text-center">Rp/Unit/Tahun</th>
-                                                    <th class="text-center">Rp/Tahun</th>
-
-                                                    <th class="text-center">Unit dst ...</th>
-                                                    <th class="text-center">Rp/Unit/Tahun dst ...</th>
-                                                    <th class="text-center">Rp/Tahun dst ...</th>
+                                                    <% }) %>
                                                 </tr>
                                             </thead>
-
-                                            <tbody>
-                                                <tr>
-                                                    <td>1.</td>
-                                                    <td>
-                                                        <div class="w-100-flex" style="justify-content: center;align-items: center;">
-                                                            <button class="btn btn-info"><i class="fas fa-search-plus"></i></button>
-                                                        </div>
-                                                    </td>
-                                                    <td>-</td>
-                                                    <td>-</td>
-                                                    <td>-</td>
-                                                    <td>-</td>
-                                                    <td>-</td>
-                                                    <td>-</td>
-                                                    <td>-</td>
-                                                    <td>-</td>
-                                                    <td>-</td>
-                                                    <td>-</td>
-                                                    <td>-</td>
-                                                    <td>-</td>
-                                                    <td>-</td>
-                                                    <td>-</td>
-                                                    <td>-</td>
-                                                </tr>
-                                            </tbody>
+                                            <tbody></tbody>
+                                            <tfoot></tfoot>
                                         </table>
                                     </div>
                                 </div>
@@ -117,29 +88,36 @@
                             <div class="row">
                                 <div class="col-12">
                                     <div class="form-group mb-0">
-                                        <label for="">Nama</label>
-                                        <input type="text" class="form-control" name="" id="">
+                                        <label for="d_nama">Nama</label>
+                                        <input type="text" class="form-control" id="d_nama" readonly>
                                     </div>
 
                                     <hr>
 
                                     <div class="form-group mb-0">
-                                        <label for="">Jabatan</label>
-                                        <input type="text" class="form-control" name="" id="">
+                                        <label for="d_jabatan">Jabatan</label>
+                                        <input type="text" class="form-control" id="d_jabatan" readonly>
                                     </div>
 
                                     <hr>
 
                                     <div class="form-group mb-0">
-                                        <label for="">No. Telepon (WhatsApp)</label>
-                                        <input type="text" class="form-control" name="" id="">
+                                        <label for="d_telp">No. Telepon (WhatsApp)</label>
+                                        <input type="text" class="form-control" id="d_telp" readonly>
                                     </div>
 
                                     <hr>
 
                                     <div class="form-group mb-0">
-                                        <label for="">Email</label>
-                                        <input type="text" class="form-control" name="" id="">
+                                        <label for="d_email">Email</label>
+                                        <input type="text" class="form-control" id="d_email" readonly>
+                                    </div>
+
+                                    <hr>
+
+                                    <div class="form-group mb-0">
+                                        <label for="d_provider">Vendor / Provider</label>
+                                        <input type="text" class="form-control" id="d_provider" readonly>
                                     </div>
                                 </div>
                             </div>
@@ -149,146 +127,32 @@
             </div>
 
             <div class="row">
+                <% SYARAT.forEach(function (s) { %>
                 <div class="col-12 col-lg-6 col-xl-6">
                     <div class="card">
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-12">
-                                    <h5><i class="fas fa-th-list" style="font-size: 26px;"></i>&nbsp;&nbsp;Syarat Administrasi</h5>
+                                    <h5><i class="fas fa-th-list" style="font-size: 26px;"></i>&nbsp;&nbsp;<%= s.judul %></h5>
                                     <hr>
                                 </div>
                             </div>
 
                             <div class="row">
                                 <div class="col-12">
+                                    <% s.kunci.forEach(function (k, i) { %>
+                                    <% if (i) { %><hr><% } %>
                                     <div class="form-group mb-0">
-                                        <label for="">Foto copy Kartu Tanda Penduduk (KTP) Pemohon</label>
-                                        <div class="custom-file">
-                                            <input type="file" class="custom-file-input" id="customFile">
-                                            <label class="custom-file-label" for="customFile">Pilih File</label>
-                                        </div>
-                                        <a href="#" target="_blank" class="btn btn-outline-dark btn-sm mt-2">-- Lihat File --</a>
+                                        <label><%= jenis_dokumen[k] %></label>
+                                        <div class="dokumen" data-jenis="<%= k %>"><span class="text-muted"><i>Belum diupload</i></span></div>
                                     </div>
-
-                                    <hr>
-
-                                    <div class="form-group mb-0">
-                                        <label for="">Foto Copy akte pendirian Badan Usaha/Badan Hukum</label>
-                                        <div class="custom-file">
-                                            <input type="file" class="custom-file-input" id="customFile">
-                                            <label class="custom-file-label" for="customFile">Pilih File</label>
-                                            <a href="#" target="_blank" class="btn btn-outline-dark btn-sm mt-2">-- Lihat File --</a>
-                                        </div>
-                                    </div>
-
-                                    <hr>
-
-                                    <div class="form-group mb-0">
-                                        <label for="">Surat Kuasa Pengurusan permohonan izin pembangunan/penempatan bangunan dan jaringan utilitas</label>
-                                        <div class="custom-file">
-                                            <input type="file" class="custom-file-input" id="customFile">
-                                            <label class="custom-file-label" for="customFile">Pilih File</label>
-                                        </div>
-                                        <a href="#" target="_blank" class="btn btn-outline-dark btn-sm mt-2">-- Lihat File --</a>
-                                    </div>
-
-                                    <hr>
-
-                                    <div class="form-group mb-0">
-                                        <label for="">Surat Pernyataan kesanggupan memenuhi dan mematuhi semua persyaratan yang ditentukan dalam pembangunan/penempatan bangunan dan jaringan utilitas</label>
-                                        <div class="custom-file">
-                                            <input type="file" class="custom-file-input" id="customFile">
-                                            <label class="custom-file-label" for="customFile">Pilih File</label>
-                                        </div>
-                                        <a href="#" target="_blank" class="btn btn-outline-dark btn-sm mt-2">-- Lihat File --</a>
-                                    </div>
-
-                                    <hr>
-
-                                    <div class="form-group mb-0">
-                                        <label for="">Surat pernyataan kesanggupan pembayaran Retribusi</label>
-                                        <div class="custom-file">
-                                            <input type="file" class="custom-file-input" id="customFile">
-                                            <label class="custom-file-label" for="customFile">Pilih File</label>
-                                        </div>
-                                        <a href="#" target="_blank" class="btn btn-outline-dark btn-sm mt-2">-- Lihat File --</a>
-                                    </div>
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-12 col-lg-6 col-xl-6">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-12">
-                                    <h5><i class="fas fa-th-list" style="font-size: 26px;"></i>&nbsp;&nbsp;Syarat Teknis</h5>
-                                    <hr>
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-12">
-                                    <div class="form-group mb-0">
-                                        <label for="">Gambar Lokasi Pembangunan/Penempatan Bangunan dan Jaringan Utilitas</label>
-                                        <div class="custom-file">
-                                            <input type="file" class="custom-file-input" id="customFile">
-                                            <label class="custom-file-label" for="customFile">Pilih File</label>
-                                        </div>
-                                        <a href="#" target="_blank" class="btn btn-outline-dark btn-sm mt-2">-- Lihat File --</a>
-                                    </div>
-
-                                    <hr>
-
-                                    <div class="form-group mb-0">
-                                        <label for="">Rencana Teknis</label>
-                                        <div class="custom-file">
-                                            <input type="file" class="custom-file-input" id="customFile">
-                                            <label class="custom-file-label" for="customFile">Pilih File</label>
-                                        </div>
-                                        <a href="#" target="_blank" class="btn btn-outline-dark btn-sm mt-2">-- Lihat File --</a>
-                                    </div>
-
-                                    <hr>
-
-                                    <div class="form-group mb-0">
-                                        <label for="">Jadwal Pelaksanaan Kegiatan</label>
-                                        <div class="custom-file">
-                                            <input type="file" class="custom-file-input" id="customFile">
-                                            <label class="custom-file-label" for="customFile">Pilih File</label>
-                                        </div>
-                                        <a href="#" target="_blank" class="btn btn-outline-dark btn-sm mt-2">-- Lihat File --</a>
-                                    </div>
-
-                                    <hr>
-
-                                    <div class="form-group mb-0">
-                                        <label for="">Rencana Anggaran Biaya</label>
-                                        <div class="custom-file">
-                                            <input type="file" class="custom-file-input" id="customFile">
-                                            <label class="custom-file-label" for="customFile">Pilih File</label>
-                                        </div>
-                                        <a href="#" target="_blank" class="btn btn-outline-dark btn-sm mt-2">-- Lihat File --</a>
-                                    </div>
-
-                                    <hr>
-
-                                    <div class="form-group mb-0">
-                                        <label for="">Surat pernyataan kesanggupan pembayaran Retribusi</label>
-                                        <div class="custom-file">
-                                            <input type="file" class="custom-file-input" id="customFile">
-                                            <label class="custom-file-label" for="customFile">Pilih File</label>
-                                        </div>
-                                        <a href="#" target="_blank" class="btn btn-outline-dark btn-sm mt-2">-- Lihat File --</a>
-                                    </div>
+                                    <% }) %>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+                <% }) %>
             </div>
 
             <div class="row">
@@ -301,26 +165,28 @@
                                     <hr>
                                 </div>
                             </div>
-                            
+
                             <div class="row">
                                 <div class="col-12">
+                                    <div class="alert alert-info" id="info-tahap" style="display: none;"></div>
+
                                     <div class="form-group">
-                                        <label for="">Status Verifikasi</label>
-                                        <select name="" id="status_verifikasi" class="custom-select">
+                                        <label for="status_verifikasi">Status Verifikasi</label>
+                                        <select id="status_verifikasi" class="custom-select">
                                             <option value="">-- Pilih --</option>
-                                            <option value="0">-- Menunggu Verifikasi --</option>
-                                            <option value="1">-- Revisi --</option>
-                                            <option value="2">-- Disetujui --</option>
+                                            <option value="diajukan">-- Menunggu Verifikasi --</option>
+                                            <option value="revisi">-- Revisi --</option>
+                                            <option value="lolos">-- Disetujui --</option>
                                         </select>
                                     </div>
 
                                     <div class="form-group" id="konten-revisi">
-                                        <label for="">Keterangan Revisi</label>
-                                        <textarea name="" id="" class="form-control" rows="4"></textarea>
+                                        <label for="keterangan">Keterangan Revisi</label>
+                                        <textarea id="keterangan" class="form-control" rows="4" style="height: auto;"></textarea>
                                     </div>
 
                                     <hr>
-                                    <button class="btn btn-primary btn-lg">Submit</button>
+                                    <button type="button" class="btn btn-primary btn-lg" id="button_submit" onclick="submit()">Submit</button>
                                 </div>
                             </div>
                         </div>
@@ -343,71 +209,176 @@
 <% include ../../../template-backoffice/footer.ejs %>
 <script type="text/javascript">
     var rooturl = ''
+    var ID_PERMOHONAN = <%= permohonan_id %>;
+    var KOMPONEN = <%- JSON.stringify(komponen) %>; // komponen retribusi per ruas (helpper/permohonan.js)
+    var KODE_WILAYAH = <%- JSON.stringify(kode_wilayah) %>;
+    var TAHAP = { verifikasi: 'Verifikasi', peninjauan_lapangan: 'Peninjauan Lapangan', persetujuan_prinsip: 'Persetujuan Prinsip', penerbitan_izin: 'Penerbitan Izin' };
 
-    $('#konten-revisi').hide();
+    function rupiah(n) {
+      return 'Rp ' + Number(n || 0).toLocaleString('id-ID', { maximumFractionDigits: 0 }) + ',-';
+    }
+    function angka(n) {
+      return Number(n || 0).toLocaleString('id-ID', { maximumFractionDigits: 2 });
+    }
+    function esc(t) {
+      return $('<div>').text(t == null || t === '' ? '-' : t).html();
+    }
+
+    // ---------------- peta ----------------
+    var map = L.map('map', { center: [-6.8694, 109.1402], zoom: 13, maxZoom: 22 });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 22, maxNativeZoom: 19 }).addTo(map);
+    var ruasLayer = L.featureGroup().addTo(map);
+    var digitasiLayer = L.featureGroup().addTo(map);
+    var layerPerRuas = {}; // permohonan_ruas_id -> [layer]
+
+    function petaDigitasi(digitasi) {
+      digitasi.tiang.forEach(function (f) {
+        var c = f.geojson.coordinates;
+        var m = L.circleMarker([c[1], c[0]], { radius: 6, color: '#fff', weight: 2, fillColor: '#6777ef', fillOpacity: 1 })
+          .bindPopup('<b>Tiang</b><br/>Ruas: ' + esc(f.nm_ruas || 'Di luar ruas') + '<br/>Jumlah: ' + f.jumlah + '<br/>Ket: ' + esc(f.keterangan))
+          .addTo(digitasiLayer);
+        (layerPerRuas[f.permohonan_ruas_id] = layerPerRuas[f.permohonan_ruas_id] || []).push(m);
+      });
+      digitasi.kabel.forEach(function (f) {
+        var l = L.polyline(f.geojson.coordinates.map(function (p) { return [p[1], p[0]]; }), { color: '#fc544b', weight: 4 })
+          .bindPopup('<b>Kabel</b><br/>Ruas: ' + esc(f.nm_ruas || 'Di luar ruas') + '<br/>Panjang: ' + angka(f.panjang) + ' m<br/>Jumlah: ' + f.jumlah + '<br/>Ket: ' + esc(f.keterangan))
+          .addTo(digitasiLayer);
+        (layerPerRuas[f.permohonan_ruas_id] = layerPerRuas[f.permohonan_ruas_id] || []).push(l);
+      });
+    }
+
+    // Garis ruas jalan dari master_retribusi (topojson /peta/sk_jalan)
+    function petaRuas(ruasIds) {
+      if (!ruasIds.length) return $.Deferred().resolve();
+      return $.getJSON(rooturl + '/peta/sk_jalan').then(function (topo) {
+        Object.keys(topo.objects).forEach(function (k) {
+          L.geoJSON(topojson.feature(topo, topo.objects[k]), {
+            filter: function (f) { return ruasIds.indexOf(Number(f.properties.id)) !== -1; },
+            style: { color: '#f7ca18', weight: 7, opacity: 0.9 },
+            onEachFeature: function (f, layer) { layer.bindTooltip(f.properties.nm_ruas || ''); }
+          }).eachLayer(function (l) { ruasLayer.addLayer(l); });
+        });
+        ruasLayer.bringToBack();
+      });
+    }
+
+    function zoomRuas(id) {
+      var g = L.featureGroup(layerPerRuas[id] || []);
+      if (g.getLayers().length) map.fitBounds(g.getBounds(), { padding: [30, 30], maxZoom: 19 });
+      $('html, body').animate({ scrollTop: $('#map').offset().top - 100 }, 300);
+    }
+
+    function zoomSemua() {
+      var g = L.featureGroup(ruasLayer.getLayers().concat(digitasiLayer.getLayers()));
+      if (g.getLayers().length) map.fitBounds(g.getBounds(), { padding: [30, 30], maxZoom: 19 });
+    }
+
+    // ---------------- data ----------------
+    function tampil(data) {
+      var p = data.permohonan;
+      $('#d_nama').val(p.nama_pemohon || '');
+      $('#d_jabatan').val(p.jabatan_pemohon || '');
+      $('#d_telp').val(p.telp_pemohon || '');
+      $('#d_email').val(p.email_pemohon || '');
+      $('#d_provider').val((p.vendor ? (p.vendor.fullname || p.vendor.username) : '-') + ' / ' + (p.provider || '-'));
+
+      data.dokumen.forEach(function (d) {
+        $('.dokumen[data-jenis="' + d.jenis_dokumen + '"]').html(
+          '<a href="' + rooturl + '/manajemen_perizinan/dokumen/' + d.permohonan_dokumen_id + '" target="_blank" class="btn btn-outline-dark btn-sm mt-2">-- Lihat File --</a>' +
+          ' <small class="text-muted">' + esc(d.nama_asli) + '</small>');
+      });
+
+      var t = { total: 0 };
+      KOMPONEN.forEach(function (k) { t[k.kode] = { jumlah: 0, retribusi: 0 }; });
+      var $tb = $('#tabel_ruas tbody').empty();
+      data.ruas.forEach(function (r, i) {
+        var no = String(r.no || '');
+        var selKomponen = KOMPONEN.map(function (k) {
+          t[k.kode].jumlah += Number(r[k.jumlah] || 0);
+          t[k.kode].retribusi += Number(r['retribusi_' + k.kode] || 0);
+          return '<td class="text-center">' + angka(r[k.jumlah]) + '</td>' +
+            '<td class="text-right">' + rupiah(r[k.tarif]) + '</td>' +
+            '<td class="text-right">' + rupiah(r['retribusi_' + k.kode]) + '</td>';
+        }).join('');
+        t.total += Number(r.retribusi_total);
+        $tb.append('<tr>' +
+          '<td class="text-center">' + (i + 1) + '.</td>' +
+          '<td><div class="w-100-flex" style="justify-content: center;align-items: center;">' +
+            '<button type="button" class="btn btn-info" onclick="zoomRuas(' + r.permohonan_ruas_id + ')"><i class="fas fa-search-plus"></i></button></div></td>' +
+          '<td>' + esc(r.label_ruas) + '</td>' +
+          // Nomor ruas = kode provinsi | kode kab/kota | nomor ruas
+          '<td class="text-center">' + (Number(r.luar_ruas) ? '-' : KODE_WILAYAH.prov) + '</td>' +
+          '<td class="text-center">' + (Number(r.luar_ruas) ? '-' : KODE_WILAYAH.kab) + '</td>' +
+          '<td class="text-center">' + esc(no) + '</td>' +
+          '<td class="text-center">' + (r.panjang != null ? angka(r.panjang) : '-') + '</td>' +
+          selKomponen +
+          '<td class="text-right">' + rupiah(r.retribusi_total) + '</td>' +
+          '</tr>');
+      });
+      $('#tabel_ruas tfoot').html('<tr><th colspan="7" class="text-right">Total</th>' +
+        KOMPONEN.map(function (k) {
+          return '<th class="text-center">' + angka(t[k.kode].jumlah) + '</th><th></th><th class="text-right">' + rupiah(t[k.kode].retribusi) + '</th>';
+        }).join('') +
+        '<th class="text-right">' + rupiah(t.total) + '</th></tr>');
+
+      // Form verifikasi hanya untuk permohonan yang menunggu verifikasi
+      var bisa = p.status === 'diajukan' && p.tahap === 'verifikasi';
+      $('#status_verifikasi').val(bisa ? 'diajukan' : (p.status === 'revisi' ? 'revisi' : 'lolos')).prop('disabled', !bisa).trigger('change');
+      $('#keterangan').val(p.status === 'revisi' ? (p.keterangan || '') : '').prop('disabled', !bisa);
+      $('#button_submit').prop('disabled', !bisa);
+      if (!bisa) {
+        $('#info-tahap').show().text(p.status === 'revisi'
+          ? 'Permohonan sedang dikembalikan ke pemohon untuk revisi.'
+          : 'Permohonan sudah lolos verifikasi dan berada di tahap ' + (TAHAP[p.tahap] || p.tahap) + '.');
+      }
+    }
+
+    function muat() {
+      return $.get(rooturl + '/manajemen_perizinan/data/' + ID_PERMOHONAN).done(function (res) {
+        tampil(res.data);
+        ruasLayer.clearLayers(); digitasiLayer.clearLayers(); layerPerRuas = {};
+        petaDigitasi(res.data.digitasi);
+        var ruasIds = res.data.ruas.filter(function (r) { return r.ruas_id && !Number(r.luar_ruas); }).map(function (r) { return Number(r.ruas_id); });
+        petaRuas(ruasIds).always(zoomSemua);
+      }).fail(function () {
+        swal('Gagal', 'Gagal memuat data permohonan', 'error');
+      });
+    }
 
     $('#status_verifikasi').change(function(){
-        if ($(this).val() == '') {
-            $('#konten-revisi').hide();
-        }
-
-         if ($(this).val() == '0') {
-            $('#konten-revisi').hide();
-        } 
-
-        if ($(this).val() == '1') {
-            $('#konten-revisi').show();
-        } 
-
-        if ($(this).val() == '2') {
-            $('#konten-revisi').hide();
-        } 
+      $('#konten-revisi').toggle($(this).val() == 'revisi');
     });
 
-  async function submit() {
-    const will_insert = await swal({
-      title: "Tambah Data",
-      text: "Apakah anda akan menambahkan data ini?",
-      icon: "warning",
-      dangerMode: true,
-      buttons: ["Tidak", "Ya"],
-    });
+    async function submit() {
+      var status = $('#status_verifikasi').val();
+      if (!status) return swal('Pilih status', 'Status verifikasi wajib dipilih', 'warning');
+      if (status == 'revisi' && !$('#keterangan').val().trim()) return swal('Keterangan revisi', 'Keterangan revisi wajib diisi', 'warning');
 
-    if ( will_insert) {
-      $('#button_submit').empty()
-      $('#button_submit').append('<button class="btn btn-primary btn-embossed" disabled>Simpan</button>')
-      
-      let formData = new FormData();    
-      // nama kolom db
-      let arr = ['NamaKolomDb1', 'NamaKolomDb2', 'NamaKolomDb3']
-      for (let i = 0; i < arr.length; i++) {
-        if (arr[i].substring(0,4)=='foto') {
-          if ( $(`#`+arr[i])[0].files[0]){
-            formData.append(arr[i], $(`#`+arr[i])[0].files[0]);
-          } 
-        }
-        // else if (arr[i].substring(0,3)=='ket'){        
-        //   formData.append(arr[i] ,CKEDITOR.instances[arr[i]].getData())
-        // }
-        else{
-          formData.append(arr[i],$('#'+arr[i]).val())
-        }
-      }
+      const yakin = await swal({
+        title: "Verifikasi Permohonan",
+        text: status == 'lolos' ? "Permohonan akan dilanjutkan ke tahap Peninjauan Lapangan. Lanjutkan?"
+          : status == 'revisi' ? "Permohonan akan dikembalikan ke pemohon untuk revisi. Lanjutkan?"
+          : "Status permohonan tetap menunggu verifikasi. Lanjutkan?",
+        icon: "warning",
+        dangerMode: status == 'revisi',
+        buttons: ["Tidak", "Ya"],
+      });
+      if (!yakin) return;
 
-      $.ajax({
-        type: 'POST',
-        enctype: 'multipart/form-data',
-        url: rooturl+'/api_basic/insert',
-        data: formData,
-        processData: false,
-        contentType: false,
-        success: function(data) {
-          swal({title:text_insert.title,text:text_insert.text, icon: text_insert.icon, type:text_insert.type})
-          window.location.href = rooturl+'/manajemen_basic';
-        },error: function(data) {
-          swal({title:text_error.title,text:text_error.text, icon: text_error.icon, type:text_error.type})
-        }
-      })      
-    } 
-  }
+      $('#button_submit').prop('disabled', true);
+      $.post(rooturl + '/manajemen_perizinan/permohonan/verifikasi/' + ID_PERMOHONAN, {
+        status: status,
+        keterangan: $('#keterangan').val()
+      }).done(function () {
+        swal('Berhasil', 'Verifikasi permohonan berhasil disimpan', 'success').then(function () {
+          window.location.href = rooturl + '/manajemen_perizinan/permohonan';
+        });
+      }).fail(function (xhr) {
+        $('#button_submit').prop('disabled', false);
+        swal('Gagal', (xhr.responseJSON && xhr.responseJSON.message) || 'Gagal menyimpan verifikasi', 'error');
+      });
+    }
+
+    $('#konten-revisi').hide();
+    muat();
 </script>

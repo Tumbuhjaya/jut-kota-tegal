@@ -6,7 +6,7 @@
         <div class="section-header">
           <h1>Data Peninjauan Lapangan</h1>
           <div class="section-header-breadcrumb">
-            <div class="breadcrumb-item active"><a href="#">Dashboard</a></div>
+            <div class="breadcrumb-item active"><a href="/backoffice">Dashboard</a></div>
             <div class="breadcrumb-item">Data</div>
           </div>
         </div>
@@ -17,12 +17,11 @@
           <div class="col-lg-12 col-xl-12">
             <div class="card">
               <div class="card-header">
-                <!-- <a href="/manajemen_basic/insert" class="btn btn-primary custom-btn-card-header"><i class="fas fa-plus"></i> Tambah Data</a> -->
               </div>
               <div class="card-body">
                 <div class="table-responsive">
                   <table class="table table-bordered table-striped table-hover" id="list-data">
-                    <thead>                                 
+                    <thead>
                       <tr>
                         <th class="text-center" rowspan="2">No.</th>
                         <th class="text-center" rowspan="2">Pemohon/Vendor</th>
@@ -39,25 +38,7 @@
                         <th class="text-center" style="min-width: 130px;">Retribusi (Rp)</th>
                       </tr>
                     </thead>
-                    <tbody>                                 
-                      <tr>
-                        <td class="text-center">1.</td>
-                        <td>value pemohon</td>
-                        <td>value provider</td>
-                        <td class="text-center">00</td>
-                        <td class="text-center">00</td>
-                        <td class="text-center">00</td>
-                        <td class="text-right">Rp 0,-</td>
-                        <td>value tim teknis</td>
-                        <td>
-                          <div class="w-100-flex" style="justify-content: center;gap: 5px;">
-                            <button class="btn btn-warning" title="Buat Draft BA" data-toggle="modal" data-target="#modalDraft"><i class="fas fa-pen-square"></i></button>
-                            <button class="btn btn-success" title="Cetak Draft BA"><i class="fas fa-print"></i></button>
-                            <button class="btn btn-info" title="Upload BA TTD" data-toggle="modal" data-target="#modalUpload"><i class="fas fa-file-upload"></i></button>
-                          </div>
-                        </td>
-                      </tr>
-                    </tbody>
+                    <tbody></tbody>
                   </table>
                 </div>
               </div>
@@ -78,11 +59,11 @@
 <% include ../../../template-backoffice/footer.ejs %>
 
 <!-- Modal -->
-<div class="modal fade" id="modalDraft" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade" id="modalDraft" tabindex="-1" aria-labelledby="judulDraft" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
     <div class="modal-content">
         <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLabel">Buat Draft Berita Acara Peninjauan Lapangan</h5>
+            <h5 class="modal-title" id="judulDraft">Buat Draft Berita Acara Peninjauan Lapangan</h5>
             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
             </button>
@@ -91,114 +72,74 @@
             <div class="row">
                 <div class="col-12 col-lg-6 col-xl-6">
                     <div class="form-group">
-                        <label for="">Nomor Berita Acara</label>
-                        <input type="text" class="form-control" id="" name="">
+                        <label for="no_ba">Nomor Berita Acara</label>
+                        <input type="text" class="form-control" id="no_ba">
                     </div>
                 </div>
 
                 <div class="col-12 col-lg-6 col-xl-6">
                     <div class="form-group">
-                        <label for="">Tanggal Berita Acara</label>
-                        <input type="date" class="form-control" id="" name="">
+                        <label for="tanggal_ba">Tanggal Berita Acara</label>
+                        <input type="date" class="form-control" id="tanggal_ba">
                     </div>
                 </div>
 
                 <div class="col-12 col-lg-6 col-xl-6">
                     <div class="form-group">
-                        <label for="">Nomor Surat Permohonan</label>
-                        <input type="text" class="form-control" id="" name="" readonly>
+                        <label for="no_surat_permohonan">Nomor Surat Permohonan</label>
+                        <input type="text" class="form-control" id="no_surat_permohonan">
                     </div>
                 </div>
                 <div class="col-12 col-lg-6 col-xl-6">
                     <div class="form-group">
-                        <label for="">Tanggal Surat Permohonan</label>
-                        <input type="date" class="form-control" id="" name="" readonly>
+                        <label for="tanggal_surat_permohonan">Tanggal Surat Permohonan</label>
+                        <input type="date" class="form-control" id="tanggal_surat_permohonan">
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <div class="form-group">
+                        <label for="tim_teknis">Tim Teknis <small class="text-muted">(satu nama per baris)</small></label>
+                        <textarea id="tim_teknis" class="form-control" rows="3" style="height: auto;"></textarea>
                     </div>
                 </div>
             </div>
             <div class="row">
                  <div class="col-12">
                     <div class="form-group">
-                        <label for="">Hasil Peninjauan Lapangan</label>
-                        <textarea name="" id="editor1" class="form-control" rows="5"></textarea>
+                        <label for="editor1">Hasil Peninjauan Lapangan</label>
+                        <textarea id="editor1" class="form-control" rows="5"></textarea>
                     </div>
                 </div>
             </div>
             <div class="row">
+                <% for (var i = 1; i <= jumlah_foto; i++) { %>
                 <div class="col-12 col-lg-6 col-xl-6">
                     <div class="form-group">
-                        <label for="">Upload Dokumentasi Peninjauan Lapangan</label>
+                        <label for="foto_<%= i %>">Upload Dokumentasi Peninjauan Lapangan <%= i %></label>
                         <div class="custom-file">
-                            <input type="file" class="custom-file-input" id="customFile">
-                            <label class="custom-file-label" for="customFile">Pilih File</label>
+                            <input type="file" class="custom-file-input" id="foto_<%= i %>" accept=".jpg,.jpeg,.png">
+                            <label class="custom-file-label" for="foto_<%= i %>">Pilih File</label>
                         </div>
+                        <div class="foto-lama mt-2" data-urutan="<%= i %>"></div>
                     </div>
                 </div>
-
-                <div class="col-12 col-lg-6 col-xl-6">
-                    <div class="form-group">
-                        <label for="">Upload Dokumentasi Peninjauan Lapangan</label>
-                        <div class="custom-file">
-                            <input type="file" class="custom-file-input" id="customFile">
-                            <label class="custom-file-label" for="customFile">Pilih File</label>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-12 col-lg-6 col-xl-6">
-                    <div class="form-group">
-                        <label for="">Upload Dokumentasi Peninjauan Lapangan</label>
-                        <div class="custom-file">
-                            <input type="file" class="custom-file-input" id="customFile">
-                            <label class="custom-file-label" for="customFile">Pilih File</label>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-12 col-lg-6 col-xl-6">
-                    <div class="form-group">
-                        <label for="">Upload Dokumentasi Peninjauan Lapangan</label>
-                        <div class="custom-file">
-                            <input type="file" class="custom-file-input" id="customFile">
-                            <label class="custom-file-label" for="customFile">Pilih File</label>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-12 col-lg-6 col-xl-6">
-                    <div class="form-group">
-                        <label for="">Upload Dokumentasi Peninjauan Lapangan</label>
-                        <div class="custom-file">
-                            <input type="file" class="custom-file-input" id="customFile">
-                            <label class="custom-file-label" for="customFile">Pilih File</label>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-12 col-lg-6 col-xl-6">
-                    <div class="form-group">
-                        <label for="">Upload Dokumentasi Peninjauan Lapangan</label>
-                        <div class="custom-file">
-                            <input type="file" class="custom-file-input" id="customFile">
-                            <label class="custom-file-label" for="customFile">Pilih File</label>
-                        </div>
-                    </div>
-                </div>
+                <% } %>
             </div>
         </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal"><i class="fas fa-times"></i>&nbsp;&nbsp;Tutup</button>
-        <button type="button" class="btn btn-primary"><i class="fas fa-check"></i>&nbsp;&nbsp;Simpan</button>
+        <button type="button" class="btn btn-primary" id="btn-simpan-draft" onclick="simpanDraft()"><i class="fas fa-check"></i>&nbsp;&nbsp;Simpan</button>
       </div>
     </div>
   </div>
 </div>
 
-<div class="modal fade" id="modalUpload" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade" id="modalUpload" tabindex="-1" aria-labelledby="judulUpload" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
         <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLabel">Upload Berita Acara Peninjauan Lapangan</h5>
+            <h5 class="modal-title" id="judulUpload">Upload Berita Acara Peninjauan Lapangan</h5>
             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
             </button>
@@ -207,18 +148,19 @@
             <div class="row">
                 <div class="col-12">
                     <div class="form-group">
-                        <label for="">Upload BA yang sudah ditandatangani </label>
+                        <label for="file_ttd">Upload BA yang sudah ditandatangani </label>
                         <div class="custom-file">
-                            <input type="file" class="custom-file-input" id="customFile">
-                            <label class="custom-file-label" for="customFile">Pilih File</label>
+                            <input type="file" class="custom-file-input" id="file_ttd" accept=".pdf,.jpg,.jpeg,.png">
+                            <label class="custom-file-label" for="file_ttd">Pilih File</label>
                         </div>
+                        <small class="text-muted">Setelah diupload, permohonan lanjut ke tahap Persetujuan Prinsip.</small>
                     </div>
                 </div>
             </div>
         </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal"><i class="fas fa-times"></i>&nbsp;&nbsp;Tutup</button>
-        <button type="button" class="btn btn-primary"><i class="fas fa-check"></i>&nbsp;&nbsp;Simpan</button>
+        <button type="button" class="btn btn-primary" id="btn-simpan-upload" onclick="simpanUpload()"><i class="fas fa-check"></i>&nbsp;&nbsp;Simpan</button>
       </div>
     </div>
   </div>
@@ -226,12 +168,28 @@
 
 <script type="text/javascript">
     var rooturl = ''
+    var URL_TAHAP = rooturl + '/manajemen_perizinan/peninjauan_lapangan';
+    var JUMLAH_FOTO = <%= jumlah_foto %>;
+    var id_aktif = null;
 
     CKEDITOR.replace('editor1', {
         height: 300, // Mengatur tinggi editor (dalam piksel)
         versionCheck: false, // Menonaktifkan notifikasi peringatan versi LTS di layar
         toolbar: []
     });
+
+    function rupiah(n) {
+      return 'Rp ' + Number(n || 0).toLocaleString('id-ID', { maximumFractionDigits: 0 }) + ',-';
+    }
+    function esc(t) {
+      return $('<div>').text(t == null || t === '' ? '-' : t).html();
+    }
+    function tglInput(d) {
+      return d ? moment(d).format('YYYY-MM-DD') : '';
+    }
+    function pesanGagal(xhr, def) {
+      swal('Gagal', (xhr.responseJSON && xhr.responseJSON.message) || def, 'error');
+    }
 
     let data_table  =$('#list-data').DataTable({
       "language": {
@@ -251,25 +209,32 @@
           }
       },
       "processing": true,
-      // "ajax":  `${rooturl}/api_basic/list`,
-      // "columns": [
-      //   { "data": null},
-      //   { "data": null},
-      //   { "data": null,render: function(data){
-      //     let a = ''
-      //           if (data) {
-      //             a = `
-      //             <ul class="list-inline mb-0">
-      //               <li class="list-inline-item"><a href="${rooturl}/manajemen_basic/edit/${data}" class="btn btn-warning"><i class="fas fa-edit"></i></a></li>
-      //               <li class="list-inline-item"><button onclick="hapus(${data})" class="btn btn-danger"><i class="fa fa-trash"></i></button></li>
-      //             </ul></ul>`
-      //           }
-      //           return `<td><center>${a}</center></td>`
-      //   }},
-      // ],
+      "ordering": false,
+      "ajax": { url: URL_TAHAP + '/list', type: 'POST' },
+      "columns": [
+        { "data": null, "defaultContent": '', "className": 'text-center' },
+        { "data": null, "render": function (r) { return esc(r.nama_pemohon) + '<br/><small class="text-muted">' + esc(r.nama_vendor || r.username_vendor) + '</small>'; } },
+        { "data": 'provider', "render": esc },
+        { "data": 'jml_ruas', "className": 'text-center' },
+        { "data": 'jml_tiang', "className": 'text-center' },
+        { "data": 'jml_kabel', "className": 'text-center', "render": function (d) { return Number(d).toLocaleString('id-ID'); } },
+        { "data": 'retribusi', "className": 'text-right', "render": rupiah },
+        { "data": 'tim_teknis', "render": function (d) { return d ? esc(d).replace(/\n/g, '<br/>') : '<i class="text-muted">belum ditentukan</i>'; } },
+        { "data": null, "render": function (r) {
+            var ada = Number(r.ada_ba);
+            return '<div class="w-100-flex" style="justify-content: center;gap: 5px;">' +
+              '<a href="' + rooturl + '/manajemen_perizinan/permohonan/verifikasi/' + r.permohonan_id + '" class="btn btn-light" title="Detail Permohonan"><i class="fas fa-eye"></i></a>' +
+              '<button type="button" class="btn btn-warning" title="' + (ada ? 'Ubah' : 'Buat') + ' Draft BA" onclick="bukaDraft(' + r.permohonan_id + ')"><i class="fas fa-pen-square"></i></button>' +
+              (ada
+                ? '<a href="' + URL_TAHAP + '/cetak/' + r.permohonan_id + '" target="_blank" class="btn btn-success" title="Cetak Draft BA"><i class="fas fa-print"></i></a>' +
+                  '<button type="button" class="btn btn-info" title="Upload BA TTD" onclick="bukaUpload(' + r.permohonan_id + ')"><i class="fas fa-file-upload"></i></button>'
+                : '<button type="button" class="btn btn-success" title="Buat draft BA terlebih dahulu" disabled><i class="fas fa-print"></i></button>' +
+                  '<button type="button" class="btn btn-info" title="Buat draft BA terlebih dahulu" disabled><i class="fas fa-file-upload"></i></button>') +
+              '</div>';
+        } }
+      ],
       "columnDefs": [
         { "width": "30px", "targets": 0},
-        // { "width": "200px", "targets": 8}
       ],
     });
 
@@ -279,4 +244,114 @@
         cell.innerHTML = i + 1 + PageInfo.start;
       });
     });
+
+    // Nama file terpilih tampil di label custom-file
+    $(document).on('change', '.custom-file-input', function () {
+      $(this).next('.custom-file-label').text(this.files[0] ? this.files[0].name : 'Pilih File');
+    });
+
+    function resetFile($input) {
+      $input.val('').next('.custom-file-label').text('Pilih File');
+    }
+
+    function tampilFoto(foto) {
+      $('.foto-lama').empty();
+      (foto || []).forEach(function (f) {
+        var url = URL_TAHAP + '/foto/' + id_aktif + '/' + f.urutan + '?v=' + f.permohonan_peninjauan_foto_id;
+        $('.foto-lama[data-urutan="' + f.urutan + '"]').html(
+          '<a href="' + url + '" target="_blank"><img src="' + url + '" style="max-height: 80px;max-width: 100%;" class="img-thumbnail"></a> ' +
+          '<button type="button" class="btn btn-sm btn-outline-danger" onclick="hapusFoto(' + f.urutan + ')"><i class="fas fa-trash"></i></button>');
+      });
+    }
+
+    function bukaDraft(id) {
+      id_aktif = id;
+      $.get(URL_TAHAP + '/data/' + id).done(function (res) {
+        var p = res.data.permohonan, b = res.data.peninjauan || {};
+        $('#judulDraft').text((res.data.peninjauan ? 'Ubah' : 'Buat') + ' Draft Berita Acara Peninjauan Lapangan');
+        $('#no_ba').val(b.no_ba || '');
+        $('#tanggal_ba').val(tglInput(b.tanggal_ba));
+        $('#no_surat_permohonan').val(b.no_surat_permohonan || '');
+        // Default tanggal surat = tanggal permohonan diajukan
+        $('#tanggal_surat_permohonan').val(tglInput(b.tanggal_surat_permohonan || p.diajukanAt));
+        $('#tim_teknis').val(b.tim_teknis || '');
+        CKEDITOR.instances.editor1.setData(b.hasil || '');
+        for (var i = 1; i <= JUMLAH_FOTO; i++) resetFile($('#foto_' + i));
+        tampilFoto(b.foto);
+        $('#modalDraft').modal('show');
+      }).fail(function (xhr) { pesanGagal(xhr, 'Gagal memuat data'); });
+    }
+
+    function simpanDraft() {
+      if (!$('#no_ba').val() || !$('#tanggal_ba').val()) return swal('Lengkapi data', 'Nomor & tanggal berita acara wajib diisi', 'warning');
+      var formData = new FormData();
+      ['no_ba', 'tanggal_ba', 'no_surat_permohonan', 'tanggal_surat_permohonan', 'tim_teknis'].forEach(function (k) {
+        formData.append(k, $('#' + k).val());
+      });
+      formData.append('hasil', CKEDITOR.instances.editor1.getData());
+      for (var i = 1; i <= JUMLAH_FOTO; i++) {
+        var f = $('#foto_' + i)[0].files[0];
+        if (f) formData.append('foto_' + i, f);
+      }
+
+      $('#btn-simpan-draft').prop('disabled', true);
+      $.ajax({
+        type: 'POST',
+        url: URL_TAHAP + '/simpan/' + id_aktif,
+        data: formData,
+        processData: false,
+        contentType: false
+      }).done(function () {
+        $('#modalDraft').modal('hide');
+        swal({title:text_insert.title,text:text_insert.text, icon: text_insert.icon, type:text_insert.type})
+        data_table.ajax.reload(null, false);
+      }).fail(function (xhr) {
+        pesanGagal(xhr, 'Gagal menyimpan draft berita acara');
+      }).always(function () {
+        $('#btn-simpan-draft').prop('disabled', false);
+      });
+    }
+
+    async function hapusFoto(urutan) {
+      const yakin = await swal({ title: 'Hapus Foto', text: 'Hapus foto dokumentasi ' + urutan + '?', icon: 'warning', dangerMode: true, buttons: ['Tidak', 'Ya'] });
+      if (!yakin) return;
+      $.post(URL_TAHAP + '/hapus_foto/' + id_aktif + '/' + urutan).done(function () {
+        $('.foto-lama[data-urutan="' + urutan + '"]').empty();
+      }).fail(function (xhr) { pesanGagal(xhr, 'Gagal menghapus foto'); });
+    }
+
+    function bukaUpload(id) {
+      id_aktif = id;
+      resetFile($('#file_ttd'));
+      $('#modalUpload').modal('show');
+    }
+
+    async function simpanUpload() {
+      var f = $('#file_ttd')[0].files[0];
+      if (!f) return swal('Pilih file', 'File BA yang sudah ditandatangani wajib dipilih', 'warning');
+      const yakin = await swal({
+        title: 'Upload BA', text: 'Permohonan akan dilanjutkan ke tahap Persetujuan Prinsip. Lanjutkan?',
+        icon: 'warning', buttons: ['Tidak', 'Ya']
+      });
+      if (!yakin) return;
+
+      var formData = new FormData();
+      formData.append('file', f);
+      $('#btn-simpan-upload').prop('disabled', true);
+      $.ajax({
+        type: 'POST',
+        url: URL_TAHAP + '/upload/' + id_aktif,
+        data: formData,
+        processData: false,
+        contentType: false
+      }).done(function () {
+        $('#modalUpload').modal('hide');
+        swal('Berhasil', 'BA berhasil diupload, permohonan lanjut ke tahap Persetujuan Prinsip', 'success');
+        data_table.ajax.reload();
+      }).fail(function (xhr) {
+        pesanGagal(xhr, 'Gagal mengupload berita acara');
+      }).always(function () {
+        $('#btn-simpan-upload').prop('disabled', false);
+      });
+    }
 </script>

@@ -40,30 +40,7 @@
                         <th class="text-center" style="min-width: 130px;">Retribusi (Rp)</th>
                       </tr>
                     </thead>
-                    <tbody>                                 
-                      <tr>
-                        <td class="text-center">1.</td>
-                        <td>00/00/000</td>
-                        <td>value pemohon</td>
-                        <td>value provider</td>
-                        <td class="text-center">00</td>
-                        <td class="text-center">00</td>
-                        <td class="text-center">00</td>
-                        <td class="text-right">Rp 0,-</td>
-                        <td>
-                            <div class="w-100-flex" style="justify-content: center;align-items: center;gap: 5px;">
-                                <span class="badge badge-warning mb-0">Menunggu Verifikasi</span>
-                            </div>
-                        </td>
-                        <td>
-                          <div class="w-100-flex" style="justify-content: center;gap: 5px;">
-                            <a href="/manajemen_perizinan/permohonan/verifikasi/1" class="btn btn-warning" title="Verifikasi Permohonan"><i class="fas fa-tasks"></i></a>
-                             <button class="btn btn-danger"><i class="fas fa-trash"></i></button>
-                            
-                          </div>
-                        </td>
-                      </tr>
-                    </tbody>
+                    <tbody></tbody>
                   </table>
                 </div>
               </div>
@@ -83,8 +60,21 @@
   </footer>
 <% include ../../../template-backoffice/footer.ejs %>
 
+
 <script type="text/javascript">
     var rooturl = ''
+    var STATUS = {
+      diajukan: { label: 'Menunggu Verifikasi', badge: 'warning' },
+      revisi:   { label: 'Perlu Revisi', badge: 'danger' }
+    };
+
+    function rupiah(n) {
+      return 'Rp ' + Number(n || 0).toLocaleString('id-ID', { maximumFractionDigits: 0 }) + ',-';
+    }
+    function esc(t) {
+      return $('<div>').text(t == null || t === '' ? '-' : t).html();
+    }
+
     let data_table  =$('#list-data').DataTable({
       "language": {
           "sProcessing":   "Sedang memproses...",
@@ -103,22 +93,28 @@
           }
       },
       "processing": true,
-      // "ajax":  `${rooturl}/api_basic/list`,
-      // "columns": [
-      //   { "data": null},
-      //   { "data": null},
-      //   { "data": null,render: function(data){
-      //     let a = ''
-      //           if (data) {
-      //             a = `
-      //             <ul class="list-inline mb-0">
-      //               <li class="list-inline-item"><a href="${rooturl}/manajemen_basic/edit/${data}" class="btn btn-warning"><i class="fas fa-edit"></i></a></li>
-      //               <li class="list-inline-item"><button onclick="hapus(${data})" class="btn btn-danger"><i class="fa fa-trash"></i></button></li>
-      //             </ul></ul>`
-      //           }
-      //           return `<td><center>${a}</center></td>`
-      //   }},
-      // ],
+      "ordering": false,
+      "ajax": { url: `${rooturl}/manajemen_perizinan/permohonan/list`, type: 'POST' },
+      "columns": [
+        { "data": null, "defaultContent": '', "className": 'text-center' },
+        { "data": 'diajukanAt', "render": function (d) { return d ? moment(d).format('DD/MM/YYYY HH:mm') : '-'; } },
+        { "data": null, "render": function (r) { return esc(r.nama_pemohon) + '<br/><small class="text-muted">' + esc(r.nama_vendor || r.username_vendor) + '</small>'; } },
+        { "data": 'provider', "render": esc },
+        { "data": 'jml_ruas', "className": 'text-center' },
+        { "data": 'jml_tiang', "className": 'text-center' },
+        { "data": 'jml_kabel', "className": 'text-center', "render": function (d) { return Number(d).toLocaleString('id-ID'); } },
+        { "data": 'retribusi', "className": 'text-right', "render": rupiah },
+        { "data": 'status', "render": function (d) {
+            var s = STATUS[d] || { label: d, badge: 'light' };
+            return '<div class="w-100-flex" style="justify-content: center;align-items: center;gap: 5px;"><span class="badge badge-' + s.badge + ' mb-0">' + s.label + '</span></div>';
+        } },
+        { "data": null, "render": function (r) {
+            return '<div class="w-100-flex" style="justify-content: center;gap: 5px;">' +
+              '<a href="' + rooturl + '/manajemen_perizinan/permohonan/verifikasi/' + r.permohonan_id + '" class="btn btn-warning" title="Verifikasi Permohonan"><i class="fas fa-tasks"></i></a>' +
+              '<button type="button" class="btn btn-danger" title="Hapus" onclick="hapus(' + r.permohonan_id + ')"><i class="fas fa-trash"></i></button>' +
+              '</div>';
+        } }
+      ],
       "columnDefs": [
         { "width": "30px", "targets": 0},
         { "width": "100px", "targets": 9}
@@ -126,7 +122,7 @@
     });
 
     data_table.on( 'draw.dt', function () {
-      let PageInfo = $('#data').DataTable().page.info();
+      let PageInfo = $('#list-data').DataTable().page.info();
       data_table.column(0, { page: 'current' }).nodes().each( function (cell, i) {
         cell.innerHTML = i + 1 + PageInfo.start;
       });
@@ -135,17 +131,19 @@
     async function hapus(id) {
       const willDelete = await swal({
         title: "Hapus Data",
-        text: "Apakah anda akan menghapus data ini?",
+        text: "Apakah anda akan menghapus permohonan ini?",
         icon: "warning",
         dangerMode: true,
         buttons: ["Tidak", "Ya"],
       });
-            
+
       if ( willDelete) {
-        $.get(rooturl+"/manajemen_basic/hapus/"+id).then(function (hsl) {
-          swal({title:text_delete.title,text:text_delete.text, icon: text_delete.icon, type:text_delete.type})
-          data_table.ajax.url(rooturl+"/manajemen_basic/list").load();
-        })
+        $.post(rooturl + "/manajemen_perizinan/permohonan/hapus/" + id)
+          .done(function () {
+            swal({title:text_delete.title,text:text_delete.text, icon: text_delete.icon, type:text_delete.type})
+            data_table.ajax.reload();
+          })
+          .fail(function (xhr) { swal('Gagal', (xhr.responseJSON && xhr.responseJSON.message) || 'Gagal menghapus data', 'error'); });
       }
     }
 </script>
