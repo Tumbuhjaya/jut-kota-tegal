@@ -559,6 +559,7 @@ module.exports = {
   NAMA_RUAS_LAIN: NAMA_RUAS_LAIN,
   getIdRuasLain: getIdRuasLain,
   getDataSk: getDataSk,
+  KONFIG_SK: KONFIG_SK,
   buatExcel: buatExcel,
   bisaUbah: bisaUbah,
   SQL_REKAP: SQL_REKAP,

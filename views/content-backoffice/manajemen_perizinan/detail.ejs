@@ -106,6 +106,54 @@
           </div>
         </div>
 
+        <div class="row" id="wrap_sewa" style="display: none;">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header">
+                <h4>Perjanjian Sewa</h4>
+                <div class="card-header-action">
+                  <a href="#" id="btn_cetak_sewa" target="_blank" class="btn btn-success" style="display: none;"><i class="fas fa-print"></i> Cetak Draft</a>
+                  <a href="#" id="btn_file_sewa" target="_blank" class="btn btn-secondary" style="display: none;"><i class="fas fa-file-signature"></i> Lihat Perjanjian TTD</a>
+                </div>
+              </div>
+              <div class="card-body">
+                <form id="form-sewa" autocomplete="off">
+                  <div class="row">
+                    <div class="col-md-4 form-group">
+                      <label for="no_perjanjian">Nomor Perjanjian Sewa</label>
+                      <input type="text" class="form-control" id="no_perjanjian">
+                    </div>
+                    <div class="col-md-4 form-group">
+                      <label for="tanggal_perjanjian">Tanggal Perjanjian Sewa</label>
+                      <input type="date" class="form-control" id="tanggal_perjanjian">
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="isi_perjanjian">Ketentuan Perjanjian Sewa</label>
+                    <textarea id="isi_perjanjian" class="form-control" rows="5"></textarea>
+                  </div>
+                  <div class="text-right mb-3">
+                    <button type="button" class="btn btn-primary" id="btn_simpan_sewa" onclick="simpanSewa()"><i class="fas fa-save"></i> Simpan Draft Perjanjian Sewa</button>
+                  </div>
+                  <div class="form-group mb-0" id="wrap_upload_sewa" style="display: none;">
+                    <label for="file_sewa">Upload Perjanjian Sewa yang sudah ditandatangani</label>
+                    <div class="input-group">
+                      <div class="custom-file">
+                        <input type="file" class="custom-file-input" id="file_sewa" accept=".pdf,.jpg,.jpeg,.png">
+                        <label class="custom-file-label" for="file_sewa">Pilih File</label>
+                      </div>
+                      <div class="input-group-append">
+                        <button type="button" class="btn btn-info" id="btn_upload_sewa" onclick="uploadTtd('sewa')"><i class="fas fa-file-upload"></i> Upload</button>
+                      </div>
+                    </div>
+                    <small class="text-muted" id="info_sewa"></small>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="row" id="wrap_proses" style="display: none;">
           <div class="col-12">
             <div class="card">
@@ -129,9 +177,38 @@
                   <div class="text-right">
                     <button type="button" class="btn btn-warning" onclick="proses('revisi')"><i class="fas fa-undo"></i> Kembalikan untuk Revisi</button>
                     <button type="button" class="btn btn-danger" onclick="proses('tolak')"><i class="fas fa-times"></i> Tolak</button>
-                    <button type="button" class="btn btn-success" onclick="proses('setujui')"><i class="fas fa-check"></i> Setujui</button>
+                    <button type="button" class="btn btn-success" id="btn_setujui" onclick="proses('setujui')"><i class="fas fa-check"></i> Setujui &amp; Buat Draft Izin</button>
                   </div>
+                  <div class="text-right"><small class="text-muted" id="info_setujui"></small></div>
                 </form>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row" id="wrap_izin" style="display: none;">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header">
+                <h4>Izin Pemanfaatan Ruang Milik Jalan</h4>
+                <div class="card-header-action">
+                  <a href="#" id="btn_file_izin" target="_blank" class="btn btn-secondary" style="display: none;"><i class="fas fa-file-signature"></i> Lihat Izin TTD</a>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="form-group mb-0">
+                  <label for="file_izin">Upload Izin Pemanfaatan Ruang Milik Jalan yang sudah ditandatangani</label>
+                  <div class="input-group">
+                    <div class="custom-file">
+                      <input type="file" class="custom-file-input" id="file_izin" accept=".pdf,.jpg,.jpeg,.png">
+                      <label class="custom-file-label" for="file_izin">Pilih File</label>
+                    </div>
+                    <div class="input-group-append">
+                      <button type="button" class="btn btn-info" id="btn_upload_izin" onclick="uploadTtd('izin')"><i class="fas fa-file-upload"></i> Upload</button>
+                    </div>
+                  </div>
+                  <small class="text-muted" id="info_izin"></small>
+                </div>
               </div>
             </div>
           </div>
@@ -159,6 +236,20 @@
     disetujui: { label: 'Disetujui', badge: 'success' },
     ditolak:   { label: 'Ditolak', badge: 'danger' }
   };
+  var TAHAP = { verifikasi: 'Verifikasi', peninjauan_lapangan: 'Peninjauan Lapangan', persetujuan_prinsip: 'Persetujuan Prinsip', verifikasi_persyaratan: 'Verifikasi Persyaratan', penerbitan_izin: 'Penerbitan Izin' };
+
+  CKEDITOR.replace('isi_perjanjian', {
+      height: 250,
+      versionCheck: false, // Menonaktifkan notifikasi peringatan versi LTS di layar
+      toolbar: []
+  });
+
+  // Data pertama bisa datang sebelum editor siap
+  function isiEditorSewa(isi, readOnly) {
+    var ed = CKEDITOR.instances.isi_perjanjian;
+    function tulis() { ed.setData(isi); ed.setReadOnly(readOnly); }
+    if (ed.status === 'ready') tulis(); else ed.once('instanceReady', tulis);
+  }
 
   function rupiah(n) {
     return 'Rp ' + Number(n || 0).toLocaleString('id-ID', { maximumFractionDigits: 0 }) + ',-';
@@ -223,7 +314,10 @@
   function tampil(data) {
     var p = data.permohonan;
     var s = STATUS[p.status] || { label: p.status, badge: 'light' };
-    $('#d_status').html('<span class="badge badge-' + s.badge + '">' + s.label + '</span>');
+    // Permohonan yang sedang berjalan: tampilkan tahapnya
+    $('#d_status').html(p.status === 'diajukan' && TAHAP[p.tahap]
+      ? '<span class="badge badge-info">Tahap ' + TAHAP[p.tahap] + '</span>'
+      : '<span class="badge badge-' + s.badge + '">' + s.label + '</span>');
     $('#d_diajukan').text(p.diajukanAt ? moment(p.diajukanAt).format('DD/MM/YYYY HH:mm') : '-');
     $('#d_vendor').html(esc(p.vendor ? (p.vendor.fullname || p.vendor.username) : '-'));
     $('#d_provider').html(esc(p.provider));
@@ -282,11 +376,84 @@
 
     $('#btn_cetak').attr('href', rooturl + '/manajemen_perizinan/cetak_sk/' + ID_PERMOHONAN).toggle(p.status === 'disetujui');
     $('#btn_edit').attr('href', rooturl + '/manajemen_perizinan/edit/' + ID_PERMOHONAN).toggle(p.status !== 'disetujui');
-    // Permohonan diajukan baru diproses (SK) setelah melewati tahap persetujuan prinsip
-    $('#wrap_proses').toggle(['disetujui', 'ditolak'].indexOf(p.status) !== -1 || (p.status === 'diajukan' && p.tahap === 'penerbitan_izin'));
+    // Permohonan diajukan baru diproses (SK) setelah melewati tahap verifikasi persyaratan
+    var penerbitan = p.status === 'diajukan' && p.tahap === 'penerbitan_izin';
+    $('#wrap_proses').toggle(['disetujui', 'ditolak'].indexOf(p.status) !== -1 || penerbitan);
     $('#no_sk').val(p.no_sk || '');
     $('#tanggal_sk').val(p.tanggal_sk ? moment(p.tanggal_sk).format('YYYY-MM-DD') : '');
     $('#keterangan').val(p.keterangan || '');
+
+    // Perjanjian sewa: diisi di tahap penerbitan izin, SK baru bisa disetujui setelah perjanjian TTD diupload
+    var sewa = data.perjanjian_sewa;
+    $('#wrap_sewa').toggle(penerbitan || !!sewa);
+    $('#no_perjanjian').val(sewa ? sewa.no_perjanjian || '' : '').prop('disabled', !penerbitan);
+    $('#tanggal_perjanjian').val(sewa && sewa.tanggal_perjanjian ? moment(sewa.tanggal_perjanjian).format('YYYY-MM-DD') : '').prop('disabled', !penerbitan);
+    isiEditorSewa(sewa ? sewa.isi || '' : '', !penerbitan);
+    $('#btn_simpan_sewa').toggle(penerbitan);
+    $('#wrap_upload_sewa').toggle(penerbitan && !!sewa);
+    $('#btn_cetak_sewa').attr('href', rooturl + '/manajemen_perizinan/perjanjian_sewa/cetak/' + ID_PERMOHONAN).toggle(!!sewa);
+    $('#btn_file_sewa').attr('href', rooturl + '/manajemen_perizinan/perjanjian_sewa/file/' + ID_PERMOHONAN).toggle(!!(sewa && sewa.file_ttd));
+    $('#info_sewa').text(sewa && sewa.uploadTtdAt ? 'Diupload ' + moment(sewa.uploadTtdAt).format('DD/MM/YYYY HH:mm') + '. Upload ulang akan mengganti file.' : '');
+    var sewaTtd = !!(sewa && sewa.file_ttd);
+    $('#btn_setujui').prop('disabled', penerbitan && !sewaTtd);
+    $('#info_setujui').text(penerbitan && !sewaTtd ? 'Upload perjanjian sewa yang sudah ditandatangani terlebih dahulu untuk menyetujui.' : '');
+
+    // Izin TTD diupload setelah SK disetujui; upload mengirim email izin terbit ke pemohon
+    $('#wrap_izin').toggle(p.status === 'disetujui');
+    $('#btn_file_izin').attr('href', rooturl + '/manajemen_perizinan/izin/file/' + ID_PERMOHONAN).toggle(!!p.file_sk);
+    $('#info_izin').text(p.uploadSkAt
+      ? 'Diupload ' + moment(p.uploadSkAt).format('DD/MM/YYYY HH:mm') + ' dan sudah dikirim ke email pemohon. Upload ulang akan mengganti file dan mengirim email lagi.'
+      : 'Setelah diupload, izin dikirim ke email pemohon sebagai pemberitahuan izin telah terbit.');
+    $('.custom-file-input').val('').next('.custom-file-label').text('Pilih File');
+  }
+
+  // Nama file terpilih tampil di label custom-file
+  $(document).on('change', '.custom-file-input', function () {
+    $(this).next('.custom-file-label').text(this.files[0] ? this.files[0].name : 'Pilih File');
+  });
+
+  function simpanSewa() {
+    if (!$('#no_perjanjian').val() || !$('#tanggal_perjanjian').val()) return swal('Lengkapi data', 'Nomor & tanggal perjanjian sewa wajib diisi', 'warning');
+    $('#btn_simpan_sewa').prop('disabled', true);
+    $.post(rooturl + '/manajemen_perizinan/perjanjian_sewa/simpan/' + ID_PERMOHONAN, {
+      no_perjanjian: $('#no_perjanjian').val(),
+      tanggal_perjanjian: $('#tanggal_perjanjian').val(),
+      isi: CKEDITOR.instances.isi_perjanjian.getData()
+    }).done(function () {
+      swal({title:text_insert.title,text:text_insert.text, icon: text_insert.icon, type:text_insert.type});
+      muat();
+    }).fail(function (xhr) {
+      swal('Gagal', (xhr.responseJSON && xhr.responseJSON.message) || 'Gagal menyimpan draft perjanjian sewa', 'error');
+    }).always(function () {
+      $('#btn_simpan_sewa').prop('disabled', false);
+    });
+  }
+
+  // jenis: sewa (perjanjian sewa TTD) | izin (izin / SK TTD)
+  var UPLOAD = {
+    sewa: { input: '#file_sewa', tombol: '#btn_upload_sewa', url: '/manajemen_perizinan/perjanjian_sewa/upload/', nama: 'perjanjian sewa',
+            konfirmasi: 'Upload perjanjian sewa yang sudah ditandatangani?' },
+    izin: { input: '#file_izin', tombol: '#btn_upload_izin', url: '/manajemen_perizinan/izin/upload/', nama: 'izin',
+            konfirmasi: 'Izin akan dikirim ke email pemohon sebagai pemberitahuan izin telah terbit. Lanjutkan?' }
+  };
+  async function uploadTtd(jenis) {
+    var u = UPLOAD[jenis];
+    var f = $(u.input)[0].files[0];
+    if (!f) return swal('Pilih file', 'File ' + u.nama + ' yang sudah ditandatangani wajib dipilih', 'warning');
+    var yakin = await swal({ title: 'Upload', text: u.konfirmasi, icon: 'warning', buttons: ['Tidak', 'Ya'] });
+    if (!yakin) return;
+    var formData = new FormData();
+    formData.append('file', f);
+    $(u.tombol).prop('disabled', true);
+    $.ajax({ type: 'POST', url: rooturl + u.url + ID_PERMOHONAN, data: formData, processData: false, contentType: false })
+      .done(function () {
+        swal('Berhasil', 'File ' + u.nama + ' berhasil diupload', 'success');
+        muat();
+      }).fail(function (xhr) {
+        swal('Gagal', (xhr.responseJSON && xhr.responseJSON.message) || 'Gagal mengupload ' + u.nama, 'error');
+      }).always(function () {
+        $(u.tombol).prop('disabled', false);
+      });
   }
 
   function muat() {

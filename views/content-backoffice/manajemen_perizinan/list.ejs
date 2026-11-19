@@ -105,6 +105,7 @@
     disetujui: { label: 'Disetujui', badge: 'success' },
     ditolak:   { label: 'Ditolak', badge: 'danger' }
   };
+  var TAHAP = { verifikasi: 'Verifikasi', peninjauan_lapangan: 'Peninjauan Lapangan', persetujuan_prinsip: 'Persetujuan Prinsip', verifikasi_persyaratan: 'Verifikasi Persyaratan', penerbitan_izin: 'Penerbitan Izin' };
 
   function rupiah(n) {
     return 'Rp ' + Number(n || 0).toLocaleString('id-ID', { maximumFractionDigits: 0 }) + ',-';
@@ -150,8 +151,12 @@
         { "data": 'jml_kabel', "className": 'text-center', "render": function (d) { return Number(d).toLocaleString('id-ID'); } },
         { "data": 'retribusi', "className": 'text-right', "render": rupiah },
         { "data": 'no_sk', "render": function (d) { return esc(d || '-'); } },
-        { "data": 'status', "render": function (d) {
-            var s = STATUS[d] || { label: d, badge: 'light' };
+        { "data": null, "render": function (r) {
+            // Permohonan yang sedang berjalan: tampilkan tahapnya
+            if (r.status === 'diajukan' && TAHAP[r.tahap]) {
+              return '<span class="badge badge-' + (r.tahap === 'penerbitan_izin' ? 'primary' : 'info') + '">' + TAHAP[r.tahap] + '</span>';
+            }
+            var s = STATUS[r.status] || { label: r.status, badge: 'light' };
             return '<span class="badge badge-' + s.badge + '">' + s.label + '</span>';
         } },
         { "data": null, "render": function (r) {

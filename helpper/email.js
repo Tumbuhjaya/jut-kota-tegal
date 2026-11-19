@@ -4,7 +4,8 @@ var sql_enak = require('../database/mysql_enak.js').connection;
 
 const ejs = require('ejs');
 const path = require('path');
-const email = function (email, subject, isi) { 
+// lampiran (opsional): [{ filename, path }] sesuai format attachments nodemailer
+const email = function (email, subject, isi, lampiran) {
     console.log(email, subject, isi);
     var transporter = nodemailer.createTransport({
         service: 'Gmail',
@@ -17,7 +18,8 @@ const email = function (email, subject, isi) {
         from: 'Service Desk BRI Insurance',
         to:email,
         subject: subject,
-        html: isi
+        html: isi,
+        attachments: lampiran || []
     };
 let a =''
     transporter.sendMail(mainOptions, function (err, info) {

@@ -28,6 +28,7 @@
                         <th class="text-center" rowspan="2">Provider</th>
                         <th class="text-center" colspan="4">Total</th>
                         <th class="text-center" rowspan="2" style="min-width: 100px;">Tim Teknis</th>
+                        <th class="text-center" rowspan="2">Hasil Peninjauan</th>
                         <th class="text-center" rowspan="2" style="min-width: 100px;">Option</th>
                       </tr>
 
@@ -101,6 +102,18 @@
                     <div class="form-group">
                         <label for="tim_teknis">Tim Teknis <small class="text-muted">(satu nama per baris)</small></label>
                         <textarea id="tim_teknis" class="form-control" rows="3" style="height: auto;"></textarea>
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <div class="form-group">
+                        <label for="kelayakan">Hasil Peninjauan</label>
+                        <select id="kelayakan" class="custom-select">
+                            <option value="">-- Pilih --</option>
+                            <option value="layak">Layak</option>
+                            <option value="tidak_layak">Tidak Layak</option>
+                        </select>
+                        <small class="text-muted">Tidak layak: BA tidak bisa diupload, lakukan peninjauan ulang lalu ubah draft BA.</small>
                     </div>
                 </div>
             </div>
@@ -220,16 +233,24 @@
         { "data": 'jml_kabel', "className": 'text-center', "render": function (d) { return Number(d).toLocaleString('id-ID'); } },
         { "data": 'retribusi', "className": 'text-right', "render": rupiah },
         { "data": 'tim_teknis', "render": function (d) { return d ? esc(d).replace(/\n/g, '<br/>') : '<i class="text-muted">belum ditentukan</i>'; } },
+        { "data": 'kelayakan', "className": 'text-center', "render": function (d) {
+            if (d === 'layak') return '<span class="badge badge-success">Layak</span>';
+            if (d === 'tidak_layak') return '<span class="badge badge-danger">Tidak Layak</span><br/><small class="text-muted">perlu peninjauan ulang</small>';
+            return '<i class="text-muted">belum ditinjau</i>';
+        } },
         { "data": null, "render": function (r) {
             var ada = Number(r.ada_ba);
+            var layak = r.kelayakan === 'layak';
+            var alasan = !ada ? 'Buat draft BA terlebih dahulu' : 'Hasil peninjauan tidak layak, lakukan peninjauan ulang';
             return '<div class="w-100-flex" style="justify-content: center;gap: 5px;">' +
               '<a href="' + rooturl + '/manajemen_perizinan/permohonan/verifikasi/' + r.permohonan_id + '" class="btn btn-light" title="Detail Permohonan"><i class="fas fa-eye"></i></a>' +
               '<button type="button" class="btn btn-warning" title="' + (ada ? 'Ubah' : 'Buat') + ' Draft BA" onclick="bukaDraft(' + r.permohonan_id + ')"><i class="fas fa-pen-square"></i></button>' +
               (ada
-                ? '<a href="' + URL_TAHAP + '/cetak/' + r.permohonan_id + '" target="_blank" class="btn btn-success" title="Cetak Draft BA"><i class="fas fa-print"></i></a>' +
-                  '<button type="button" class="btn btn-info" title="Upload BA TTD" onclick="bukaUpload(' + r.permohonan_id + ')"><i class="fas fa-file-upload"></i></button>'
-                : '<button type="button" class="btn btn-success" title="Buat draft BA terlebih dahulu" disabled><i class="fas fa-print"></i></button>' +
-                  '<button type="button" class="btn btn-info" title="Buat draft BA terlebih dahulu" disabled><i class="fas fa-file-upload"></i></button>') +
+                ? '<a href="' + URL_TAHAP + '/cetak/' + r.permohonan_id + '" target="_blank" class="btn btn-success" title="Cetak Draft BA"><i class="fas fa-print"></i></a>'
+                : '<button type="button" class="btn btn-success" title="Buat draft BA terlebih dahulu" disabled><i class="fas fa-print"></i></button>') +
+              (ada && layak
+                ? '<button type="button" class="btn btn-info" title="Upload BA TTD" onclick="bukaUpload(' + r.permohonan_id + ')"><i class="fas fa-file-upload"></i></button>'
+                : '<button type="button" class="btn btn-info" title="' + alasan + '" disabled><i class="fas fa-file-upload"></i></button>') +
               '</div>';
         } }
       ],
@@ -275,6 +296,7 @@
         // Default tanggal surat = tanggal permohonan diajukan
         $('#tanggal_surat_permohonan').val(tglInput(b.tanggal_surat_permohonan || p.diajukanAt));
         $('#tim_teknis').val(b.tim_teknis || '');
+        $('#kelayakan').val(b.kelayakan || '');
         CKEDITOR.instances.editor1.setData(b.hasil || '');
         for (var i = 1; i <= JUMLAH_FOTO; i++) resetFile($('#foto_' + i));
         tampilFoto(b.foto);
@@ -284,8 +306,9 @@
 
     function simpanDraft() {
       if (!$('#no_ba').val() || !$('#tanggal_ba').val()) return swal('Lengkapi data', 'Nomor & tanggal berita acara wajib diisi', 'warning');
+      if (!$('#kelayakan').val()) return swal('Lengkapi data', 'Hasil peninjauan (layak / tidak layak) wajib dipilih', 'warning');
       var formData = new FormData();
-      ['no_ba', 'tanggal_ba', 'no_surat_permohonan', 'tanggal_surat_permohonan', 'tim_teknis'].forEach(function (k) {
+      ['no_ba', 'tanggal_ba', 'no_surat_permohonan', 'tanggal_surat_permohonan', 'tim_teknis', 'kelayakan'].forEach(function (k) {
         formData.append(k, $('#' + k).val());
       });
       formData.append('hasil', CKEDITOR.instances.editor1.getData());
@@ -330,7 +353,7 @@
       var f = $('#file_ttd')[0].files[0];
       if (!f) return swal('Pilih file', 'File BA yang sudah ditandatangani wajib dipilih', 'warning');
       const yakin = await swal({
-        title: 'Upload BA', text: 'Permohonan akan dilanjutkan ke tahap Persetujuan Prinsip. Lanjutkan?',
+        title: 'Upload BA', text: 'Permohonan akan dilanjutkan ke tahap Persetujuan Prinsip dan BA dikirim ke email pemohon. Lanjutkan?',
         icon: 'warning', buttons: ['Tidak', 'Ya']
       });
       if (!yakin) return;

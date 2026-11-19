@@ -176,12 +176,13 @@
                                             <option value="">-- Pilih --</option>
                                             <option value="diajukan">-- Menunggu Verifikasi --</option>
                                             <option value="revisi">-- Revisi --</option>
+                                            <option value="tolak">-- Tolak --</option>
                                             <option value="lolos">-- Disetujui --</option>
                                         </select>
                                     </div>
 
                                     <div class="form-group" id="konten-revisi">
-                                        <label for="keterangan">Keterangan Revisi</label>
+                                        <label for="keterangan" id="label-keterangan">Keterangan Revisi</label>
                                         <textarea id="keterangan" class="form-control" rows="4" style="height: auto;"></textarea>
                                     </div>
 
@@ -212,7 +213,7 @@
     var ID_PERMOHONAN = <%= permohonan_id %>;
     var KOMPONEN = <%- JSON.stringify(komponen) %>; // komponen retribusi per ruas (helpper/permohonan.js)
     var KODE_WILAYAH = <%- JSON.stringify(kode_wilayah) %>;
-    var TAHAP = { verifikasi: 'Verifikasi', peninjauan_lapangan: 'Peninjauan Lapangan', persetujuan_prinsip: 'Persetujuan Prinsip', penerbitan_izin: 'Penerbitan Izin' };
+    var TAHAP = { verifikasi: 'Verifikasi', peninjauan_lapangan: 'Peninjauan Lapangan', persetujuan_prinsip: 'Persetujuan Prinsip', verifikasi_persyaratan: 'Verifikasi Persyaratan', penerbitan_izin: 'Penerbitan Izin' };
 
     function rupiah(n) {
       return 'Rp ' + Number(n || 0).toLocaleString('id-ID', { maximumFractionDigits: 0 }) + ',-';
@@ -323,12 +324,14 @@
 
       // Form verifikasi hanya untuk permohonan yang menunggu verifikasi
       var bisa = p.status === 'diajukan' && p.tahap === 'verifikasi';
-      $('#status_verifikasi').val(bisa ? 'diajukan' : (p.status === 'revisi' ? 'revisi' : 'lolos')).prop('disabled', !bisa).trigger('change');
-      $('#keterangan').val(p.status === 'revisi' ? (p.keterangan || '') : '').prop('disabled', !bisa);
+      var STATUS_FORM = { revisi: 'revisi', ditolak: 'tolak' };
+      $('#status_verifikasi').val(bisa ? 'diajukan' : (STATUS_FORM[p.status] || 'lolos')).prop('disabled', !bisa).trigger('change');
+      $('#keterangan').val(STATUS_FORM[p.status] ? (p.keterangan || '') : '').prop('disabled', !bisa);
       $('#button_submit').prop('disabled', !bisa);
       if (!bisa) {
         $('#info-tahap').show().text(p.status === 'revisi'
           ? 'Permohonan sedang dikembalikan ke pemohon untuk revisi.'
+          : p.status === 'ditolak' ? 'Permohonan sudah ditolak.'
           : 'Permohonan sudah lolos verifikasi dan berada di tahap ' + (TAHAP[p.tahap] || p.tahap) + '.');
       }
     }
@@ -346,21 +349,26 @@
     }
 
     $('#status_verifikasi').change(function(){
-      $('#konten-revisi').toggle($(this).val() == 'revisi');
+      var v = $(this).val();
+      $('#konten-revisi').toggle(v == 'revisi' || v == 'tolak');
+      $('#label-keterangan').text(v == 'tolak' ? 'Alasan Penolakan' : 'Keterangan Revisi');
     });
 
     async function submit() {
       var status = $('#status_verifikasi').val();
       if (!status) return swal('Pilih status', 'Status verifikasi wajib dipilih', 'warning');
-      if (status == 'revisi' && !$('#keterangan').val().trim()) return swal('Keterangan revisi', 'Keterangan revisi wajib diisi', 'warning');
+      if ((status == 'revisi' || status == 'tolak') && !$('#keterangan').val().trim()) {
+        return swal('Keterangan', status == 'tolak' ? 'Alasan penolakan wajib diisi' : 'Keterangan revisi wajib diisi', 'warning');
+      }
 
       const yakin = await swal({
         title: "Verifikasi Permohonan",
         text: status == 'lolos' ? "Permohonan akan dilanjutkan ke tahap Peninjauan Lapangan. Lanjutkan?"
-          : status == 'revisi' ? "Permohonan akan dikembalikan ke pemohon untuk revisi. Lanjutkan?"
+          : status == 'revisi' ? "Permohonan akan dikembalikan ke pemohon untuk revisi dan pemohon diberi notifikasi email. Lanjutkan?"
+          : status == 'tolak' ? "Permohonan akan ditolak dan pemohon diberi notifikasi email. Lanjutkan?"
           : "Status permohonan tetap menunggu verifikasi. Lanjutkan?",
         icon: "warning",
-        dangerMode: status == 'revisi',
+        dangerMode: status == 'revisi' || status == 'tolak',
         buttons: ["Tidak", "Ya"],
       });
       if (!yakin) return;

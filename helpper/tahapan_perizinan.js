@@ -1,10 +1,12 @@
 // Tahapan backoffice permohonan izin jaringan utilitas:
-// verifikasi -> peninjauan lapangan (berita acara) -> persetujuan prinsip -> penerbitan izin (SK, lihat helpper/permohonan.js)
+// verifikasi -> peninjauan lapangan (berita acara) -> persetujuan prinsip -> verifikasi persyaratan
+// -> penerbitan izin (perjanjian sewa -> SK, lihat helpper/permohonan.js -> upload izin TTD)
 var path = require('path');
 var fs = require('fs');
 var multer = require('multer');
 var sql_enak = require('../database/mysql_enak.js').connection;
 var helper = require('./permohonan.js');
+var email = require('./email.js');
 
 // Satu folder dengan dokumen persyaratan (di luar public)
 var DIR_DOKUMEN = path.join(__dirname, '..', 'uploads', 'permohonan');
@@ -13,8 +15,11 @@ var TAHAP = {
   verifikasi: 'Verifikasi',
   peninjauan_lapangan: 'Peninjauan Lapangan',
   persetujuan_prinsip: 'Persetujuan Prinsip',
+  verifikasi_persyaratan: 'Verifikasi Persyaratan',
   penerbitan_izin: 'Penerbitan Izin'
 };
+
+var KELAYAKAN = { layak: 'Layak', tidak_layak: 'Tidak Layak' };
 
 var JUMLAH_FOTO = 6;
 var FIELD_FOTO = [];
@@ -68,21 +73,23 @@ function kirimFile(res, nama_file, nama_asli, inline) {
 function sqlListTahap() {
   return `
     SELECT x.*,
-           pl.tim_teknis, pl.no_ba, pl.tanggal_ba, pl.file_ba, pl.uploadBaAt,
+           pl.tim_teknis, pl.no_ba, pl.tanggal_ba, pl.kelayakan, pl.file_ba, pl.uploadBaAt,
            (pl.permohonan_peninjauan_id IS NOT NULL) AS ada_ba,
-           pp.no_pp, pp.tanggal_pp, pp.file_ttd AS file_pp, pp.uploadTtdAt AS uploadPpAt,
+           pp.no_pp, pp.tanggal_pp, pp.file_ttd AS file_pp, pp.uploadTtdAt AS uploadPpAt, pp.keterangan_persyaratan,
            (pp.permohonan_persetujuan_prinsip_id IS NOT NULL) AS ada_pp
       FROM (${helper.SQL_REKAP}) x
       LEFT JOIN permohonan_peninjauan pl ON pl.permohonan_id = x.permohonan_id
       LEFT JOIN permohonan_persetujuan_prinsip pp ON pp.permohonan_id = x.permohonan_id`;
 }
 
-// status: daftar status permohonan yang ditampilkan pada tahap tsb
+// tahap: satu tahap / beberapa tahap; status: daftar status permohonan yang ditampilkan
 async function listTahap(tahap, status) {
+  tahap = [].concat(tahap);
+  function isian(a) { return a.map(function () { return '?'; }).join(','); }
   var [rows] = await sql_enak.raw(
-    sqlListTahap() + ` WHERE x.tahap = ? AND x.status IN (${status.map(function () { return '?'; }).join(',')})
+    sqlListTahap() + ` WHERE x.tahap IN (${isian(tahap)}) AND x.status IN (${isian(status)})
       ORDER BY FIELD(x.status, 'diajukan') DESC, x.diajukanAt ASC`,
-    [tahap].concat(status)
+    tahap.concat(status)
   );
   return rows;
 }
@@ -103,7 +110,7 @@ async function getPeninjauan(permohonan_id) {
 // Buat / ubah draft BA; foto yang diupload mengganti slot urutan yang sama
 async function simpanPeninjauan(permohonan_id, b, files, id_user) {
   var kolom = [b.tim_teknis || null, b.no_ba || null, b.tanggal_ba || null,
-    b.no_surat_permohonan || null, b.tanggal_surat_permohonan || null, b.hasil || null];
+    b.no_surat_permohonan || null, b.tanggal_surat_permohonan || null, b.hasil || null, b.kelayakan || null];
   var ada = await getPeninjauan(permohonan_id);
   var id;
   if (ada) {
@@ -111,15 +118,15 @@ async function simpanPeninjauan(permohonan_id, b, files, id_user) {
     await sql_enak.raw(
       `UPDATE permohonan_peninjauan
           SET tim_teknis = ?, no_ba = ?, tanggal_ba = ?, no_surat_permohonan = ?, tanggal_surat_permohonan = ?, hasil = ?,
-              lastUpdateAt = NOW()
+              kelayakan = ?, lastUpdateAt = NOW()
         WHERE permohonan_peninjauan_id = ?`,
       kolom.concat([id])
     );
   } else {
     var [hasil] = await sql_enak.raw(
       `INSERT INTO permohonan_peninjauan
-         (permohonan_id, tim_teknis, no_ba, tanggal_ba, no_surat_permohonan, tanggal_surat_permohonan, hasil, dibuat_oleh, insertedAt, lastUpdateAt)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+         (permohonan_id, tim_teknis, no_ba, tanggal_ba, no_surat_permohonan, tanggal_surat_permohonan, hasil, kelayakan, dibuat_oleh, insertedAt, lastUpdateAt)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
       [permohonan_id].concat(kolom, [id_user])
     );
     id = hasil.insertId;
@@ -178,16 +185,55 @@ async function simpanPersetujuan(permohonan_id, b, id_user) {
   return hasil.insertId;
 }
 
+// Persyaratan persetujuan prinsip terpenuhi -> lanjut ke penerbitan izin;
+// belum terpenuhi -> tetap di tahap verifikasi persyaratan, keterangan dikirim ke pemohon
+async function simpanVerifikasiPersyaratan(permohonan_id, lanjut, keterangan, id_user) {
+  await sql_enak.raw(
+    `UPDATE permohonan_persetujuan_prinsip
+        SET keterangan_persyaratan = ?, persyaratanAt = ?, persyaratan_oleh = ?, lastUpdateAt = NOW()
+      WHERE permohonan_id = ?`,
+    [keterangan || null, lanjut ? new Date() : null, id_user, permohonan_id]
+  );
+  if (lanjut) await pindahTahap(permohonan_id, 'penerbitan_izin');
+}
+
+// ---------------- Perjanjian sewa (tahap penerbitan izin, sebelum SK) ----------------
+async function getPerjanjianSewa(permohonan_id) {
+  var [rows] = await sql_enak.raw(`SELECT * FROM permohonan_perjanjian_sewa WHERE permohonan_id = ?`, [permohonan_id]);
+  return rows[0] || null;
+}
+
+async function simpanPerjanjianSewa(permohonan_id, b, id_user) {
+  var kolom = [b.no_perjanjian || null, b.tanggal_perjanjian || null, b.isi || null];
+  var ada = await getPerjanjianSewa(permohonan_id);
+  if (ada) {
+    await sql_enak.raw(
+      `UPDATE permohonan_perjanjian_sewa SET no_perjanjian = ?, tanggal_perjanjian = ?, isi = ?, lastUpdateAt = NOW()
+        WHERE permohonan_perjanjian_sewa_id = ?`,
+      kolom.concat([ada.permohonan_perjanjian_sewa_id])
+    );
+    return ada.permohonan_perjanjian_sewa_id;
+  }
+  var [hasil] = await sql_enak.raw(
+    `INSERT INTO permohonan_perjanjian_sewa (permohonan_id, no_perjanjian, tanggal_perjanjian, isi, dibuat_oleh, insertedAt, lastUpdateAt)
+     VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
+    [permohonan_id].concat(kolom, [id_user])
+  );
+  return hasil.insertId;
+}
+
 // ---------------- Perpindahan tahap ----------------
 async function pindahTahap(permohonan_id, tahap) {
   await sql_enak.raw(`UPDATE permohonan SET tahap = ?, lastUpdateAt = NOW() WHERE permohonan_id = ?`, [tahap, permohonan_id]);
 }
 
-// Upload dokumen bertanda tangan lalu permohonan lanjut ke tahap berikutnya.
+// Upload dokumen bertanda tangan, lalu (jika ada) permohonan lanjut ke tahap berikutnya.
 // cfg: tabel, kolom file & nama asli & waktu upload, tahap berikutnya
 var UPLOAD_TTD = {
   ba: { tabel: 'permohonan_peninjauan', file: 'file_ba', asli: 'nama_asli_ba', waktu: 'uploadBaAt', lanjut: 'persetujuan_prinsip' },
-  pp: { tabel: 'permohonan_persetujuan_prinsip', file: 'file_ttd', asli: 'nama_asli_ttd', waktu: 'uploadTtdAt', lanjut: 'penerbitan_izin' }
+  pp: { tabel: 'permohonan_persetujuan_prinsip', file: 'file_ttd', asli: 'nama_asli_ttd', waktu: 'uploadTtdAt', lanjut: 'verifikasi_persyaratan' },
+  sewa: { tabel: 'permohonan_perjanjian_sewa', file: 'file_ttd', asli: 'nama_asli_ttd', waktu: 'uploadTtdAt', lanjut: null },
+  sk: { tabel: 'permohonan', file: 'file_sk', asli: 'nama_asli_sk', waktu: 'uploadSkAt', lanjut: null }
 };
 
 async function simpanTtd(jenis, permohonan_id, file) {
@@ -198,19 +244,56 @@ async function simpanTtd(jenis, permohonan_id, file) {
     `UPDATE ${cfg.tabel} SET ${cfg.file} = ?, ${cfg.asli} = ?, ${cfg.waktu} = NOW(), lastUpdateAt = NOW() WHERE permohonan_id = ?`,
     [file.filename, file.originalname, permohonan_id]
   );
-  await pindahTahap(permohonan_id, cfg.lanjut);
+  if (cfg.lanjut) await pindahTahap(permohonan_id, cfg.lanjut);
 }
 
-// Data halaman cetak BA / persetujuan prinsip: detail + total retribusi (seperti SK) + dokumen tahapan
+// Data halaman cetak BA / persetujuan prinsip / perjanjian sewa: detail + total retribusi (seperti SK) + dokumen tahapan
 async function getDataCetak(permohonan) {
   var data = await helper.getDataSk(permohonan);
   data.peninjauan = await getPeninjauan(permohonan.permohonan_id);
   data.persetujuan = await getPersetujuan(permohonan.permohonan_id);
+  data.perjanjian_sewa = await getPerjanjianSewa(permohonan.permohonan_id);
   return data;
+}
+
+// ---------------- Notifikasi email ke pemohon ----------------
+function escHtml(t) {
+  return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
+// File upload sebagai lampiran email (null jika file tidak ada)
+function lampiran(nama_file, nama_asli) {
+  var file = nama_file && path.join(DIR_DOKUMEN, path.basename(nama_file));
+  if (!file || !fs.existsSync(file)) return null;
+  return { filename: nama_asli || nama_file, path: file };
+}
+
+// isi: potongan HTML (teks isian pengguna harus sudah di-escape); berkas: [{ filename, path }]
+// Gagal kirim hanya dicatat di log agar proses tahapan tetap berjalan
+async function kirimNotifikasi(permohonan, judul, isi, berkas) {
+  try {
+    var tujuan = permohonan.email_pemohon;
+    if (!tujuan) {
+      var [v] = await sql_enak.raw(`SELECT email FROM user WHERE id_user = ?`, [permohonan.id_user]);
+      tujuan = v[0] && v[0].email;
+    }
+    if (!tujuan) return console.log('Notifikasi permohonan ' + permohonan.permohonan_id + ' tidak terkirim: email pemohon kosong');
+    var html =
+      '<p>Yth. ' + escHtml(permohonan.nama_pemohon || 'Pemohon') + ',</p>' +
+      isi +
+      '<p>Nomor permohonan: <b>' + permohonan.permohonan_id + '</b></p>' +
+      '<p>Terima kasih.<br/>' + escHtml(helper.KONFIG_SK.instansi) + '<br/>' + escHtml(helper.KONFIG_SK.pemerintah) + '</p>';
+    email.email(tujuan, judul + ' - Permohonan Izin Jaringan Utilitas', html, (berkas || []).filter(Boolean));
+  } catch (err) {
+    console.log(err);
+  }
 }
 
 module.exports = {
   TAHAP: TAHAP,
+  KELAYAKAN: KELAYAKAN,
   JUMLAH_FOTO: JUMLAH_FOTO,
   upload_foto: pakaiUpload(upload_foto),
   upload_ttd: pakaiUpload(upload_ttd),
@@ -222,7 +305,13 @@ module.exports = {
   hapusFotoPeninjauan: hapusFotoPeninjauan,
   getPersetujuan: getPersetujuan,
   simpanPersetujuan: simpanPersetujuan,
+  simpanVerifikasiPersyaratan: simpanVerifikasiPersyaratan,
+  getPerjanjianSewa: getPerjanjianSewa,
+  simpanPerjanjianSewa: simpanPerjanjianSewa,
   pindahTahap: pindahTahap,
   simpanTtd: simpanTtd,
-  getDataCetak: getDataCetak
+  getDataCetak: getDataCetak,
+  escHtml: escHtml,
+  lampiran: lampiran,
+  kirimNotifikasi: kirimNotifikasi
 };
