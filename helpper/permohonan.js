@@ -206,7 +206,7 @@ async function getDigitasi(permohonan_id, permohonan_ruas_id) {
     val
   );
   [tiang, kabel].forEach(function (list) {
-    list.forEach(function (f) { f.geojson = JSON.parse(f.geojson); });
+    list.forEach(function (f) { if (typeof f.geojson === 'string') f.geojson = JSON.parse(f.geojson); });
   });
   return { tiang: tiang, kabel: kabel };
 }
@@ -289,7 +289,7 @@ async function daftarSinkronTiang(status) {
       WHERE pt.deletedAt IS NULL` + filter + ` ORDER BY pt.permohonan_id DESC, pt.permohonan_tiang_id`,
     status ? [status] : []
   );
-  data.forEach(function (d) { d.geojson = JSON.parse(d.geojson); });
+  data.forEach(function (d) { if (typeof d.geojson === 'string') d.geojson = JSON.parse(d.geojson); });
   return data;
 }
 
