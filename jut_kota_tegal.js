@@ -55,6 +55,7 @@ var user = require('./isine/user.js');
 var provider = require('./isine/provider.js');
 var perusahaan = require('./isine/perusahaan.js');
 var perusahaan_provider = require('./isine/perusahaan_provider.js');
+var penandatangan = require('./isine/penandatangan.js');
 
 var vendor = require('./isine/vendor.js');
 var dashboard_perusahaan = require('./isine/dashboard_perusahaan.js');
@@ -143,6 +144,7 @@ app.use('/api', api);
 app.use('/provider', provider);
 app.use('/perusahaan', perusahaan);
 app.use('/perusahaan_provider', perusahaan_provider);
+app.use('/penandatangan', penandatangan);
 app.use('/vendor', vendor);
 app.use('/dashboard_perusahaan', dashboard_perusahaan);
 app.use('/dashboard_vendor', dashboard_vendor);

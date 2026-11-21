@@ -295,10 +295,10 @@
         $('#judulDraft').text((res.data.peninjauan ? 'Ubah' : 'Buat') + ' Draft Berita Acara Peninjauan Lapangan');
         $('#no_ba').val(b.no_ba || '');
         $('#tanggal_ba').val(tglInput(b.tanggal_ba));
-        $('#no_surat_permohonan').val(b.no_surat_permohonan || '');
+        // Default no. surat = isian saat verifikasi permohonan
+        $('#no_surat_permohonan').val(b.no_surat_permohonan || p.no_surat_permohonan || '');
         // Default tanggal surat = tanggal permohonan diajukan
         $('#tanggal_surat_permohonan').val(tglInput(b.tanggal_surat_permohonan || p.diajukanAt));
-        $('#tim_teknis').val(b.tim_teknis || '');
         $('#kelayakan').val(b.kelayakan || '');
         CKEDITOR.instances.editor1.setData(b.hasil || '');
         for (var i = 1; i <= JUMLAH_FOTO; i++) resetFile($('#foto_' + i));
@@ -311,7 +311,8 @@
       if (!$('#no_ba').val() || !$('#tanggal_ba').val()) return swal('Lengkapi data', 'Nomor & tanggal berita acara wajib diisi', 'warning');
       if (!$('#kelayakan').val()) return swal('Lengkapi data', 'Hasil peninjauan (layak / tidak layak) wajib dipilih', 'warning');
       var formData = new FormData();
-      ['no_ba', 'tanggal_ba', 'no_surat_permohonan', 'tanggal_surat_permohonan', 'tim_teknis', 'kelayakan'].forEach(function (k) {
+      // tim teknis dipilih saat verifikasi permohonan (permohonan_tim_teknis), tidak diisi di BA
+      ['no_ba', 'tanggal_ba', 'no_surat_permohonan', 'tanggal_surat_permohonan', 'kelayakan'].forEach(function (k) {
         formData.append(k, $('#' + k).val());
       });
       formData.append('hasil', CKEDITOR.instances.editor1.getData());

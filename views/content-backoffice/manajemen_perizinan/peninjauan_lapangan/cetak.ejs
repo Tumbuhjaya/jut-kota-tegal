@@ -25,7 +25,11 @@
   function dmy(d) { return ('0' + d.getDate()).slice(-2) + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + d.getFullYear(); }
 
   var p = permohonan, k = konfig, b = peninjauan;
-  var tim = String(b.tim_teknis || '').split(/\r?\n/).map(function (t) { return t.trim(); }).filter(Boolean);
+  // Tim teknis dipilih saat verifikasi permohonan; data lama memakai isian teks tim_teknis pada BA
+  var tim = tim_teknis.length
+    ? tim_teknis.map(function (t) { return { nama: t.fullname || t.username, instansi: t.instansi || '' }; })
+    : String(b.tim_teknis || '').split(/\r?\n/).map(function (t) { return { nama: t.trim(), instansi: '' }; }).filter(function (t) { return t.nama; });
+  var no_surat = p.no_surat_permohonan || b.no_surat_permohonan;
   var tgl = b.tanggal_ba ? new Date(b.tanggal_ba) : null;
 
   // Lampiran: 6 slot foto (2 kolom x 3 baris), diisi sesuai urutan
@@ -127,7 +131,7 @@
       tahun <%= tgl ? terbilang(tgl.getFullYear()) : '..........' %>
       (<%= tgl ? dmy(tgl) : '..........' %>) telah dilaksanakan peninjauan lapangan atas permohonan izin
       Pembangunan/Penempatan Bangunan dan Jaringan Utilitas berdasarkan surat Nomor :
-      <%= b.no_surat_permohonan || '..........' %> tanggal : <%= tanggal(b.tanggal_surat_permohonan) %>
+      <%= no_surat || '..........' %> tanggal : <%= tanggal(b.tanggal_surat_permohonan) %>
       Perihal Permohonan Izin Pembangunan/Penempatan Bangunan dan Jaringan Utilitas dengan hasil sebagai berikut:</p>
 
     <% /* hasil = HTML dari CKEditor yang diisi administrator */ %>
@@ -138,10 +142,11 @@
     <table class="hadir">
       <tr><td colspan="4">Dihadiri oleh :</td></tr>
       <tr><td colspan="4">Tim Teknis :</td></tr>
-      <% (tim.length ? tim : ['.........................................']).forEach(function (t, i) { %>
+      <% (tim.length ? tim : [{ nama: '.........................................', instansi: '' }]).forEach(function (t, i) { %>
       <tr class="isi">
         <td class="no"><%= i + 1 %>.</td>
-        <td class="nama" colspan="2"><%= t %></td>
+        <td class="nama"><%= t.nama %></td>
+        <td class="instansi"><%= t.instansi %></td>
         <td class="ttd"><%= i + 1 %>. <span></span></td>
       </tr>
       <% }) %>

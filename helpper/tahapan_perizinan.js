@@ -73,7 +73,11 @@ function kirimFile(res, nama_file, nama_asli, inline) {
 function sqlListTahap() {
   return `
     SELECT x.*,
-           pl.tim_teknis, pl.no_ba, pl.tanggal_ba, pl.kelayakan, pl.file_ba, pl.uploadBaAt,
+           -- tim teknis dipilih saat verifikasi; data lama memakai isian teks pada BA
+           COALESCE((SELECT GROUP_CONCAT(IFNULL(u.fullname, u.username) ORDER BY u.fullname SEPARATOR '\\n')
+                       FROM permohonan_tim_teknis t JOIN user u ON u.id_user = t.id_user
+                      WHERE t.permohonan_id = x.permohonan_id), pl.tim_teknis) AS tim_teknis,
+           pl.no_ba, pl.tanggal_ba, pl.kelayakan, pl.file_ba, pl.uploadBaAt,
            (pl.permohonan_peninjauan_id IS NOT NULL) AS ada_ba,
            pp.no_pp, pp.tanggal_pp, pp.file_ttd AS file_pp, pp.uploadTtdAt AS uploadPpAt, pp.keterangan_persyaratan,
            (pp.permohonan_persetujuan_prinsip_id IS NOT NULL) AS ada_pp
@@ -117,7 +121,7 @@ async function simpanPeninjauan(permohonan_id, b, files, id_user) {
     id = ada.permohonan_peninjauan_id;
     await sql_enak.raw(
       `UPDATE permohonan_peninjauan
-          SET tim_teknis = ?, no_ba = ?, tanggal_ba = ?, no_surat_permohonan = ?, tanggal_surat_permohonan = ?, hasil = ?,
+          SET tim_teknis = COALESCE(?, tim_teknis), no_ba = ?, tanggal_ba = ?, no_surat_permohonan = ?, tanggal_surat_permohonan = ?, hasil = ?,
               kelayakan = ?, lastUpdateAt = NOW()
         WHERE permohonan_peninjauan_id = ?`,
       kolom.concat([id])

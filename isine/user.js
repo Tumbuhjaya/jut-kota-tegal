@@ -99,6 +99,9 @@ router.get('/edit/:id', cek_login, function(req, res) {
       post['foto_2'] = nama_file;
     }
   }
+    // kolom timestamp tanpa nilai akan tersimpan 0000-00-00
+    post.created_date = new Date()
+    post.updated = new Date()
       await sql_enak.insert(post).into('user').then(data=>{
       res.status(200).json({ status: 200, message: "sukses", data: data})
    })

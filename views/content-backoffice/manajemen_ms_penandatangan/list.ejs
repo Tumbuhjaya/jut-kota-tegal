@@ -6,7 +6,7 @@
         <div class="section-header">
           <h1>Data Master Penandatangan</h1>
           <div class="section-header-breadcrumb">
-            <div class="breadcrumb-item active"><a href="#">Dashboard</a></div>
+            <div class="breadcrumb-item active"><a href="/backoffice">Dashboard</a></div>
             <div class="breadcrumb-item">Data</div>
           </div>
         </div>
@@ -22,33 +22,18 @@
               <div class="card-body">
                 <div class="table-responsive">
                   <table class="table table-bordered" id="list-data">
-                    <thead>                                 
+                    <thead>
                       <tr>
                         <th class="text-center">No.</th>
                         <th>Nama</th>
                         <th>NIP</th>
                         <th>Jabatan</th>
                         <th>Golongan</th>
+                        <th>Status</th>
                         <th>Option</th>
                       </tr>
                     </thead>
-                    <tbody>                                 
-                      <tr>
-                        <td class="text-center">1.</td>
-                        <td>Value Nama</td>
-                        <td>Value NIP</td>
-                        <td>Value Jabatan</td>
-                        <td>Value Golongan</td>
-                        <td>
-                          <div class="w-100-flex" style="justify-content: center;">
-                            <ul class="list-inline mb-0">
-                              <li class="list-inline-item"><a href="/manajemen_master/penandatangan/edit/1" class="btn btn-warning"><i class="fas fa-edit"></i></a></li>
-                              <li class="list-inline-item"><button class=" btn btn-danger"><i class="fas fa-trash"></i></button></li>
-                            </ul> 
-                          </div>
-                        </td>
-                      </tr>
-                    </tbody>
+                    <tbody></tbody>
                   </table>
                 </div>
               </div>
@@ -70,6 +55,11 @@
 
 <script type="text/javascript">
     var rooturl = ''
+
+    function esc(t) {
+      return $('<div>').text(t == null || t === '' ? '-' : t).html();
+    }
+
     let data_table  =$('#list-data').DataTable({
       "language": {
           "sProcessing":   "Sedang memproses...",
@@ -88,30 +78,34 @@
           }
       },
       "processing": true,
-      // "ajax":  `${rooturl}/api_basic/list`,
-      // "columns": [
-      //   { "data": null},
-      //   { "data": null},
-      //   { "data": null,render: function(data){
-      //     let a = ''
-      //           if (data) {
-      //             a = `
-      //             <ul class="list-inline mb-0">
-      //               <li class="list-inline-item"><a href="${rooturl}/manajemen_basic/edit/${data}" class="btn btn-warning"><i class="fas fa-edit"></i></a></li>
-      //               <li class="list-inline-item"><button onclick="hapus(${data})" class="btn btn-danger"><i class="fa fa-trash"></i></button></li>
-      //             </ul></ul>`
-      //           }
-      //           return `<td><center>${a}</center></td>`
-      //   }},
-      // ],
+      "ajax":  `${rooturl}/penandatangan/list`,
+      "columns": [
+        { "data": null, "defaultContent": '', "className": 'text-center'},
+        { "data": "nama", render: esc},
+        { "data": "nip", render: esc},
+        { "data": "jabatan", render: esc},
+        { "data": "pangkat", render: esc},
+        { "data": "aktif", "className": 'text-center', render: function (d) {
+          return Number(d) ? '<span class="badge badge-success">Aktif</span>' : '<span class="badge badge-secondary">Tidak Aktif</span>';
+        }},
+        { "data": "penandatangan_id", render: function(id){
+          return `
+            <div class="w-100-flex" style="justify-content: center;">
+              <ul class="list-inline mb-0">
+                <li class="list-inline-item"><a href="${rooturl}/manajemen_master/penandatangan/edit/${id}" class="btn btn-warning"><i class="fas fa-edit"></i></a></li>
+                <li class="list-inline-item"><button onclick="hapus(${id})" class="btn btn-danger"><i class="fas fa-trash"></i></button></li>
+              </ul>
+            </div>`
+        }},
+      ],
       "columnDefs": [
         { "width": "30px", "targets": 0},
-        { "width": "100px", "targets": 5}
+        { "width": "100px", "targets": 6}
       ],
     });
 
     data_table.on( 'draw.dt', function () {
-      let PageInfo = $('#data').DataTable().page.info();
+      let PageInfo = $('#list-data').DataTable().page.info();
       data_table.column(0, { page: 'current' }).nodes().each( function (cell, i) {
         cell.innerHTML = i + 1 + PageInfo.start;
       });
@@ -120,16 +114,18 @@
     async function hapus(id) {
       const willDelete = await swal({
         title: "Hapus Data",
-        text: "Apakah anda akan menghapus data ini?",
+        text: "Apakah anda akan menghapus data ini? Dokumen yang sudah dicetak tidak berubah.",
         icon: "warning",
         dangerMode: true,
         buttons: ["Tidak", "Ya"],
       });
-            
+
       if ( willDelete) {
-        $.get(rooturl+"/manajemen_basic/hapus/"+id).then(function (hsl) {
+        $.post(rooturl+"/penandatangan/hapus/"+id).then(function () {
           swal({title:text_delete.title,text:text_delete.text, icon: text_delete.icon, type:text_delete.type})
-          data_table.ajax.url(rooturl+"/manajemen_basic/list").load();
+          data_table.ajax.reload();
+        }, function (xhr) {
+          swal('Gagal', (xhr.responseJSON && xhr.responseJSON.message) || text_error.text, 'error');
         })
       }
     }

@@ -16,25 +16,36 @@
         <div class="row">
           <div class="col-lg-12 col-xl-12">
             <div class="card">
-              <!-- <div class="card-header">
-                <a href="/manajemen_users/insert" class="btn btn-primary custom-btn-card-header"><i class="fas fa-plus"></i> Tambah Data</a>
-              </div> -->
+              <div class="card-header">
+                <div class="form-inline">
+                  <label for="filter_status" class="mr-2">Status</label>
+                  <select id="filter_status" class="custom-select">
+                    <option value="">-- Semua --</option>
+                    <option value="menunggu" selected>Menunggu Verifikasi</option>
+                    <option value="disetujui">Disetujui</option>
+                    <option value="ditolak">Ditolak</option>
+                  </select>
+                </div>
+              </div>
               <div class="card-body">
                 <div class="table-responsive">
                   <table class="table table-bordered table-striped table-hover" id="list-data">
                     <thead>
                     <tr>
                       <th class="header">No.</th>
+                      <th class="header">Tgl. Daftar</th>
+                      <th class="header">Username</th>
                       <th class="header">Nama</th>
                       <th class="header">Alamat</th>
                       <th class="header">No. Telepon (WhatsApp)</th>
                       <th class="header">Email</th>
+                      <th class="header">Status</th>
                       <th class="header">Option</th>
                     </tr>
                   </thead>
-                  
+
                   <tbody>
-                  
+
                   </tbody>
                   </table>
                 </div>
@@ -68,25 +79,34 @@
       <div class="modal-body">
         <div class="row">
           <div class="col-12">
+            <table class="table table-sm table-borderless mb-3">
+              <tr><td style="width: 120px;">Username</td><td id="v_username"></td></tr>
+              <tr><td>Nama</td><td id="v_fullname"></td></tr>
+              <tr><td>Alamat</td><td id="v_alamat"></td></tr>
+              <tr><td>No. Telepon</td><td id="v_telp"></td></tr>
+              <tr><td>Email</td><td id="v_email"></td></tr>
+            </table>
+
             <div class="form-group">
-              <label for="">Status Verifikasi ?</label>
-              <select name="" id="status_verif" class="custom-select">
+              <label for="status_verif">Status Verifikasi ?</label>
+              <select id="status_verif" class="custom-select">
                 <option value="">-- Pilih --</option>
-                <option value="1">-- Disetujui --</option>
-                <option value="2">-- Ditolak --</option>
+                <option value="setujui">-- Disetujui --</option>
+                <option value="tolak">-- Ditolak --</option>
               </select>
             </div>
 
             <div class="form-group" id="konten-tolak">
-              <label for="">Keterangan Ditolak</label>
-              <textarea name="" id="" class="form-control" rows="4"></textarea>
+              <label for="keterangan_tolak">Keterangan Ditolak</label>
+              <textarea id="keterangan_tolak" class="form-control" rows="4" style="height: auto;"></textarea>
             </div>
+            <small class="form-text text-muted">Hasil verifikasi akan dikirim ke email pemohon.</small>
           </div>
         </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal"><i class="fas fa-times"></i>&nbsp;&nbsp;Tutup</button>
-        <button type="button" class="btn btn-primary"><i class="fas fa-save"></i>&nbsp;&nbsp;Simpan</button>
+        <button type="button" class="btn btn-primary" id="button_submit" onclick="simpan()"><i class="fas fa-save"></i>&nbsp;&nbsp;Simpan</button>
       </div>
     </div>
   </div>
@@ -94,34 +114,22 @@
 
 <script type="text/javascript">
     var rooturl = ''
-    let id = 0
-    
+    var STATUS = {
+      menunggu:  { label: 'Menunggu Verifikasi', badge: 'info' },
+      disetujui: { label: 'Disetujui', badge: 'success' },
+      ditolak:   { label: 'Ditolak', badge: 'danger' }
+    };
+    let akun_dipilih = null
+
+    function esc(t) {
+      return $('<div>').text(t == null || t === '' ? '-' : t).html();
+    }
+
     $('#konten-tolak').hide();
 
     $('#status_verif').change(function(){
-        if ($(this).val() == '') {
-              $('#konten-tolak').hide();
-        }
-
-        if ($(this).val() == '1') {
-              $('#konten-tolak').hide();
-        } 
-
-        if ($(this).val() == '2') {
-              $('#konten-tolak').show();
-        }    
+      $('#konten-tolak').toggle($(this).val() == 'tolak');
     });
-
-
-    function myFunction() {
-      $("#iconne").toggleClass("fa fa-eye-slash fa fa-eye");
-      var x = document.getElementById("pwd");
-      if (x.type === "password") {
-        x.type = "text";
-      } else {
-        x.type = "password";
-      }
-    }
 
     let data_table  =$('#list-data').DataTable({
       "language": {
@@ -141,27 +149,37 @@
           }
       },
       "processing": true,
-      "ajax":  `${rooturl}/manajemen_users/list${'<%=user.is_admin%>'!=1?'?id_user=<%=user.id_user%>':''}`,
+      "ordering": false,
+      "ajax": {
+        url: `${rooturl}/manajemen_users/pendaftaran_akun/list`,
+        data: function () { return { status: $('#filter_status').val() }; }
+      },
       "columns": [
-        { "data": null},
-        { "data": "fullname"},
-        { "data": "alamat"},
-        { "data": "telp"},
-        { "data": "email"},
-        { "data": null,render: function(data){
-          let a = ''
-          if (data) {
-            a = `
-                <div class="w-100-flex" style="justify-content:center;gap:10px;">
-                  <button class="btn btn-warning" data-toggle="modal" data-target="#modalVerif"><i class="fas fa-user-check"></i></button>
-                </div>`
-          }
-          return `<td>${a}</td>`
+        { "data": null, "defaultContent": ''},
+        { "data": "created_date", render: function (d) { return d && moment(d).isValid() ? moment(d).format('DD/MM/YYYY HH:mm') : '-'; }},
+        { "data": "username", render: esc},
+        { "data": "fullname", render: esc},
+        { "data": "alamat", render: esc},
+        { "data": "telp", render: esc},
+        { "data": "email", render: esc},
+        { "data": null, render: function (r) {
+          var s = STATUS[r.status_verifikasi] || { label: r.status_verifikasi, badge: 'light' };
+          var html = '<span class="badge badge-' + s.badge + '">' + s.label + '</span>';
+          if (r.diverifikasiAt) html += '<br/><small>' + moment(r.diverifikasiAt).format('DD/MM/YYYY HH:mm') + (r.nama_verifikator ? ' oleh ' + esc(r.nama_verifikator) : '') + '</small>';
+          if (r.keterangan_verifikasi) html += '<br/><small class="text-danger">' + esc(r.keterangan_verifikasi) + '</small>';
+          return html;
+        }},
+        { "data": null, render: function(r, type, row, meta){
+          if (r.status_verifikasi !== 'menunggu') return '<div class="text-center">-</div>';
+          return `
+              <div class="w-100-flex" style="justify-content:center;gap:10px;">
+                <button class="btn btn-warning" title="Verifikasi" onclick="bukaVerifikasi(${meta.row})"><i class="fas fa-user-check"></i></button>
+              </div>`
         }},
       ],
       "columnDefs": [
         { "width": "40px", "targets": 0},
-        { "width": "50px", "targets": 5}
+        { "width": "50px", "targets": 8}
       ],
     });
 
@@ -171,84 +189,48 @@
         cell.innerHTML = i + 1 + PageInfo.start;
       });
     });
-    async function ganti_id(prm) {
-      id=prm
-    }
-  async function ganti_password() {
-    const will_update = await swal({
-      title: "Edit Data",
-      text: "Apakah anda akan mengedit data ini?",
-      icon: "warning",
-      dangerMode: true,
-      buttons: ["Tidak", "Ya"],
-    });
-    
-    let a = 0
-    let b = 0
-    let c = 0
-    let d = 0
-    if ($('#pwd').val()) {
-      for (let i = 0; i < $('#pwd').val().length; i++) {
-          if ( $('#pwd').val().charCodeAt(i) >=49 &&$('#pwd').val().charCodeAt(i) <=57 ) {
-          a+=1
-          }else if ( $('#pwd').val().charCodeAt(i) >=65 &&$('#pwd').val().charCodeAt(i) <=90 ) {
-          b+=1
-          }else if ( $('#pwd').val().charCodeAt(i) >=97 &&$('#pwd').val().charCodeAt(i) <=122 ) {
-          c+=1
-          }else{
-          d+=1
-          }
-      }
-    }else{
-      a=1
-      b=1
-      c=1
-      d=1
-    }
 
-    if (a!=0&&b!=0&&c!=0&&d!=0) {
-      if ( will_update) {
-        $('#button_submit').empty()
-        $('#button_submit').append('<button class="btn btn-primary btn-embossed" disabled>Simpan</button>')
-        let formData = new FormData();    
-        // nama kolom db        
-        formData.append('id_user', id);
-        formData.append('pwd',$('#pwd').val())
-        $.ajax({
-          type: 'POST',
-          enctype: 'multipart/form-data',
-          url: rooturl+'/user/edit',
-          data: formData,
-          processData: false,
-          contentType: false,
-          success: function(data) {
-            swal({title:text_edit.title,text:text_edit.text, icon: text_edit.icon, type:text_edit.type})
-            window.location.href = rooturl+'/manajemen_users';
-          },error: function(data) {
-            swal({title:text_error.title,text:text_error.text, icon: text_error.icon, type:text_error.type})
-          }
-        })      
-      } 
-    }else{
-      swal({title:text_error.title,text:text_error.text, icon: text_error.icon, type:text_error.type})
-    }
-  }      
+    $('#filter_status').change(function () { data_table.ajax.reload(); });
 
-    async function hapus(id) {
-      const willDelete = await swal({
-        title: "Hapus Data",
-        text: "Apakah anda akan menghapus data ini?",
-        icon: "warning",
-        dangerMode: true,
-        buttons: ["Tidak", "Ya"],
+    function bukaVerifikasi(idx) {
+      akun_dipilih = data_table.row(idx).data();
+      ['username', 'fullname', 'alamat', 'telp', 'email'].forEach(function (k) {
+        $('#v_' + k).text(akun_dipilih[k] || '-');
       });
-              
-      if ( willDelete) {
-        $.get(rooturl+"/manajemen_users/hapus/"+id).then(function (hsl) {
-          // alert('Sukses')
-          swal({title:text_delete.title,text:text_delete.text, icon: text_delete.icon, type:text_delete.type})
-          data_table.ajax.url(rooturl+"/manajemen_users/list").load();
-        })
-      }
+      $('#status_verif').val('').trigger('change');
+      $('#keterangan_tolak').val('');
+      $('#modalVerif').modal('show');
+    }
+
+    async function simpan() {
+      var aksi = $('#status_verif').val();
+      var keterangan = $.trim($('#keterangan_tolak').val());
+      if (!aksi) return swal('Periksa kembali', 'Status verifikasi wajib dipilih', 'warning');
+      if (aksi == 'tolak' && !keterangan) return swal('Periksa kembali', 'Keterangan penolakan wajib diisi', 'warning');
+
+      const yakin = await swal({
+        title: aksi == 'setujui' ? 'Setujui Akun' : 'Tolak Akun',
+        text: 'Akun ' + akun_dipilih.username + (aksi == 'setujui' ? ' akan disetujui dan bisa dipakai login.' : ' akan ditolak.') + ' Pemohon akan menerima email pemberitahuan. Lanjutkan?',
+        icon: 'warning',
+        dangerMode: aksi == 'tolak',
+        buttons: ['Tidak', 'Ya'],
+      });
+      if (!yakin) return;
+
+      $('#button_submit').prop('disabled', true);
+      $.ajax({
+        url: rooturl + '/manajemen_users/pendaftaran_akun/verifikasi/' + akun_dipilih.id_user,
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ aksi: aksi, keterangan: keterangan })
+      }).done(function (res) {
+        $('#modalVerif').modal('hide');
+        swal('Berhasil', 'Verifikasi akun tersimpan.' + (res.data.email_dikirim ? ' Email pemberitahuan dikirim ke pemohon.' : ' Pemohon tidak memiliki email.'), 'success');
+        data_table.ajax.reload();
+      }).fail(function (xhr) {
+        swal('Gagal', (xhr.responseJSON && xhr.responseJSON.message) || 'Gagal menyimpan verifikasi', 'error');
+      }).always(function () {
+        $('#button_submit').prop('disabled', false);
+      });
     }
 </script>

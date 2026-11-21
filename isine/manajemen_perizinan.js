@@ -32,7 +32,8 @@ function gagal(res, err, status) {
 
 var AKSI = { setujui: 'disetujui', tolak: 'ditolak', revisi: 'revisi' };
 // Status yang masih boleh diproses admin
-var BISA_DIPROSES = ['diajukan', 'disetujui', 'ditolak'];
+// Ditolak = final, tidak bisa diproses ulang (pemohon mengajukan permohonan baru)
+var BISA_DIPROSES = ['diajukan', 'disetujui'];
 
 // ---------------- VIEW ----------------
 router.get('/', cek_admin, function (req, res) {
@@ -172,7 +173,7 @@ router.post('/list', cek_admin, async function (req, res) {
 router.get('/vendor', cek_admin, async function (req, res) {
   try {
     var [data] = await sql_enak.raw(
-      `SELECT id_user, username, fullname FROM user WHERE is_admin = 3 AND deleted = 0 ORDER BY fullname ASC, username ASC`
+      `SELECT id_user, username, fullname FROM user WHERE is_admin = 3 AND deleted = 0 AND status_verifikasi = 'disetujui' ORDER BY fullname ASC, username ASC`
     );
     res.json({ status: 200, message: 'sukses', data: data });
   } catch (err) { gagal(res, err); }
@@ -191,7 +192,18 @@ router.get('/data/:id', cek_admin, async function (req, res) {
     var detail = await helper.getDetail(p);
     detail.digitasi = await helper.getDigitasi(p.permohonan_id);
     detail.perjanjian_sewa = await tahapan.getPerjanjianSewa(p.permohonan_id);
+    detail.tim_teknis = await helper.getTimTeknis(p.permohonan_id);
     res.json({ status: 200, message: 'sukses', data: detail });
+  } catch (err) { gagal(res, err); }
+});
+
+// Pilihan anggota tim teknis saat verifikasi: akun ber-role Tim Teknis (is_admin = 4)
+router.get('/tim_teknis', cek_admin, async function (req, res) {
+  try {
+    var [data] = await sql_enak.raw(
+      `SELECT id_user, username, fullname, NIP, instansi FROM user WHERE is_admin = 4 AND deleted = 0 ORDER BY fullname ASC, username ASC`
+    );
+    res.json({ status: 200, message: 'sukses', data: data });
   } catch (err) { gagal(res, err); }
 });
 
@@ -292,14 +304,28 @@ router.get('/permohonan/verifikasi/:id', cek_admin, async function (req, res) {
   });
 });
 
-// body: { status: diajukan | revisi | tolak | lolos, keterangan }
-// lolos -> lanjut ke peninjauan lapangan; revisi -> kembali ke vendor (pengajuan ulang mulai dari verifikasi lagi);
-// tolak -> permohonan ditolak. Revisi & tolak dikirim email ke pemohon.
+// body: { status: diajukan | revisi | tolak | lolos, keterangan, no_surat_permohonan, tim_teknis: [id_user], penandatangan_id }
+// lolos -> lanjut ke peninjauan lapangan (wajib no. surat permohonan, tim teknis & penandatangan);
+// revisi -> kembali ke vendor (pengajuan ulang mulai dari verifikasi lagi); tolak -> permohonan ditolak.
+// Semua hasil (lolos, revisi, tolak) dikirim email ke pemohon.
 router.post('/permohonan/verifikasi/:id', cek_admin, async function (req, res) {
   try {
     var b = req.body || {};
     if (['diajukan', 'revisi', 'tolak', 'lolos'].indexOf(b.status) === -1) return gagal(res, 'Status verifikasi tidak dikenal', 400);
     if ((b.status === 'revisi' || b.status === 'tolak') && !b.keterangan) return gagal(res, 'Keterangan wajib diisi', 400);
+    var tim = [].concat(b.tim_teknis || []).map(Number).filter(Boolean);
+    var no_surat = String(b.no_surat_permohonan || '').trim();
+    if (b.status === 'lolos') {
+      var kurang = [];
+      if (!no_surat) kurang.push('Nomor surat permohonan wajib diisi');
+      if (!tim.length) kurang.push('Tim teknis wajib dipilih');
+      var [ttd] = await sql_enak.raw(
+        `SELECT penandatangan_id FROM master_penandatangan WHERE penandatangan_id = ? AND aktif = 1 AND deletedAt IS NULL`,
+        [b.penandatangan_id || 0]
+      );
+      if (!ttd.length) kurang.push('Penandatangan wajib dipilih');
+      if (kurang.length) return gagal(res, kurang.join('\n'), 400);
+    }
     var p = await ambilTahap(req, res, 'verifikasi');
     if (!p) return;
     if (b.status === 'diajukan') return res.json({ status: 200, message: 'sukses', data: null });
@@ -325,7 +351,22 @@ router.post('/permohonan/verifikasi/:id', cek_admin, async function (req, res) {
        b.status === 'revisi' ? b.keterangan : null,
        getUser(req).id_user, p.permohonan_id]
     );
-    if (b.status === 'revisi') notifikasiDikembalikan(p, 'revisi', b.keterangan);
+    if (b.status === 'revisi') {
+      notifikasiDikembalikan(p, 'revisi', b.keterangan);
+      return res.json({ status: 200, message: 'sukses', data: null });
+    }
+
+    // Lolos: simpan no. surat permohonan, penandatangan & tim teknis (dipakai di cetak BA / persetujuan prinsip)
+    await sql_enak.raw(
+      `UPDATE permohonan SET no_surat_permohonan = ?, penandatangan_id = ? WHERE permohonan_id = ?`,
+      [no_surat, b.penandatangan_id, p.permohonan_id]
+    );
+    await sql_enak.raw(`DELETE FROM permohonan_tim_teknis WHERE permohonan_id = ?`, [p.permohonan_id]);
+    await sql_enak('permohonan_tim_teknis').insert(tim.map(function (id) { return { permohonan_id: p.permohonan_id, id_user: id }; }));
+    tahapan.kirimNotifikasi(p, 'Permohonan Lolos Verifikasi',
+      '<p>Permohonan izin pemanfaatan ruang milik jalan untuk jaringan utilitas yang Anda ajukan ' +
+      'dengan surat Nomor <b>' + tahapan.escHtml(no_surat) + '</b> telah <b>disetujui</b> pada tahap verifikasi.</p>' +
+      '<p>Permohonan dilanjutkan ke tahap Peninjauan Lapangan oleh tim teknis.</p>');
     res.json({ status: 200, message: 'sukses', data: null });
   } catch (err) { gagal(res, err); }
 });

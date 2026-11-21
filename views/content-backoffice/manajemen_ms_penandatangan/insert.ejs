@@ -38,42 +38,27 @@
       dangerMode: true,
       buttons: ["Tidak", "Ya"],
     });
+    if (!will_insert) return;
 
-    if ( will_insert) {
-      $('#button_submit').empty()
-      $('#button_submit').append('<button class="btn btn-primary btn-embossed" disabled>Simpan</button>')
-      
-      let formData = new FormData();    
-      // nama kolom db
-      let arr = ['NamaKolomDb1', 'NamaKolomDb2', 'NamaKolomDb3']
-      for (let i = 0; i < arr.length; i++) {
-        if (arr[i].substring(0,4)=='foto') {
-          if ( $(`#`+arr[i])[0].files[0]){
-            formData.append(arr[i], $(`#`+arr[i])[0].files[0]);
-          } 
-        }
-        // else if (arr[i].substring(0,3)=='ket'){        
-        //   formData.append(arr[i] ,CKEDITOR.instances[arr[i]].getData())
-        // }
-        else{
-          formData.append(arr[i],$('#'+arr[i]).val())
-        }
+    $('#button_submit button').prop('disabled', true);
+    // nama kolom db
+    let data = {};
+    ['nama', 'nip', 'jabatan', 'pangkat', 'aktif'].forEach(function (k) { data[k] = $('#' + k).val(); });
+
+    $.ajax({
+      type: 'POST',
+      url: rooturl + '/penandatangan/insert',
+      contentType: 'application/json',
+      data: JSON.stringify(data),
+      success: function () {
+        swal({title:text_insert.title,text:text_insert.text, icon: text_insert.icon, type:text_insert.type}).then(function () {
+          window.location.href = rooturl + '/manajemen_master/penandatangan';
+        });
+      },
+      error: function (xhr) {
+        $('#button_submit button').prop('disabled', false);
+        swal('Gagal', (xhr.responseJSON && xhr.responseJSON.message) || text_error.text, 'error');
       }
-
-      $.ajax({
-        type: 'POST',
-        enctype: 'multipart/form-data',
-        url: rooturl+'/api_basic/insert',
-        data: formData,
-        processData: false,
-        contentType: false,
-        success: function(data) {
-          swal({title:text_insert.title,text:text_insert.text, icon: text_insert.icon, type:text_insert.type})
-          window.location.href = rooturl+'/manajemen_basic';
-        },error: function(data) {
-          swal({title:text_error.title,text:text_error.text, icon: text_error.icon, type:text_error.type})
-        }
-      })      
-    } 
+    });
   }
 </script>

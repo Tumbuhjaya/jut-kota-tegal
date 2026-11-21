@@ -121,11 +121,16 @@ router.post('/daftar_akun', async function(req, res) {
   if (kurang.length) return res.status(400).json({ status: 400, message: kurang.join('\n'), data: { captcha: captcha.data } });
 
   try {
-    var [ada] = await sql_enak.raw(`SELECT id_user FROM user WHERE username = ? LIMIT 1`, [data.username]);
-    if (ada.length) return res.status(400).json({ status: 400, message: 'Username sudah dipakai', data: { captcha: captcha.data } });
+    var [ada] = await sql_enak.raw(`SELECT id_user, status_verifikasi FROM user WHERE username = ? LIMIT 1`, [data.username]);
+    if (ada.length && ada[0].status_verifikasi !== 'ditolak') return res.status(400).json({ status: 400, message: 'Username sudah dipakai', data: { captcha: captcha.data } });
+    // Pendaftaran yang ditolak boleh mendaftar ulang dengan username yang sama: akun lama diganti nama & dihapus
+    if (ada.length) {
+      await sql_enak.raw(`UPDATE user SET username = CONCAT(username, '#', id_user), deleted = 1, updated = NOW() WHERE id_user = ?`, [ada[0].id_user]);
+    }
+    // Akun belum bisa dipakai sampai diverifikasi admin (manajemen_users/pendaftaran_akun)
     await sql_enak.raw(
-      `INSERT INTO user (username, pwd, is_admin, jenis_vendor, fullname, alamat, telp, email, created_date, updated)
-       VALUES (?, ?, 3, 'outsource', ?, ?, ?, ?, NOW(), NOW())`,
+      `INSERT INTO user (username, pwd, is_admin, jenis_vendor, fullname, alamat, telp, email, status_verifikasi, created_date, updated)
+       VALUES (?, ?, 3, 'outsource', ?, ?, ?, ?, 'menunggu', NOW(), NOW())`,
       [data.username, sha1(password), data.fullname, data.alamat, data.telp, data.email]
     );
     res.json({ status: 200, message: 'sukses', data: null });
@@ -357,7 +362,10 @@ router.post(JU + '/api/simpan/:id_permohonan', cek_pemohon, async function (req,
         );
         id_ruas_tersimpan = baru.insertId;
       }
-      if (id_ruas_tersimpan) await helper.salinDataRuas(id_ruas_tersimpan);
+      if (id_ruas_tersimpan) {
+        await helper.salinDataRuas(id_ruas_tersimpan);
+        await helper.sinkronTiangRetribusi(id_ruas_tersimpan);
+      }
     }
     res.json({ status: 200, message: 'sukses', data: await helper.getRuas(p.permohonan_id) });
   } catch (err) { gagal(res, err); }

@@ -92,6 +92,9 @@ router.get('/edit/:id', cek_login, function(req, res) {
       post['foto_2'] = nama_file;
     }
   }
+  // kolom timestamp tanpa nilai akan tersimpan 0000-00-00
+  post.created_date = new Date()
+  post.updated = new Date()
   await sql_enak.insert(post).into('user').then(data=>{
       res.status(200).json({ status: 200, message: "sukses", data: data})
    })
@@ -214,8 +217,100 @@ router.get('/edit/:id', cek_login, function(req, res) {
   });
 
 
-// pendaftaran akun pemohon
-router.get('/pendaftaran_akun', cek_login, function(req, res) {
-  res.render('content-backoffice/manajemen_user/pendaftaran_akun/list',{user:req.user[0]}); 
+// ============================================================
+// PENDAFTARAN AKUN PEMOHON (is_admin = 3)
+// Akun hasil daftar mandiri berstatus 'menunggu' dan belum bisa login sampai disetujui admin.
+// Hasil verifikasi dikirim ke email pemohon.
+// ============================================================
+var kirimEmail = require('../helpper/email.js').email;
+var AKSI_AKUN = { setujui: 'disetujui', tolak: 'ditolak' };
+
+// Hanya administrator (is_admin = 1)
+function cek_admin(req, res, next) {
+  var user = req.user && req.user[0];
+  if (req.isAuthenticated() && user && Number(user.is_admin) === 1) return next();
+  if (req.xhr || req.method !== 'GET') return res.status(403).json({ status: 403, message: 'Khusus administrator', data: null });
+  res.redirect('/');
+}
+
+function escHtml(t) {
+  return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
+function isiEmailVerifikasi(akun, status, keterangan, urlLogin) {
+  var nama = escHtml(akun.fullname || akun.username);
+  if (status === 'disetujui') {
+    return '<p>Yth. ' + nama + ',</p>' +
+      '<p>Pendaftaran akun perizinan jaringan utilitas Kota Tegal dengan username <b>' + escHtml(akun.username) + '</b> telah <b>disetujui</b>.</p>' +
+      '<p>Silakan login melalui tab Vendor di <a href="' + urlLogin + '">' + urlLogin + '</a>.</p>' +
+      '<p>Terima kasih.</p>';
+  }
+  return '<p>Yth. ' + nama + ',</p>' +
+    '<p>Mohon maaf, pendaftaran akun perizinan jaringan utilitas Kota Tegal dengan username <b>' + escHtml(akun.username) + '</b> <b>tidak disetujui</b>.</p>' +
+    '<p>Keterangan:<br/>' + escHtml(keterangan).replace(/\n/g, '<br/>') + '</p>' +
+    '<p>Silakan melakukan pendaftaran ulang dengan data yang sesuai di <a href="' + urlLogin + '/perizinan/daftar_akun">' + urlLogin + '/perizinan/daftar_akun</a>.</p>' +
+    '<p>Terima kasih.</p>';
+}
+
+router.get('/pendaftaran_akun', cek_admin, function(req, res) {
+  res.render('content-backoffice/manajemen_user/pendaftaran_akun/list',{user:req.user[0]});
+});
+
+// ?status=menunggu | disetujui | ditolak | '' (semua)
+// Hanya hasil daftar mandiri (perizinan/daftar_akun); akun buatan admin / perusahaan tidak perlu diverifikasi
+router.get('/pendaftaran_akun/list', cek_admin, async function(req, res) {
+  try {
+    var sql = `SELECT u.id_user, u.username, u.fullname, u.alamat, u.telp, u.email, u.created_date,
+                      u.status_verifikasi, u.keterangan_verifikasi, u.diverifikasiAt,
+                      a.fullname AS nama_verifikator
+                 FROM user u
+                 LEFT JOIN user a ON a.id_user = u.diverifikasi_oleh
+                WHERE u.is_admin = 3 AND u.deleted = 0  AND u.created_by IS NULL`;
+    var val = [];
+    if (req.query.status) { sql += ` AND u.status_verifikasi = ?`; val.push(req.query.status); }
+    var [data] = await sql_enak.raw(sql + ` ORDER BY FIELD(u.status_verifikasi, 'menunggu') DESC, u.created_date DESC, u.id_user DESC`, val);
+    res.json({ status: 200, message: 'sukses', data: data });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ status: 500, message: 'gagal', data: null });
+  }
+});
+
+// body: { aksi: setujui | tolak, keterangan }
+router.post('/pendaftaran_akun/verifikasi/:id', cek_admin, async function(req, res) {
+  try {
+    var b = req.body || {};
+    var status = AKSI_AKUN[b.aksi];
+    var keterangan = String(b.keterangan || '').trim();
+    if (!status) return res.status(400).json({ status: 400, message: 'Status verifikasi wajib dipilih', data: null });
+    if (status === 'ditolak' && !keterangan) return res.status(400).json({ status: 400, message: 'Keterangan penolakan wajib diisi', data: null });
+
+    var [rows] = await sql_enak.raw(
+      `SELECT id_user, username, fullname, email, status_verifikasi FROM user WHERE id_user = ? AND is_admin = 3 AND deleted = 0`,
+      [req.params.id]
+    );
+    var akun = rows[0];
+    if (!akun) return res.status(404).json({ status: 404, message: 'Akun tidak ditemukan', data: null });
+    if (akun.status_verifikasi !== 'menunggu') return res.status(400).json({ status: 400, message: 'Akun sudah diverifikasi', data: null });
+
+    await sql_enak.raw(
+      `UPDATE user SET status_verifikasi = ?, keterangan_verifikasi = ?, diverifikasiAt = NOW(), diverifikasi_oleh = ?, updated = NOW()
+        WHERE id_user = ?`,
+      [status, keterangan || null, req.user[0].id_user, akun.id_user]
+    );
+
+    if (akun.email) {
+      var urlLogin = req.protocol + '://' + req.get('host');
+      kirimEmail(akun.email,
+        status === 'disetujui' ? 'Pendaftaran Akun Perizinan Disetujui' : 'Pendaftaran Akun Perizinan Tidak Disetujui',
+        isiEmailVerifikasi(akun, status, keterangan, urlLogin));
+    }
+    res.json({ status: 200, message: 'sukses', data: { email_dikirim: !!akun.email } });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ status: 500, message: 'gagal', data: null });
+  }
 });
 module.exports = router;

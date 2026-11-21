@@ -29,29 +29,18 @@
 <% include ../../template-backoffice/footer.ejs %>
 <script type="text/javascript">
   var rooturl = ''
-  let data_basic = {}
-  window.onload =async function (params) {
-    await $.get('/api_basic/list?data_basic_id=').then(function (data) {
-      data_basic = data.data[0]
-      for (const i in data_basic) {
-        if (Object.hasOwnProperty.call(data_basic, i)) {
-          if (i.substring(0,4)=='foto') {
-            if (data_basic[i]) {
-              $('#lihat_'+i).append(`<div style="width: 30%;border:2px dashed #6777ef;padding: 5px;margin-top: 15px;border-radius: 0.25rem;"><img src="/foto/${data_basic[i]}" alt="" class="w-100" style="border-radius: 0.25rem;"></div>`)
-            }
-          }else if(i.substring(i.length-2,i.length)=='id'){
-            $('#'+i).val(data_basic[i]).select2()
-          }
-          // else if (i.substring(0,3)=='ket'){        
-          //   CKEDITOR.instances[i].setData(data_basic[i])
-          // }
-          else{
-            $('#'+i).val(data_basic[i])
-          }
-        }
-      }
-    })
-  }
+  var ID = '<%= id %>'
+  var KOLOM = ['nama', 'nip', 'jabatan', 'pangkat', 'aktif'] // nama kolom db
+
+  $.get(rooturl + '/penandatangan/list', { penandatangan_id: ID }).done(function (res) {
+    var d = res.data[0];
+    if (!d) {
+      return swal('Gagal', 'Data penandatangan tidak ditemukan', 'error').then(function () {
+        window.location.href = rooturl + '/manajemen_master/penandatangan';
+      });
+    }
+    KOLOM.forEach(function (k) { $('#' + k).val(d[k] == null ? '' : String(d[k])); });
+  });
 
   async function submit() {
     const will_update = await swal({
@@ -60,46 +49,27 @@
       icon: "warning",
       dangerMode: true,
       buttons: ["Tidak", "Ya"],
-    });        
-    
-    if ( will_update) {
-      $('#button_submit').empty()
-      $('#button_submit').append('<button class="btn btn-primary btn-embossed" disabled>Simpan</button>')
-    
-      let formData = new FormData();    
-      // nama kolom db
-      let arr = ['NamaKolomDb1', 'NamaKolomDb2', 'NamaKolomDb3']
-    
-      formData.append('data_basic_id', data_basic.data_basic_id);
+    });
+    if (!will_update) return;
 
-      for (let i = 0; i < arr.length; i++) {
-        if (arr[i].substring(0,4)=='foto') {
-          if ( $(`#`+arr[i])[0].files[0]){
-            formData.append(arr[i], $(`#`+arr[i])[0].files[0]);
-          } 
-        }
-        // else if (arr[i].substring(0,3)=='ket'){        
-        //   formData.append(arr[i] ,CKEDITOR.instances[arr[i]].getData())
-        // }
-        else{
-          formData.append(arr[i],$('#'+arr[i]).val())
-        }
+    $('#button_submit button').prop('disabled', true);
+    let data = {};
+    KOLOM.forEach(function (k) { data[k] = $('#' + k).val(); });
+
+    $.ajax({
+      type: 'POST',
+      url: rooturl + '/penandatangan/edit/' + ID,
+      contentType: 'application/json',
+      data: JSON.stringify(data),
+      success: function () {
+        swal({title:text_edit.title,text:text_edit.text, icon: text_edit.icon, type:text_edit.type}).then(function () {
+          window.location.href = rooturl + '/manajemen_master/penandatangan';
+        });
+      },
+      error: function (xhr) {
+        $('#button_submit button').prop('disabled', false);
+        swal('Gagal', (xhr.responseJSON && xhr.responseJSON.message) || text_error.text, 'error');
       }
-
-      $.ajax({
-        type: 'POST',
-        enctype: 'multipart/form-data',
-        url: rooturl+'/api_basic/edit',
-        data: formData,
-        processData: false,
-        contentType: false,
-        success: function(data) {
-          swal({title:text_edit.title,text:text_edit.text, icon: text_edit.icon, type:text_edit.type})
-          window.location.href = rooturl+'/manajemen_basic';
-        },error: function(data) {
-          swal({title:text_error.title,text:text_error.text, icon: text_error.icon, type:text_error.type})
-        }
-      })      
-    } 
+    });
   }
 </script>

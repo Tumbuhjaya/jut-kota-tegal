@@ -77,11 +77,11 @@ async function getIdRuasLain() {
 
 // Pengisi permohonan (vendor sendiri / admin atas nama vendor) hanya boleh mengubah
 // permohonan yang belum diajukan atau dikembalikan untuk revisi
-// Admin boleh mengubah permohonan di status apa pun kecuali yang sudah disetujui
+// Admin boleh mengubah permohonan di status apa pun kecuali yang sudah disetujui / ditolak (ditolak = final)
 // (SK terbit & digitasi sudah disalin ke data utama; kembalikan ke revisi dulu lewat proses)
 function bisaUbah(permohonan, admin) {
   if (!permohonan) return false;
-  if (admin) return permohonan.status !== 'disetujui';
+  if (admin) return ['disetujui', 'ditolak'].indexOf(permohonan.status) === -1;
   return permohonan.status === 'draft' || permohonan.status === 'revisi';
 }
 
@@ -263,6 +263,18 @@ async function sinkronTotalRuas(permohonan_ruas_id) {
       WHERE r.permohonan_ruas_id = ?`,
     [permohonan_ruas_id]
   );
+  await sinkronTiangRetribusi(permohonan_ruas_id);
+}
+
+// Jumlah tiang retribusi (D <= 30 cm + D > 30 cm) mengikuti tiang hasil digitasi.
+// Tiang D > 30 cm tetap isian manual, sisanya dihitung sebagai D <= 30 cm. Tanpa digitasi, isian manual dibiarkan.
+async function sinkronTiangRetribusi(permohonan_ruas_id) {
+  await sql_enak.raw(
+    `UPDATE permohonan_ruas
+        SET jml_t_k30cm = GREATEST(jumlah_tiang - IFNULL(jml_t_l30cm, 0), 0), lastUpdateAt = NOW()
+      WHERE permohonan_ruas_id = ? AND jumlah_tiang > 0`,
+    [permohonan_ruas_id]
+  );
 }
 
 // Salin digitasi permohonan yang disetujui ke data utama `tiang` & `kabel`.
@@ -416,8 +428,28 @@ async function getDataSk(permohonan) {
   var kata = terbilang(total.retribusi).replace(/\s+/g, ' ').trim() || 'nol';
   total.terbilang = kata.charAt(0).toUpperCase() + kata.slice(1) + ' rupiah';
   detail.total = total;
-  detail.konfig = KONFIG_SK;
+  detail.konfig = Object.assign({}, KONFIG_SK);
+  // Penandatangan dipilih saat permohonan lolos verifikasi (master_penandatangan); tanpa itu memakai KONFIG_SK
+  var [ttd] = await sql_enak.raw(`SELECT nama, nip, jabatan, pangkat FROM master_penandatangan WHERE penandatangan_id = ?`, [permohonan.penandatangan_id || 0]);
+  if (ttd.length) {
+    detail.konfig.jabatan_ttd = ttd[0].jabatan;
+    detail.konfig.nama_ttd = ttd[0].nama;
+    detail.konfig.pangkat_ttd = ttd[0].pangkat || '';
+    detail.konfig.nip_ttd = ttd[0].nip;
+  }
+  detail.tim_teknis = await getTimTeknis(permohonan.permohonan_id);
   return detail;
+}
+
+// Anggota tim teknis permohonan (dipilih admin saat verifikasi)
+async function getTimTeknis(permohonan_id) {
+  var [rows] = await sql_enak.raw(
+    `SELECT u.id_user, u.fullname, u.username, u.NIP, u.instansi FROM permohonan_tim_teknis t
+       JOIN user u ON u.id_user = t.id_user
+      WHERE t.permohonan_id = ? ORDER BY u.fullname ASC`,
+    [permohonan_id]
+  );
+  return rows;
 }
 
 var STATUS_LABEL = { draft: 'Draft', diajukan: 'Menunggu Verifikasi', revisi: 'Perlu Revisi', disetujui: 'Disetujui', ditolak: 'Ditolak' };
@@ -574,6 +606,7 @@ module.exports = {
   NAMA_RUAS_LAIN: NAMA_RUAS_LAIN,
   getIdRuasLain: getIdRuasLain,
   getDataSk: getDataSk,
+  getTimTeknis: getTimTeknis,
   KONFIG_SK: KONFIG_SK,
   buatExcel: buatExcel,
   bisaUbah: bisaUbah,
@@ -586,6 +619,7 @@ module.exports = {
   getDigitasi: getDigitasi,
   hitungDigitasi: hitungDigitasi,
   sinkronTotalRuas: sinkronTotalRuas,
+  sinkronTiangRetribusi: sinkronTiangRetribusi,
   salinDataRuas: salinDataRuas,
   KOLOM_SALINAN_RUAS: KOLOM_SALINAN_RUAS,
   KOMPONEN_RETRIBUSI: KOMPONEN_RETRIBUSI,
