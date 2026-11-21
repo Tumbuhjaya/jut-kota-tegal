@@ -349,6 +349,19 @@ router.get('/peninjauan_lapangan', cek_admin, function (req, res) {
 
 router.post('/peninjauan_lapangan/list', cek_admin, kirimList('peninjauan_lapangan', ['diajukan']));
 
+// Detail perizinan (peta, tabel ruas, pemohon, dokumen persyaratan) tanpa form verifikasi; data diambil via GET /data/:id
+router.get('/peninjauan_lapangan/detail/:id', cek_admin, async function (req, res) {
+  var p = await helper.getPermohonan(req.params.id);
+  if (!p || p.status === 'draft') return res.redirect('/manajemen_perizinan/peninjauan_lapangan');
+  res.render('content-backoffice/manajemen_perizinan/peninjauan_lapangan/detail', {
+    user: getUser(req),
+    permohonan_id: p.permohonan_id,
+    komponen: helper.KOMPONEN_RETRIBUSI,
+    kode_wilayah: helper.KODE_WILAYAH,
+    jenis_dokumen: helper.JENIS_DOKUMEN
+  });
+});
+
 router.get('/peninjauan_lapangan/data/:id', cek_admin, async function (req, res) {
   try {
     var p = await helper.getPermohonan(req.params.id);
@@ -438,6 +451,19 @@ router.get('/persetujuan_prinsip', cek_admin, function (req, res) {
 
 // Termasuk yang sudah upload persetujuan prinsip TTD dan menunggu verifikasi persyaratan
 router.post('/persetujuan_prinsip/list', cek_admin, kirimList(['persetujuan_prinsip', 'verifikasi_persyaratan'], ['diajukan']));
+
+// Detail perizinan (peta, tabel ruas, pemohon, dokumen persyaratan) tanpa form verifikasi; data diambil via GET /data/:id
+router.get('/persetujuan_prinsip/detail/:id', cek_admin, async function (req, res) {
+  var p = await helper.getPermohonan(req.params.id);
+  if (!p || p.status === 'draft') return res.redirect('/manajemen_perizinan/persetujuan_prinsip');
+  res.render('content-backoffice/manajemen_perizinan/persetujuan_prinsip/detail', {
+    user: getUser(req),
+    permohonan_id: p.permohonan_id,
+    komponen: helper.KOMPONEN_RETRIBUSI,
+    kode_wilayah: helper.KODE_WILAYAH,
+    jenis_dokumen: helper.JENIS_DOKUMEN
+  });
+});
 
 router.get('/persetujuan_prinsip/data/:id', cek_admin, async function (req, res) {
   try {
@@ -590,5 +616,4 @@ router.get('/izin/file/:id', cek_admin, async function (req, res) {
     tahapan.kirimFile(res, p.file_sk, p.nama_asli_sk);
   } catch (err) { gagal(res, err); }
 });
-
 module.exports = router;

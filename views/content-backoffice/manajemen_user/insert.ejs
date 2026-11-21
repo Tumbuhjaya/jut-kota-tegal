@@ -29,6 +29,16 @@
 <% include ../../template-backoffice/footer.ejs %>
 
 <script type="text/javascript">
+  // Tampilkan #konten-admin-timteknis hanya jika role (is_admin) bernilai 1 atau 4
+  function toggleKontenAdminTimteknis() {
+    var role = String($('#is_admin').val() || '');
+    $('#konten-admin-timteknis').toggle(role === '1' || role === '4');
+  }
+  $(function () {
+    toggleKontenAdminTimteknis();
+    $('#is_admin').on('change', toggleKontenAdminTimteknis);
+  });
+
   function myFunction() {
     $("#iconne").toggleClass("fa fa-eye-slash fa fa-eye");
     var x = document.getElementById("pwd");

@@ -98,14 +98,25 @@
                     </div>
                 </div>
 
-                <div class="col-12">
+                <!-- <div class="col-12">
                     <div class="form-group">
                         <label for="tim_teknis">Tim Teknis <small class="text-muted">(satu nama per baris)</small></label>
                         <textarea id="tim_teknis" class="form-control" rows="3" style="height: auto;"></textarea>
                     </div>
-                </div>
+                </div> -->
 
-                <div class="col-12">
+                
+            </div>
+            <div class="row">
+                 <div class="col-12">
+                    <div class="form-group">
+                        <label for="editor1">Hasil Peninjauan Lapangan</label>
+                        <textarea id="editor1" class="form-control" rows="5"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+              <div class="col-12">
                     <div class="form-group">
                         <label for="kelayakan">Hasil Peninjauan</label>
                         <select id="kelayakan" class="custom-select">
@@ -114,14 +125,6 @@
                             <option value="tidak_layak">Tidak Layak</option>
                         </select>
                         <small class="text-muted">Tidak layak: BA tidak bisa diupload, lakukan peninjauan ulang lalu ubah draft BA.</small>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                 <div class="col-12">
-                    <div class="form-group">
-                        <label for="editor1">Hasil Peninjauan Lapangan</label>
-                        <textarea id="editor1" class="form-control" rows="5"></textarea>
                     </div>
                 </div>
             </div>
@@ -243,7 +246,7 @@
             var layak = r.kelayakan === 'layak';
             var alasan = !ada ? 'Buat draft BA terlebih dahulu' : 'Hasil peninjauan tidak layak, lakukan peninjauan ulang';
             return '<div class="w-100-flex" style="justify-content: center;gap: 5px;">' +
-              '<a href="' + rooturl + '/manajemen_perizinan/permohonan/verifikasi/' + r.permohonan_id + '" class="btn btn-light" title="Detail Permohonan"><i class="fas fa-eye"></i></a>' +
+              '<a href="' + rooturl + '/manajemen_perizinan/peninjauan_lapangan/detail/' + r.permohonan_id + '" class="btn btn-light" title="Detail Perizinan"><i class="fas fa-eye"></i></a>' +
               '<button type="button" class="btn btn-warning" title="' + (ada ? 'Ubah' : 'Buat') + ' Draft BA" onclick="bukaDraft(' + r.permohonan_id + ')"><i class="fas fa-pen-square"></i></button>' +
               (ada
                 ? '<a href="' + URL_TAHAP + '/cetak/' + r.permohonan_id + '" target="_blank" class="btn btn-success" title="Cetak Draft BA"><i class="fas fa-print"></i></a>'

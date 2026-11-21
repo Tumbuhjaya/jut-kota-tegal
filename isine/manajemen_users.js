@@ -213,4 +213,9 @@ router.get('/edit/:id', cek_login, function(req, res) {
       res.render('content-backoffice/manajemen_user/perusahaan_provider',{user:req.user[0],id:req.params.id});
   });
 
+
+// pendaftaran akun pemohon
+router.get('/pendaftaran_akun', cek_login, function(req, res) {
+  res.render('content-backoffice/manajemen_user/pendaftaran_akun/list',{user:req.user[0]}); 
+});
 module.exports = router;

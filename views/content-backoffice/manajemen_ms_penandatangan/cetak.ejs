@@ -1,0 +1,199 @@
+<!--  BACKUP ASLI SERVER BENAR -->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="shortcut icon" href="#" type="image/png">
+
+    <title></title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    <link href="/resources-maps/stylesheets/leaflet-routing-machine.css" rel="stylesheet" />
+    <link href="/resources-maps/stylesheets/L.Control.Locate.min.css" rel="stylesheet" />
+    <link href="/resources-maps/stylesheets/leaflet-routing-machine.css" rel="stylesheet" />
+    <link href="/resources-maps/stylesheets/leaflet.extra-markers.css" rel="stylesheet" />
+    <link href="/resources-maps/stylesheets/leaflet.label.css" rel="stylesheet" />
+    <link href="/resources-maps/stylesheets/groupedlayercontrol.css" rel="stylesheet" />
+    <link href="/resources-maps/stylesheets/leaflet.draw.css" rel="stylesheet" />
+    <link href="https://unpkg.com/leaflet@1.3.4/dist/leaflet.css" rel="stylesheet">
+    <link href="/resources-maps/stylesheets/Control.FullScreen.css" rel="stylesheet" />
+    <link href="/resources-maps/stylesheets/MarkerCluster.css" rel="stylesheet" />
+    <link href="/resources-maps/stylesheets/MarkerCluster.Default.css" rel="stylesheet" />
+    <script src="https://unpkg.com/leaflet@1.3.4/dist/leaflet-src.js"></script>
+    <script src="https://unpkg.com/esri-leaflet@2.1.1/dist/esri-leaflet.js"
+        integrity="sha512-ECQqaYZke9cSdqlFG08zSkudgrdF6I1d8ViSa7I3VIszJyVqw4ng1G8sehEXlumdMnFYfzY0tMgdQa4WCs9IUw=="
+        crossorigin=""></script>
+        <script src="/resources-maps/javascripts/leaflet-routing-machine.js"></script>
+        <script src="/resources-maps/javascripts/leaflet.label.js"></script>
+        <script src="/resources-maps/panah-asmara.js"></script>
+        <script src="https://maps.google.com/maps/api/js?v=3.2&key=AIzaSyBy8irzccEOp7ezf5nQ2UPaLGcte_AEsOQ"></script>
+        <script src='https://unpkg.com/leaflet.gridlayer.googlemutant@latest/dist/Leaflet.GoogleMutant.js'></script>
+        <script src="/resources-maps/javascripts/L.Control.Locate.js"></script>
+        <script src="/resources-maps/javascripts/leaflet-routing-machine.js"></script>
+        <script src="/resources-maps/javascripts/leaflet.extra-markers.js"></script>
+        <script src="/resources-maps/javascripts/leaflet-image.js"></script>
+        <script src="https://d3js.org/topojson.v1.min.js"></script>
+        <script src="/resources-maps/javascripts/Control.FullScreen.js"></script>
+        <script src="/resources-maps/javascripts/groupedlayercontrol.js"></script>
+        <script src="/resources-maps/javascripts/wicket.js"></script>
+        <script src="/resources-maps/javascripts/wicket-leaflet.js"></script>
+        <script src="/resources-maps/javascripts/leaflet-omnivore.min.js"></script>
+        <script src="/resources-maps/javascripts/leaflet.markercluster-src.js"></script>
+        <script src="/resources-maps/draw/Leaflet.draw.js"></script>
+        <script src="/resources-maps/draw/Leaflet.Draw.Event.js"></script>
+        <script src="/resources-maps/draw/Toolbar.js"></script>
+        <script src="/resources-maps/draw/Tooltip.js"></script>
+        <script src="/resources-maps/draw/ext/GeometryUtil.js"></script>
+        <script src="/resources-maps/draw/ext/LatLngUtil.js"></script>
+        <script src="/resources-maps/draw/ext/LineUtil.Intersect.js"></script>
+        <script src="/resources-maps/draw/ext/Polygon.Intersect.js"></script>
+        <script src="/resources-maps/draw/ext/Polyline.Intersect.js"></script>
+        <script src="/resources-maps/draw/ext/TouchEvents.js"></script>
+        <script src="/resources-maps/draw/draw/DrawToolbar.js"></script>
+        <script src="/resources-maps/draw/draw/handler/Draw.Feature.js"></script>
+        <script src="/resources-maps/draw/draw/handler/Draw.SimpleShape.js"></script>
+        <script src="/resources-maps/draw/draw/handler/Draw.Polyline.js"></script>
+        <script src="/resources-maps/draw/draw/handler/Draw.Marker.js"></script>
+        <script src="/resources-maps/draw/draw/handler/Draw.Polygon.js"></script>
+        <script src="/resources-maps/draw/draw/handler/Draw.Rectangle.js"></script>
+        <script src="/resources-maps/draw/edit/EditToolbar.js"></script>
+        <script src="/resources-maps/draw/edit/handler/EditToolbar.Edit.js"></script>
+        <script src="/resources-maps/draw/edit/handler/EditToolbar.Delete.js"></script>
+        <script src="/resources-maps/draw/Control.Draw.js"></script>
+        <script src="/resources-maps/draw/edit/handler/Edit.Poly.js"></script>
+        <script src="/resources-maps/draw/edit/handler/Edit.SimpleShape.js"></script>
+        <script src="/resources-maps/draw/edit/handler/Edit.Rectangle.js"></script>
+        <script src="/resources-maps/draw/edit/handler/Edit.Marker.js"></script>
+        <script src="/resources-maps/main.js"></script>
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <style type="text/css">
+        body {
+            background: rgb(204,204,204); 
+            font-size:12pt;
+            line-height:1.5em;
+            font-family: 'Arial', sans-serif !important;
+        }
+
+        page {
+            background: white;
+            display: block;
+            margin: 0 auto;
+            margin-bottom: 5mm;
+            box-shadow: 0 0 5mm rgba(0,0,0,0.5);
+            /*border:2px solid black;*/
+        }
+
+        page[size="A4"] {
+            width: 210mm;
+            height: 205mm;
+            /* height: 310mm;   */
+            border:1px solid black;
+            padding:10mm;
+            /*background-color: red;*/
+            /* float: left; */
+        }
+
+        @page {
+            size: A4 portrait;
+            margin:10mm 15mm;
+            background-color: red;
+        }
+        
+        span{
+            color:red !important;
+        }
+        @media print {
+            body, page {
+            margin: 0;
+            box-shadow: none;
+            }
+
+            #btn-print{
+            display: none !important;
+            }
+
+            h1,h2,h3,h4,h5,h6{
+            margin-top: 0px;
+            margin-bottom: 0px;
+        }
+        }
+
+        .m-t-0{
+            margin-top: 0;
+        }
+
+        .m-b-0{
+            margin-bottom: 0;
+        }
+
+        /* table { page-break-inside:auto } */
+        /* tr    { page-break-inside:avoid; page-break-after:auto} */
+        .border {border: 0.5mm solid black !important}
+
+
+        h1,h2,h3,h4,h5,h6{
+            margin-top: 0px;
+            margin-bottom: 0px;
+        }
+
+        span{
+            color: red;
+        }
+
+        .button {
+            background-color: red;
+            border: none;
+            color: white;
+            padding: 15px 25px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 6px;
+            position: absolute;
+            top: 0;
+            right: 0;
+        }
+
+        .button:hover{
+            background-color: #fff;
+            color: black;
+        }
+        
+        /* div{
+            page-break-inside: avoid;
+        } */
+        /*table { page-break-inside:auto }*/
+        /*tr    { page-break-inside:avoid; page-break-after:auto }
+        thead { display:table-header-group }
+        tfoot { page-break-inside:avoid; page-break-after:auto  }*/
+    </style>
+</head>
+
+<body style="position: relative;">
+    <button class="button"  id="btn-print">Cetak</button>
+    <page size="A4">
+    </page>
+    
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script type="text/javascript">
+    $('#btn-print').click(function(){
+         window.print();
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,254 @@
+<% include ../../../template-backoffice/header.ejs %>
+  <!-- Main Content -->
+  <div class="main-content">
+    <section class="section">
+      <div class="w-100" style="padding: 0 30px;">
+        <div class="section-header">
+          <h1>Data Pendaftaran Akun Perizinan</h1>
+          <div class="section-header-breadcrumb">
+            <div class="breadcrumb-item active"><a href="/backoffice">Dashboard</a></div>
+            <div class="breadcrumb-item">Data</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-body">
+        <div class="row">
+          <div class="col-lg-12 col-xl-12">
+            <div class="card">
+              <!-- <div class="card-header">
+                <a href="/manajemen_users/insert" class="btn btn-primary custom-btn-card-header"><i class="fas fa-plus"></i> Tambah Data</a>
+              </div> -->
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table class="table table-bordered table-striped table-hover" id="list-data">
+                    <thead>
+                    <tr>
+                      <th class="header">No.</th>
+                      <th class="header">Nama</th>
+                      <th class="header">Alamat</th>
+                      <th class="header">No. Telepon (WhatsApp)</th>
+                      <th class="header">Email</th>
+                      <th class="header">Option</th>
+                    </tr>
+                  </thead>
+                  
+                  <tbody>
+                  
+                  </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <footer class="main-footer">
+    <div class="footer-left">
+      <% include ../../../template-backoffice/copyright-left.ejs %>
+    </div>
+    <div class="footer-right">
+      <% include ../../../template-backoffice/copyright-right.ejs %>
+    </div>
+  </footer>
+<% include ../../../template-backoffice/footer.ejs %>
+
+<!-- Modal -->
+<div class="modal fade" id="modalVerif" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Verifikasi Akun Perizinan</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <div class="col-12">
+            <div class="form-group">
+              <label for="">Status Verifikasi ?</label>
+              <select name="" id="status_verif" class="custom-select">
+                <option value="">-- Pilih --</option>
+                <option value="1">-- Disetujui --</option>
+                <option value="2">-- Ditolak --</option>
+              </select>
+            </div>
+
+            <div class="form-group" id="konten-tolak">
+              <label for="">Keterangan Ditolak</label>
+              <textarea name="" id="" class="form-control" rows="4"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal"><i class="fas fa-times"></i>&nbsp;&nbsp;Tutup</button>
+        <button type="button" class="btn btn-primary"><i class="fas fa-save"></i>&nbsp;&nbsp;Simpan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript">
+    var rooturl = ''
+    let id = 0
+    
+    $('#konten-tolak').hide();
+
+    $('#status_verif').change(function(){
+        if ($(this).val() == '') {
+              $('#konten-tolak').hide();
+        }
+
+        if ($(this).val() == '1') {
+              $('#konten-tolak').hide();
+        } 
+
+        if ($(this).val() == '2') {
+              $('#konten-tolak').show();
+        }    
+    });
+
+
+    function myFunction() {
+      $("#iconne").toggleClass("fa fa-eye-slash fa fa-eye");
+      var x = document.getElementById("pwd");
+      if (x.type === "password") {
+        x.type = "text";
+      } else {
+        x.type = "password";
+      }
+    }
+
+    let data_table  =$('#list-data').DataTable({
+      "language": {
+          "sProcessing":   "Sedang memproses...",
+          "sLengthMenu":   "_MENU_",
+          "sZeroRecords":  "Tidak ditemukan data yang sesuai",
+          "sInfo":         "Menampilkan _START_ sampai _END_ dari _TOTAL_ entri",
+          "sInfoEmpty":    "Menampilkan 0 sampai 0 dari 0 entri",
+          "sInfoFiltered": "(disaring dari _MAX_ entri keseluruhan)",
+          "sInfoPostFix":  "",
+          "sUrl":          "",
+          "oPaginate": {
+            "sFirst":    "Pertama",
+            "sPrevious": "Sebelumnya",
+            "sNext":     "Selanjutnya",
+            "sLast":     "Terakhir"
+          }
+      },
+      "processing": true,
+      "ajax":  `${rooturl}/manajemen_users/list${'<%=user.is_admin%>'!=1?'?id_user=<%=user.id_user%>':''}`,
+      "columns": [
+        { "data": null},
+        { "data": "fullname"},
+        { "data": "alamat"},
+        { "data": "telp"},
+        { "data": "email"},
+        { "data": null,render: function(data){
+          let a = ''
+          if (data) {
+            a = `
+                <div class="w-100-flex" style="justify-content:center;gap:10px;">
+                  <button class="btn btn-warning" data-toggle="modal" data-target="#modalVerif"><i class="fas fa-user-check"></i></button>
+                </div>`
+          }
+          return `<td>${a}</td>`
+        }},
+      ],
+      "columnDefs": [
+        { "width": "40px", "targets": 0},
+        { "width": "50px", "targets": 5}
+      ],
+    });
+
+    data_table.on( 'draw.dt', function () {
+      let PageInfo = $('#list-data').DataTable().page.info();
+      data_table.column(0, { page: 'current' }).nodes().each( function (cell, i) {
+        cell.innerHTML = i + 1 + PageInfo.start;
+      });
+    });
+    async function ganti_id(prm) {
+      id=prm
+    }
+  async function ganti_password() {
+    const will_update = await swal({
+      title: "Edit Data",
+      text: "Apakah anda akan mengedit data ini?",
+      icon: "warning",
+      dangerMode: true,
+      buttons: ["Tidak", "Ya"],
+    });
+    
+    let a = 0
+    let b = 0
+    let c = 0
+    let d = 0
+    if ($('#pwd').val()) {
+      for (let i = 0; i < $('#pwd').val().length; i++) {
+          if ( $('#pwd').val().charCodeAt(i) >=49 &&$('#pwd').val().charCodeAt(i) <=57 ) {
+          a+=1
+          }else if ( $('#pwd').val().charCodeAt(i) >=65 &&$('#pwd').val().charCodeAt(i) <=90 ) {
+          b+=1
+          }else if ( $('#pwd').val().charCodeAt(i) >=97 &&$('#pwd').val().charCodeAt(i) <=122 ) {
+          c+=1
+          }else{
+          d+=1
+          }
+      }
+    }else{
+      a=1
+      b=1
+      c=1
+      d=1
+    }
+
+    if (a!=0&&b!=0&&c!=0&&d!=0) {
+      if ( will_update) {
+        $('#button_submit').empty()
+        $('#button_submit').append('<button class="btn btn-primary btn-embossed" disabled>Simpan</button>')
+        let formData = new FormData();    
+        // nama kolom db        
+        formData.append('id_user', id);
+        formData.append('pwd',$('#pwd').val())
+        $.ajax({
+          type: 'POST',
+          enctype: 'multipart/form-data',
+          url: rooturl+'/user/edit',
+          data: formData,
+          processData: false,
+          contentType: false,
+          success: function(data) {
+            swal({title:text_edit.title,text:text_edit.text, icon: text_edit.icon, type:text_edit.type})
+            window.location.href = rooturl+'/manajemen_users';
+          },error: function(data) {
+            swal({title:text_error.title,text:text_error.text, icon: text_error.icon, type:text_error.type})
+          }
+        })      
+      } 
+    }else{
+      swal({title:text_error.title,text:text_error.text, icon: text_error.icon, type:text_error.type})
+    }
+  }      
+
+    async function hapus(id) {
+      const willDelete = await swal({
+        title: "Hapus Data",
+        text: "Apakah anda akan menghapus data ini?",
+        icon: "warning",
+        dangerMode: true,
+        buttons: ["Tidak", "Ya"],
+      });
+              
+      if ( willDelete) {
+        $.get(rooturl+"/manajemen_users/hapus/"+id).then(function (hsl) {
+          // alert('Sukses')
+          swal({title:text_delete.title,text:text_delete.text, icon: text_delete.icon, type:text_delete.type})
+          data_table.ajax.url(rooturl+"/manajemen_users/list").load();
+        })
+      }
+    }
+</script>

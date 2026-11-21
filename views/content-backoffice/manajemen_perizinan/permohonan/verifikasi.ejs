@@ -26,7 +26,7 @@
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-12">
-                                    <h5><i class="fas fa-map-marked-alt" style="font-size: 26px;"></i>&nbsp;&nbsp;PETA DIGITASI RUAS JALAN</h5>
+                                    <h5><i class="fas fa-map-marked-alt" style="font-size: 24px;"></i>&nbsp;&nbsp;PETA DIGITASI RUAS JALAN</h5>
                                     <hr>
                                     <div id="map" class="w-100" style="height: 500px;background-color: whitesmoke;"></div>
                                 </div>
@@ -80,7 +80,7 @@
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-12">
-                                    <h5><i class="fas fa-user" style="font-size: 26px;"></i>&nbsp;&nbsp;PEMOHON / VENDOR</h5>
+                                    <h5><i class="fas fa-user" style="font-size: 24px;"></i>&nbsp;&nbsp;PEMOHON / VENDOR</h5>
                                     <hr>
                                 </div>
                             </div>
@@ -127,13 +127,67 @@
             </div>
 
             <div class="row">
+                <div class="col-12 col-lg-12 col-xl-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-12">
+                                    <h5><i class="fas fa-building" style="font-size: 24px;"></i>&nbsp;&nbsp;INFORMASI PERUSAHAAN</h5>
+                                    <hr>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="alert alert-light mb-3" id="info-perusahaan-kosong" style="display: none;">Provider pada permohonan ini belum terhubung ke data perusahaan.</div>
+
+                                    <div class="form-group mb-0">
+                                        <label for="d_nama_perusahaan">Nama Perusahaan</label>
+                                        <input type="text" class="form-control" id="d_nama_perusahaan" readonly>
+                                    </div>
+
+                                    <hr>
+
+                                    <div class="form-group mb-0">
+                                        <label for="d_provider_perusahaan">Provider</label>
+                                        <input type="text" class="form-control" id="d_provider_perusahaan" readonly>
+                                    </div>
+
+                                    <hr>
+
+                                    <div class="form-group mb-0">
+                                        <label for="d_alamat_perusahaan">Alamat</label>
+                                        <textarea class="form-control" id="d_alamat_perusahaan" rows="2" style="height: auto;" readonly></textarea>
+                                    </div>
+
+                                    <hr>
+
+                                    <div class="form-group mb-0">
+                                        <label for="d_telp_perusahaan">No. Telepon</label>
+                                        <input type="text" class="form-control" id="d_telp_perusahaan" readonly>
+                                    </div>
+
+                                    <hr>
+
+                                    <div class="form-group mb-0">
+                                        <label for="d_email_perusahaan">Email</label>
+                                        <input type="text" class="form-control" id="d_email_perusahaan" readonly>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
                 <% SYARAT.forEach(function (s) { %>
                 <div class="col-12 col-lg-6 col-xl-6">
                     <div class="card">
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-12">
-                                    <h5><i class="fas fa-th-list" style="font-size: 26px;"></i>&nbsp;&nbsp;<%= s.judul %></h5>
+                                    <h5><i class="fas fa-th-list" style="font-size: 20px;"></i>&nbsp;&nbsp;<%= s.judul %></h5>
                                     <hr>
                                 </div>
                             </div>
@@ -161,7 +215,7 @@
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-12">
-                                    <h5><i class="fas fa-clipboard-check" style="font-size: 26px;"></i>&nbsp;&nbsp;VERIFIKASI</h5>
+                                    <h5><i class="fas fa-clipboard-check" style="font-size: 24px;"></i>&nbsp;&nbsp;VERIFIKASI PERMOHONAN IZIN</h5>
                                     <hr>
                                 </div>
                             </div>
@@ -186,8 +240,25 @@
                                         <textarea id="keterangan" class="form-control" rows="4" style="height: auto;"></textarea>
                                     </div>
 
+                                    <div id="konten-tim-teknis">
+                                      <div class="form-group">
+                                        <label for="">Nomor Surat Permohonan</label>
+                                        <input type="text" class="form-control" name="" id="">
+                                      </div>
+
+                                      <div class="form-group">
+                                          <label for="">Tim Teknis</label>
+                                          <select name="" id="" class="form-control select2" multiple="multiple" style="width: 100%;">
+                                            <option value="">-- Pilih --</option>
+                                            <option value="">-- Pilih --</option>
+                                            <option value="">-- Pilih --</option>
+                                          </select>
+                                      </div>
+                                    </div>
+                                    
+
                                     <hr>
-                                    <button type="button" class="btn btn-primary btn-lg" id="button_submit" onclick="submit()">Submit</button>
+                                    <button type="button" class="btn btn-primary btn-lg" id="button_submit" onclick="submit()"><i class="fas fa-save"></i>&nbsp;&nbsp;Simpan</button>
                                 </div>
                             </div>
                         </div>
@@ -282,6 +353,15 @@
       $('#d_telp').val(p.telp_pemohon || '');
       $('#d_email').val(p.email_pemohon || '');
       $('#d_provider').val((p.vendor ? (p.vendor.fullname || p.vendor.username) : '-') + ' / ' + (p.provider || '-'));
+
+      // Perusahaan pemilik provider yang dipilih
+      var ps = p.perusahaan || {};
+      $('#info-perusahaan-kosong').toggle(!p.perusahaan);
+      $('#d_nama_perusahaan').val(ps.nama_perusahaan || '-');
+      $('#d_provider_perusahaan').val(p.provider || '-');
+      $('#d_alamat_perusahaan').val(ps.alamat || '-');
+      $('#d_telp_perusahaan').val(ps.no_telepon || '-');
+      $('#d_email_perusahaan').val(ps.email || '-');
 
       data.dokumen.forEach(function (d) {
         $('.dokumen[data-jenis="' + d.jenis_dokumen + '"]').html(
@@ -388,5 +468,25 @@
     }
 
     $('#konten-revisi').hide();
+
+    $('#konten-tim-teknis').hide();
+
+    $('#status_verifikasi').change(function(){
+        if ($(this).val() == '') {
+              $('#konten-tim-teknis').hide();
+        }
+
+        if ($(this).val() == 'revisi') {
+              $('#konten-tim-teknis').hide();
+        } 
+
+        if ($(this).val() == 'tolak') {
+              $('#konten-tim-teknis').hide();
+        }  
+        
+        if ($(this).val() == 'lolos') {
+              $('#konten-tim-teknis').show();
+        }  
+    });
     muat();
 </script>

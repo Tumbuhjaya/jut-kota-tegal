@@ -26,7 +26,7 @@
                     <tr>
                       <th class="header">No.</th>
                       <th class="header">Nama Lengkap</th>
-                      <th class="header">NIP</th>
+                      <th class="header">No. Telepon (WhatsApp)</th>
                       <th class="header">Email</th>
                       <th class="header">Role</th>
                       <th class="header">Option</th>
@@ -118,10 +118,10 @@
       "columns": [
         { "data": null},
         { "data": "fullname"},
-        { "data": "NIP"},
+        { "data": "telp"},
         { "data": "email"},
         { "data": "is_admin",render : function (data) {
-          return data==1?'Administrator': data==2?'Pengguna':data==3?'Vendor':''
+          return data==1?'Administrator': data==2?'Perusahaan':data==3?'Pemohon':data==4?'Tim Teknis':''
         }},
         { "data": null,render: function(data){
           let a = ''

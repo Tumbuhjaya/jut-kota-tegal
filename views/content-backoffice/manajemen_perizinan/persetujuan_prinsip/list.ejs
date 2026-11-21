@@ -175,7 +175,10 @@
     CKEDITOR.replace('editor1', {
         height: 300, // Mengatur tinggi editor (dalam piksel)
         versionCheck: false, // Menonaktifkan notifikasi peringatan versi LTS di layar
-        toolbar: []
+        // Persyaratan: bullet & numbering (+ indent untuk sub-poin)
+        toolbar: [
+            { name: 'paragraph', items: ['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent'] }
+        ]
     });
 
     function rupiah(n) {
@@ -224,7 +227,7 @@
         } },
         { "data": null, "render": function (r) {
             var aksi = '<div class="w-100-flex" style="justify-content: center;gap: 5px;">' +
-              '<a href="' + rooturl + '/manajemen_perizinan/permohonan/verifikasi/' + r.permohonan_id + '" class="btn btn-light" title="Detail Permohonan"><i class="fas fa-eye"></i></a>' +
+              '<a href="' + rooturl + '/manajemen_perizinan/persetujuan_prinsip/detail/' + r.permohonan_id + '" class="btn btn-light" title="Detail Permohonan"><i class="fas fa-eye"></i></a>' +
               (r.file_ba ? '<a href="' + rooturl + '/manajemen_perizinan/peninjauan_lapangan/file/' + r.permohonan_id + '" target="_blank" class="btn btn-secondary" title="Lihat BA Peninjauan Lapangan TTD"><i class="fas fa-file-alt"></i></a>' : '');
             // Persetujuan prinsip TTD sudah diupload -> tinggal verifikasi persyaratan
             if (r.tahap === 'verifikasi_persyaratan') {

@@ -170,11 +170,26 @@ async function getDokumen(permohonan_id) {
 
 // Detail lengkap satu permohonan: header + provider + dokumen + ruas
 async function getDetail(permohonan) {
-  var [prov] = await sql_enak.raw(`SELECT provider FROM provider WHERE provider_id = ?`, [permohonan.provider_id || 0]);
+  var [prov] = await sql_enak.raw(
+    `SELECT pv.provider, ps.perusahaan_id, ps.nama_perusahaan, ps.alamat, ps.no_telepon, ps.email
+       FROM provider pv
+       LEFT JOIN perusahaan ps ON ps.perusahaan_id = pv.perusahaan_id AND ps.deletedAt IS NULL
+      WHERE pv.provider_id = ?`,
+    [permohonan.provider_id || 0]
+  );
   var [vendor] = await sql_enak.raw(`SELECT fullname, username, email, telp FROM user WHERE id_user = ?`, [permohonan.id_user]);
+  var pr = prov[0];
   return {
     permohonan: Object.assign({}, permohonan, {
-      provider: prov[0] ? prov[0].provider : null,
+      provider: pr ? pr.provider : null,
+      // Perusahaan pemilik provider yang dipilih pada permohonan
+      perusahaan: pr && pr.perusahaan_id ? {
+        perusahaan_id: pr.perusahaan_id,
+        nama_perusahaan: pr.nama_perusahaan,
+        alamat: pr.alamat,
+        no_telepon: pr.no_telepon,
+        email: pr.email
+      } : null,
       vendor: vendor[0] || null,
       bisa_ubah: bisaUbah(permohonan)
     }),
@@ -357,8 +372,8 @@ async function hapusDariDataUtama(permohonan_id) {
 var KONFIG_SK = {
   pemerintah: 'PEMERINTAH KOTA TEGAL',
   instansi: 'DINAS PEKERJAAN UMUM DAN PENATAAN RUANG',
-  alamat: 'Jl. ................................ Kota Tegal',
-  kontak: 'Telp. (0283) ......... | Email: .........................',
+  alamat: 'Jl. Proklamasi No. 11 Kota Tegal Kode Pos 52111',
+  kontak: 'Telp./Fax. (0283) 356353, e-mail :  dpukotategal@gmail.com',
   logo: '/images/template/logo_kota_tegal.png',
   tempat: 'Tegal',
   jabatan_ttd: 'KEPALA DINAS PEKERJAAN UMUM DAN PENATAAN RUANG KOTA TEGAL',
