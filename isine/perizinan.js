@@ -13,6 +13,7 @@ var cek_login = require('./login').cek_login;
 var cek_login_google = require('./login').cek_login_google;
 var cek_vendor = require('./dashboard_vendor.js').cek_vendor;
 var helper = require('../helpper/permohonan.js');
+var tahapan = require('../helpper/tahapan_perizinan.js');
 var reklame = require('../helpper/reklame.js');
 var dbgeo = require("dbgeo");
 var multer = require("multer");
@@ -276,6 +277,58 @@ router.get(JU + '/cetak_sk/:id_permohonan', cek_pemohon, async function (req, re
   var p = await helper.getPermohonan(req.params.id_permohonan, idPemilik(req));
   if (!p || p.status !== 'disetujui') return res.status(404).send('SK belum tersedia');
   res.render('content-backoffice/manajemen_perizinan/cetak_sk', await helper.getDataSk(p));
+});
+
+// ---------------- Kelengkapan persyaratan persetujuan prinsip ----------------
+// Link halaman ini dikirim lewat email saat persetujuan prinsip TTD diupload admin.
+// Pemohon mengirim satu file ZIP; admin memverifikasi dari menu Persetujuan Prinsip.
+function bisaKirimPersyaratan(p, pp) {
+  return p.status === 'diajukan' && p.tahap === 'verifikasi_persyaratan' && !!(pp && pp.file_ttd);
+}
+
+router.get(JU + '/persyaratan/:id_permohonan', cek_pemohon, async function (req, res) {
+  if (isAdmin(req)) return res.redirect('/manajemen_perizinan/persetujuan_prinsip');
+  var p = await helper.getPermohonan(req.params.id_permohonan, idPemilik(req));
+  if (!p) return res.redirect('/perizinan' + JU);
+  var pp = await tahapan.getPersetujuan(p.permohonan_id);
+  var [prov] = await sql_enak.raw(`SELECT provider FROM provider WHERE provider_id = ?`, [p.provider_id]);
+  res.render('content/jaringan_utilitas/persyaratan', {
+    user: getUser(req),
+    permohonan: p,
+    provider: prov[0] ? prov[0].provider : '-',
+    persetujuan: pp,
+    bisa_kirim: bisaKirimPersyaratan(p, pp),
+    maks_mb: tahapan.MAKS_MB_PERSYARATAN
+  });
+});
+
+router.post(JU + '/api/persyaratan/:id_permohonan', cek_vendor, tahapan.upload_persyaratan, async function (req, res) {
+  var file = req.files && req.files.file && req.files.file[0];
+  try {
+    if (!file) return gagal(res, 'File ZIP persyaratan wajib dipilih', 400);
+    var p = await helper.getPermohonan(req.params.id_permohonan, getUser(req).id_user);
+    var pp = p && await tahapan.getPersetujuan(p.permohonan_id);
+    if (!p || !bisaKirimPersyaratan(p, pp)) {
+      tahapan.hapusFile(file.filename);
+      return gagal(res, p ? 'Permohonan tidak sedang menunggu kelengkapan persyaratan' : 'Permohonan tidak ditemukan', p ? 400 : 404);
+    }
+    await tahapan.simpanPersyaratanPemohon(p.permohonan_id, file);
+    res.json({ status: 200, message: 'sukses', data: null });
+  } catch (err) {
+    if (file) tahapan.hapusFile(file.filename);
+    gagal(res, err);
+  }
+});
+
+// Persetujuan prinsip bertanda tangan & ZIP yang sudah dikirim (milik vendor sendiri)
+router.get(JU + '/persyaratan/file/:jenis/:id_permohonan', cek_vendor, async function (req, res) {
+  try {
+    var p = await helper.getPermohonan(req.params.id_permohonan, getUser(req).id_user);
+    var pp = p && await tahapan.getPersetujuan(p.permohonan_id);
+    if (!pp) return res.status(404).send('Persetujuan prinsip tidak ditemukan');
+    if (req.params.jenis === 'zip') return tahapan.kirimFile(res, pp.file_persyaratan, pp.nama_asli_persyaratan);
+    tahapan.kirimFile(res, pp.file_ttd, pp.nama_asli_ttd);
+  } catch (err) { gagal(res, err); }
 });
 
 // ---------------- API: master ----------------

@@ -25,7 +25,8 @@ var JUMLAH_FOTO = 6;
 var FIELD_FOTO = [];
 for (var i = 1; i <= JUMLAH_FOTO; i++) FIELD_FOTO.push('foto_' + i);
 
-function buatUpload(ekstensi, pesan, fields) {
+// maks_mb: batas ukuran per file (default 10 MB)
+function buatUpload(ekstensi, pesan, fields, maks_mb) {
   return multer({
     storage: multer.diskStorage({
       destination: function (req, file, cb) { cb(null, DIR_DOKUMEN); },
@@ -33,7 +34,7 @@ function buatUpload(ekstensi, pesan, fields) {
         cb(null, Date.now() + '-' + file.fieldname + path.extname(file.originalname).toLowerCase());
       }
     }),
-    limits: { fileSize: 10 * 1024 * 1024 },
+    limits: { fileSize: (maks_mb || 10) * 1024 * 1024 },
     fileFilter: function (req, file, cb) {
       if (fields.indexOf(file.fieldname) === -1) return cb(new Error('Field file tidak dikenal'));
       if (ekstensi.indexOf(path.extname(file.originalname).toLowerCase()) === -1) return cb(new Error(pesan));
@@ -45,11 +46,15 @@ function buatUpload(ekstensi, pesan, fields) {
 // Foto dokumentasi ditampilkan di cetak BA, jadi hanya gambar
 var upload_foto = buatUpload(['.jpg', '.jpeg', '.png'], 'Foto dokumentasi harus JPG / PNG', FIELD_FOTO);
 var upload_ttd = buatUpload(['.pdf', '.jpg', '.jpeg', '.png'], 'File harus PDF / JPG / PNG', ['file']);
+// Kelengkapan persyaratan persetujuan prinsip dari pemohon, dijadikan satu file ZIP
+var MAKS_MB_PERSYARATAN = 50;
+var upload_persyaratan = buatUpload(['.zip'], 'File persyaratan harus berformat ZIP', ['file'], MAKS_MB_PERSYARATAN);
 
 // Bungkus multer agar error upload dikembalikan sebagai JSON
 function pakaiUpload(upload) {
   return function (req, res, next) {
     upload(req, res, function (err) {
+      if (err && err.code === 'LIMIT_FILE_SIZE') err.message = 'Ukuran file melebihi batas';
       if (err) return res.status(400).json({ status: 400, message: err.message, data: null });
       next();
     });
@@ -80,6 +85,7 @@ function sqlListTahap() {
            pl.no_ba, pl.tanggal_ba, pl.kelayakan, pl.file_ba, pl.uploadBaAt,
            (pl.permohonan_peninjauan_id IS NOT NULL) AS ada_ba,
            pp.no_pp, pp.tanggal_pp, pp.file_ttd AS file_pp, pp.uploadTtdAt AS uploadPpAt, pp.keterangan_persyaratan,
+           pp.file_persyaratan, pp.uploadPersyaratanAt,
            (pp.permohonan_persetujuan_prinsip_id IS NOT NULL) AS ada_pp
       FROM (${helper.SQL_REKAP}) x
       LEFT JOIN permohonan_peninjauan pl ON pl.permohonan_id = x.permohonan_id
@@ -189,14 +195,28 @@ async function simpanPersetujuan(permohonan_id, b, id_user) {
   return hasil.insertId;
 }
 
+// ZIP persyaratan dari pemohon menggantikan kiriman sebelumnya dan menunggu verifikasi (uploadPersyaratanAt terisi)
+async function simpanPersyaratanPemohon(permohonan_id, file) {
+  var pp = await getPersetujuan(permohonan_id);
+  if (pp) hapusFile(pp.file_persyaratan);
+  await sql_enak.raw(
+    `UPDATE permohonan_persetujuan_prinsip
+        SET file_persyaratan = ?, nama_asli_persyaratan = ?, uploadPersyaratanAt = NOW(), lastUpdateAt = NOW()
+      WHERE permohonan_id = ?`,
+    [file.filename, file.originalname, permohonan_id]
+  );
+}
+
 // Persyaratan persetujuan prinsip terpenuhi -> lanjut ke penerbitan izin;
-// belum terpenuhi -> tetap di tahap verifikasi persyaratan, keterangan dikirim ke pemohon
+// belum terpenuhi -> tetap di tahap verifikasi persyaratan, keterangan dikirim ke pemohon.
+// Kiriman ZIP tetap disimpan, tetapi uploadPersyaratanAt dikosongkan sehingga verifikasi menunggu kiriman ulang pemohon.
 async function simpanVerifikasiPersyaratan(permohonan_id, lanjut, keterangan, id_user) {
   await sql_enak.raw(
     `UPDATE permohonan_persetujuan_prinsip
-        SET keterangan_persyaratan = ?, persyaratanAt = ?, persyaratan_oleh = ?, lastUpdateAt = NOW()
+        SET keterangan_persyaratan = ?, persyaratanAt = ?, persyaratan_oleh = ?,
+            uploadPersyaratanAt = IF(?, uploadPersyaratanAt, NULL), lastUpdateAt = NOW()
       WHERE permohonan_id = ?`,
-    [keterangan || null, lanjut ? new Date() : null, id_user, permohonan_id]
+    [keterangan || null, lanjut ? new Date() : null, id_user, lanjut ? 1 : 0, permohonan_id]
   );
   if (lanjut) await pindahTahap(permohonan_id, 'penerbitan_izin');
 }
@@ -274,6 +294,16 @@ function lampiran(nama_file, nama_asli) {
   return { filename: nama_asli || nama_file, path: file };
 }
 
+// Alamat aplikasi untuk link di email: BASE_URL (mis. https://simaju.fosan.id) atau host request admin
+function urlAplikasi(req) {
+  return (process.env.BASE_URL || (req.protocol + '://' + req.get('host'))).replace(/\/+$/, '');
+}
+
+// Link halaman pemohon untuk mengirim persyaratan persetujuan prinsip
+function urlPersyaratan(req, permohonan_id) {
+  return urlAplikasi(req) + '/perizinan/jaringan_utilitas/persyaratan/' + permohonan_id;
+}
+
 // isi: potongan HTML (teks isian pengguna harus sudah di-escape); berkas: [{ filename, path }]
 // Gagal kirim hanya dicatat di log agar proses tahapan tetap berjalan
 async function kirimNotifikasi(permohonan, judul, isi, berkas) {
@@ -301,6 +331,8 @@ module.exports = {
   JUMLAH_FOTO: JUMLAH_FOTO,
   upload_foto: pakaiUpload(upload_foto),
   upload_ttd: pakaiUpload(upload_ttd),
+  MAKS_MB_PERSYARATAN: MAKS_MB_PERSYARATAN,
+  upload_persyaratan: pakaiUpload(upload_persyaratan),
   hapusFile: hapusFile,
   kirimFile: kirimFile,
   listTahap: listTahap,
@@ -309,6 +341,7 @@ module.exports = {
   hapusFotoPeninjauan: hapusFotoPeninjauan,
   getPersetujuan: getPersetujuan,
   simpanPersetujuan: simpanPersetujuan,
+  simpanPersyaratanPemohon: simpanPersyaratanPemohon,
   simpanVerifikasiPersyaratan: simpanVerifikasiPersyaratan,
   getPerjanjianSewa: getPerjanjianSewa,
   simpanPerjanjianSewa: simpanPerjanjianSewa,
@@ -317,5 +350,6 @@ module.exports = {
   getDataCetak: getDataCetak,
   escHtml: escHtml,
   lampiran: lampiran,
+  urlPersyaratan: urlPersyaratan,
   kirimNotifikasi: kirimNotifikasi
 };

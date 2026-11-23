@@ -118,7 +118,7 @@
                             <input type="file" class="custom-file-input" id="file_ttd" accept=".pdf,.jpg,.jpeg,.png">
                             <label class="custom-file-label" for="file_ttd">Pilih File</label>
                         </div>
-                        <small class="text-muted">Setelah diupload, persetujuan prinsip beserta persyaratannya dikirim ke email pemohon dan permohonan lanjut ke tahap Verifikasi Persyaratan.</small>
+                        <small class="text-muted">Setelah diupload, persetujuan prinsip dikirim ke email pemohon beserta link untuk mengirim kelengkapan persyaratan. Verifikasi persyaratan dapat dilakukan setelah pemohon mengirim persyaratannya.</small>
                     </div>
                 </div>
             </div>
@@ -144,6 +144,10 @@
             <div class="form-group">
                 <label>Persyaratan Persetujuan Prinsip <span id="info-pp" class="text-muted"></span></label>
                 <div id="isi-persyaratan" class="border rounded p-3" style="background: #fafafa;"></div>
+            </div>
+            <div class="form-group">
+                <label>Kelengkapan dari Pemohon</label>
+                <div><a href="#" id="link-zip" class="btn btn-dark btn-sm"><i class="fas fa-file-archive"></i>&nbsp;&nbsp;<span></span></a></div>
             </div>
             <div class="form-group">
                 <label for="lanjut_persyaratan">Hasil Verifikasi</label>
@@ -219,18 +223,26 @@
         { "data": 'tim_teknis', "render": function (d) { return d ? esc(d).replace(/\n/g, '<br/>') : '-'; } },
         { "data": null, "className": 'text-center', "render": function (r) {
             if (r.tahap !== 'verifikasi_persyaratan') return '<span class="badge badge-info">Persetujuan Prinsip</span>';
+            // uploadPersyaratanAt kosong = pemohon belum (kembali) mengirim ZIP persyaratan
+            if (!r.uploadPersyaratanAt) {
+              return '<span class="badge badge-secondary">Menunggu Persyaratan Pemohon</span>' +
+                (r.keterangan_persyaratan ? '<br/><small class="text-danger">belum terpenuhi, menunggu kiriman ulang</small>' : '');
+            }
             return '<span class="badge badge-warning">Verifikasi Persyaratan</span>' +
-              (r.keterangan_persyaratan ? '<br/><small class="text-danger">belum terpenuhi</small>' : '');
+              '<br/><small class="text-muted">dikirim ' + moment(r.uploadPersyaratanAt).format('DD/MM/YYYY HH:mm') + '</small>';
         } },
         { "data": null, "render": function (r) {
             var aksi = '<div class="w-100-flex" style="justify-content: center;gap: 5px;">' +
               '<a href="' + rooturl + '/manajemen_perizinan/persetujuan_prinsip/detail/' + r.permohonan_id + '" class="btn btn-light" title="Detail Permohonan"><i class="fas fa-eye"></i></a>' +
               (r.file_ba ? '<a href="' + rooturl + '/manajemen_perizinan/peninjauan_lapangan/file/' + r.permohonan_id + '" target="_blank" class="btn btn-secondary" title="Lihat BA Peninjauan Lapangan TTD"><i class="fas fa-file-alt"></i></a>' : '');
-            // Persetujuan prinsip TTD sudah diupload -> tinggal verifikasi persyaratan
+            // Persetujuan prinsip TTD sudah diupload -> menunggu ZIP persyaratan dari pemohon, lalu verifikasi
             if (r.tahap === 'verifikasi_persyaratan') {
               return aksi +
                 '<a href="' + URL_TAHAP + '/file/' + r.permohonan_id + '" target="_blank" class="btn btn-success" title="Lihat Persetujuan Prinsip TTD"><i class="fas fa-file-signature"></i></a>' +
-                '<button type="button" class="btn btn-primary" title="Verifikasi Persyaratan" onclick="bukaPersyaratan(' + r.permohonan_id + ')"><i class="fas fa-clipboard-check"></i></button>' +
+                (r.file_persyaratan ? '<a href="' + URL_TAHAP + '/persyaratan/' + r.permohonan_id + '" class="btn btn-dark" title="Download Persyaratan dari Pemohon (ZIP)"><i class="fas fa-file-archive"></i></a>' : '') +
+                (r.uploadPersyaratanAt
+                  ? '<button type="button" class="btn btn-primary" title="Verifikasi Persyaratan" onclick="bukaPersyaratan(' + r.permohonan_id + ')"><i class="fas fa-clipboard-check"></i></button>'
+                  : '<button type="button" class="btn btn-primary" title="Menunggu pemohon mengirim persyaratan" disabled><i class="fas fa-clipboard-check"></i></button>') +
                 '</div>';
             }
             var ada = Number(r.ada_pp);
@@ -301,7 +313,7 @@
       var f = $('#file_ttd')[0].files[0];
       if (!f) return swal('Pilih file', 'File persetujuan prinsip yang sudah ditandatangani wajib dipilih', 'warning');
       const yakin = await swal({
-        title: 'Upload Persetujuan Prinsip', text: 'Persetujuan prinsip beserta persyaratannya akan dikirim ke email pemohon dan permohonan lanjut ke tahap Verifikasi Persyaratan. Lanjutkan?',
+        title: 'Upload Persetujuan Prinsip', text: 'Persetujuan prinsip akan dikirim ke email pemohon beserta link untuk mengirim kelengkapan persyaratan. Lanjutkan?',
         icon: 'warning', buttons: ['Tidak', 'Ya']
       });
       if (!yakin) return;
@@ -317,7 +329,7 @@
         contentType: false
       }).done(function () {
         $('#modalUpload').modal('hide');
-        swal('Berhasil', 'Persetujuan prinsip berhasil diupload, permohonan lanjut ke tahap Verifikasi Persyaratan', 'success');
+        swal('Berhasil', 'Persetujuan prinsip berhasil diupload dan dikirim ke email pemohon. Menunggu pemohon mengirim persyaratan.', 'success');
         data_table.ajax.reload();
       }).fail(function (xhr) {
         pesanGagal(xhr, 'Gagal mengupload persetujuan prinsip');
@@ -338,6 +350,7 @@
         $('#info-pp').text(pp.no_pp ? '(No. ' + pp.no_pp + ')' : '');
         // persyaratan = HTML CKEditor isian administrator
         $('#isi-persyaratan').html(pp.persyaratan || '<i class="text-muted">Tidak ada persyaratan</i>');
+        $('#link-zip').attr('href', URL_TAHAP + '/persyaratan/' + id).find('span').text(pp.nama_asli_persyaratan || 'Download ZIP');
         $('#lanjut_persyaratan').val('').trigger('change');
         $('#keterangan_persyaratan').val(pp.keterangan_persyaratan || '');
         $('#modalPersyaratan').modal('show');

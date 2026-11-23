@@ -658,6 +658,10 @@
                     } else {
                         html += '<a href="' + url + '" class="btn btn-info btn-sm" title="Lihat"><i class="fas fa-eye"></i></a>';
                     }
+                    // Persetujuan prinsip terbit -> pemohon mengirim ZIP kelengkapan persyaratan
+                    if (r.status === 'diajukan' && r.tahap === 'verifikasi_persyaratan') {
+                        html += '<a href="' + rooturl + '/perizinan/jaringan_utilitas/persyaratan/' + r.permohonan_id + '" class="btn btn-primary btn-sm" title="Lengkapi Persyaratan Persetujuan Prinsip"><i class="fas fa-file-upload"></i></a>';
+                    }
                     if (r.status === 'disetujui') {
                         html += '<a href="' + rooturl + '/perizinan/jaringan_utilitas/cetak_sk/' + r.permohonan_id + '" target="_blank" class="btn btn-success btn-sm" title="Cetak SK"><i class="fas fa-print"></i></a>';
                     }

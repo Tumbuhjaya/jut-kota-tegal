@@ -534,7 +534,8 @@ router.get('/persetujuan_prinsip/cetak/:id', cek_admin, async function (req, res
   res.render('content-backoffice/manajemen_perizinan/persetujuan_prinsip/cetak', data);
 });
 
-// Upload persetujuan prinsip bertanda tangan -> lanjut ke verifikasi persyaratan + email beserta persyaratannya
+// Upload persetujuan prinsip bertanda tangan -> lanjut ke verifikasi persyaratan + email berisi link
+// untuk pemohon mengirim ZIP persyaratan. Verifikasi baru bisa dilakukan setelah ZIP dikirim.
 router.post('/persetujuan_prinsip/upload/:id', cek_admin, tahapan.upload_ttd, async function (req, res) {
   var file = req.files && req.files.file && req.files.file[0];
   try {
@@ -547,11 +548,13 @@ router.post('/persetujuan_prinsip/upload/:id', cek_admin, tahapan.upload_ttd, as
       return gagal(res, 'Buat draft persetujuan prinsip terlebih dahulu', 400);
     }
     await tahapan.simpanTtd('pp', p.permohonan_id, file);
-    // persyaratan = HTML CKEditor isian administrator
+    var link = tahapan.urlPersyaratan(req, p.permohonan_id);
     tahapan.kirimNotifikasi(p, 'Persetujuan Prinsip',
-      '<p>Permohonan Anda telah mendapatkan Persetujuan Prinsip Nomor <b>' + tahapan.escHtml(pp.no_pp) + '</b> (terlampir).</p>' +
-      '<p>Untuk melanjutkan ke penerbitan izin, mohon penuhi persyaratan berikut:</p>' +
-      (pp.persyaratan || '<p>-</p>'),
+      '<p>Persetujuan prinsip atas permohonan Anda telah terbit, dengan nomor <b>' + tahapan.escHtml(pp.no_pp) + '</b> (terlampir).</p>' +
+      '<p>Persetujuan prinsip ini <b>&ldquo;BUKAN IZIN&rdquo;</b> dan pemohon dilarang melakukan kegiatan apapun sebelum ' +
+      'Izin Pemanfaatan Ruang Milik Jalan Kota diterbitkan.</p>' +
+      '<p>Silakan segera lengkapi persyaratan yang tertera pada persetujuan prinsip ini agar permohonan izin Anda dapat diproses lebih lanjut.</p>' +
+      '<p>Lengkapi syarat persetujuan prinsip melalui link di bawah ini:<br/><a href="' + link + '">' + link + '</a></p>',
       [tahapan.lampiran(file.filename, file.originalname)]);
     res.json({ status: 200, message: 'sukses', data: null });
   } catch (err) { gagal(res, err); }
@@ -566,12 +569,16 @@ router.post('/persetujuan_prinsip/verifikasi_persyaratan/:id', cek_admin, async 
     if (!lanjut && !b.keterangan) return gagal(res, 'Keterangan persyaratan yang belum dipenuhi wajib diisi', 400);
     var p = await ambilTahap(req, res, 'verifikasi_persyaratan');
     if (!p) return;
+    var pp = await tahapan.getPersetujuan(p.permohonan_id);
+    if (!pp || !pp.uploadPersyaratanAt) return gagal(res, 'Pemohon belum mengirim kelengkapan persyaratan', 400);
     await tahapan.simpanVerifikasiPersyaratan(p.permohonan_id, lanjut, b.keterangan, getUser(req).id_user);
     if (!lanjut) {
+      var link = tahapan.urlPersyaratan(req, p.permohonan_id);
       tahapan.kirimNotifikasi(p, 'Persyaratan Persetujuan Prinsip Belum Terpenuhi',
         '<p>Hasil verifikasi menunjukkan persyaratan persetujuan prinsip permohonan Anda <b>belum terpenuhi</b>.</p>' +
         '<p>Keterangan:<br/>' + tahapan.escHtml(b.keterangan).replace(/\n/g, '<br/>') + '</p>' +
-        '<p>Mohon segera melengkapi persyaratan tersebut.</p>');
+        '<p>Mohon segera melengkapi dan mengirim ulang persyaratan tersebut melalui link di bawah ini:<br/>' +
+        '<a href="' + link + '">' + link + '</a></p>');
     }
     res.json({ status: 200, message: 'sukses', data: null });
   } catch (err) { gagal(res, err); }
@@ -582,6 +589,15 @@ router.get('/persetujuan_prinsip/file/:id', cek_admin, async function (req, res)
     var pp = await tahapan.getPersetujuan(req.params.id);
     if (!pp) return res.status(404).send('Persetujuan prinsip tidak ditemukan');
     tahapan.kirimFile(res, pp.file_ttd, pp.nama_asli_ttd);
+  } catch (err) { gagal(res, err); }
+});
+
+// ZIP kelengkapan persyaratan yang dikirim pemohon
+router.get('/persetujuan_prinsip/persyaratan/:id', cek_admin, async function (req, res) {
+  try {
+    var pp = await tahapan.getPersetujuan(req.params.id);
+    if (!pp || !pp.file_persyaratan) return res.status(404).send('Pemohon belum mengirim persyaratan');
+    tahapan.kirimFile(res, pp.file_persyaratan, pp.nama_asli_persyaratan);
   } catch (err) { gagal(res, err); }
 });
 
