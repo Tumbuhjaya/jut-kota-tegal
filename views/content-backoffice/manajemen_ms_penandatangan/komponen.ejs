@@ -1,0 +1,64 @@
+<div class="section-body">
+  <div class="row">
+    <div class="col-12 col-lg-12 col-xl-12">
+      <div class="card">
+        <div class="card-body">
+          <div class="form-group row mb-0">
+            <label class="col-sm-2 col-form-label">Nama</label>
+            <div class="col-sm-10">
+              <input type="text" class="form-control" name="nama" id="nama" maxlength="150">
+            </div>
+          </div>
+
+          <hr>
+
+          <div class="form-group row mb-0">
+            <label class="col-sm-2 col-form-label">NIP</label>
+            <div class="col-sm-10">
+              <input type="text" class="form-control" name="nip" id="nip" maxlength="30">
+            </div>
+          </div>
+
+          <hr>
+
+          <div class="form-group row mb-0">
+            <label class="col-sm-2 col-form-label">Jabatan</label>
+            <div class="col-sm-10">
+              <input type="text" class="form-control" name="jabatan" id="jabatan" maxlength="255">
+              <small class="form-text text-muted">Ditulis di atas nama pada cetakan, mis. KEPALA DINAS PEKERJAAN UMUM DAN PENATAAN RUANG KOTA TEGAL</small>
+            </div>
+          </div>
+
+          <hr>
+
+          <div class="form-group row mb-0">
+            <label class="col-sm-2 col-form-label">Golongan</label>
+            <div class="col-sm-10">
+              <input type="text" class="form-control" name="pangkat" id="pangkat" maxlength="100">
+            </div>
+          </div>
+
+          <hr>
+
+          <div class="form-group row mb-0">
+            <label class="col-sm-2 col-form-label">Status</label>
+            <div class="col-sm-10">
+              <select name="aktif" id="aktif" class="custom-select">
+                <option value="1">Aktif (bisa dipilih saat verifikasi permohonan izin)</option>
+                <option value="0">Tidak Aktif</option>
+              </select>
+            </div>
+          </div>
+
+          <hr>
+
+          <div class="form-group row mb-0">
+            <div class="col-sm-10 offset-sm-2" id="button_submit">
+              <button class="btn btn-primary btn-lg" onclick="submit()"><i class="fas fa-save"></i> Simpan</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

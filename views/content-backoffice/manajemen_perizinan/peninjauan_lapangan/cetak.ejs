@@ -1,6 +1,7 @@
 <%
   var BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
   var HARI = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', "Jum'at", 'Sabtu'];
+  var SATUAN = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh', 'sebelas'];
   function tanggal(t) {
     if (!t) return '-';
     var d = new Date(t);
@@ -10,8 +11,34 @@
     var x = Number(n || 0).toFixed(desimal || 0).split('.');
     return x[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.') + (x[1] && Number(x[1]) ? ',' + x[1] : '');
   }
+  function terbilang(n) {
+    n = Math.floor(Math.abs(Number(n) || 0));
+    if (n < 12) return SATUAN[n];
+    if (n < 20) return terbilang(n - 10) + ' belas';
+    if (n < 100) return terbilang(Math.floor(n / 10)) + ' puluh' + (n % 10 ? ' ' + terbilang(n % 10) : '');
+    if (n < 200) return 'seratus' + (n % 100 ? ' ' + terbilang(n % 100) : '');
+    if (n < 1000) return terbilang(Math.floor(n / 100)) + ' ratus' + (n % 100 ? ' ' + terbilang(n % 100) : '');
+    if (n < 2000) return 'seribu' + (n % 1000 ? ' ' + terbilang(n % 1000) : '');
+    return terbilang(Math.floor(n / 1000)) + ' ribu' + (n % 1000 ? ' ' + terbilang(n % 1000) : '');
+  }
+  function kapital(t) { return String(t).replace(/\b\w/g, function (c) { return c.toUpperCase(); }); }
+  function dmy(d) { return ('0' + d.getDate()).slice(-2) + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + d.getFullYear(); }
+
   var p = permohonan, k = konfig, b = peninjauan;
-  var tim = String(b.tim_teknis || '').split(/\r?\n/).map(function (t) { return t.trim(); }).filter(Boolean);
+  // Tim teknis dipilih saat verifikasi permohonan; data lama memakai isian teks tim_teknis pada BA
+  var tim = tim_teknis.length
+    ? tim_teknis.map(function (t) { return { nama: t.fullname || t.username, instansi: t.instansi || '' }; })
+    : String(b.tim_teknis || '').split(/\r?\n/).map(function (t) { return { nama: t.trim(), instansi: '' }; }).filter(function (t) { return t.nama; });
+  var no_surat = p.no_surat_permohonan || b.no_surat_permohonan;
+  var tgl = b.tanggal_ba ? new Date(b.tanggal_ba) : null;
+
+  // Lampiran: 6 slot foto (2 kolom x 3 baris), diisi sesuai urutan
+  var slot = [null, null, null, null, null, null];
+  (b.foto || []).forEach(function (f) {
+    var i = Number(f.urutan) - 1;
+    if (i >= 0 && i < slot.length) slot[i] = f; else slot.push(f);
+  });
+  if (slot.length % 2) slot.push(null);
 %>
 <!DOCTYPE html>
 <html lang="id">
@@ -20,40 +47,59 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>BA Peninjauan Lapangan <%= b.no_ba %></title>
   <style>
-    @page { size: A4; margin: 15mm 15mm 20mm 20mm; }
+    @page { size: A4 portrait; margin: 0; }
     * { box-sizing: border-box; }
-    body { font-family: "Times New Roman", Times, serif; font-size: 12pt; color: #000; margin: 0; background: #e5e5e5; }
-    .kertas { width: 210mm; min-height: 297mm; margin: 10mm auto; padding: 15mm 15mm 20mm 20mm; background: #fff; box-shadow: 0 0 6px rgba(0,0,0,.2); }
-    .kop { display: flex; align-items: center; border-bottom: 3px double #000; padding-bottom: 6px; }
-    .kop img { width: 75px; height: auto; margin-right: 12px; }
-    .kop .teks { flex: 1; text-align: center; line-height: 1.25; }
-    .kop .pemerintah { font-size: 14pt; font-weight: bold; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 11.5pt; color: #000; background: #e5e5e5;
+           -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+    /* 1 .kertas = 1 lembar A4 */
+    .kertas { width: 210mm; height: 297mm; margin: 10mm auto; padding: 15mm 18mm 15mm 22mm;
+              background: #fff; box-shadow: 0 0 6px rgba(0,0,0,.25); overflow: hidden; }
+
+    /* Kop surat: garis tebal + garis tipis */
+    .kop { display: flex; align-items: center; padding-bottom: 5px; border-bottom: 3px solid #000; position: relative; }
+    .kop::after { content: ''; position: absolute; left: 0; right: 0; bottom: -6px; border-bottom: 1px solid #000; }
+    .kop img { width: 20mm; height: auto; }
+    .kop .teks { flex: 1; text-align: center; line-height: 1.3; padding-right: 5mm; }
+    .kop .pemerintah { font-size: 14pt; }
     .kop .instansi { font-size: 16pt; font-weight: bold; }
-    .kop .alamat { font-size: 10pt; }
-    .judul { text-align: center; margin: 18px 0 14px; line-height: 1.4; }
-    .judul .utama { font-weight: bold; text-decoration: underline; font-size: 13pt; }
-    p { margin: 6px 0; text-align: justify; line-height: 1.5; }
-    table.data td { padding: 2px 4px; vertical-align: top; }
-    table.data td:first-child { width: 190px; }
-    table.ruas { width: 100%; border-collapse: collapse; font-size: 10pt; margin: 8px 0; }
-    table.ruas th, table.ruas td { border: 1px solid #000; padding: 4px 5px; }
-    table.ruas th { background: #f0f0f0; text-align: center; }
-    .c { text-align: center; } .r { text-align: right; }
-    .hasil { line-height: 1.5; text-align: justify; }
-    .foto { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
-    .foto div { width: calc(50% - 4px); text-align: center; font-size: 10pt; page-break-inside: avoid; }
-    .foto img { width: 100%; height: 200px; object-fit: cover; border: 1px solid #000; }
-    .ttd { display: flex; justify-content: space-between; margin-top: 24px; page-break-inside: avoid; }
-    .ttd > div { width: 48%; text-align: center; line-height: 1.4; }
-    .ttd ol { text-align: left; margin: 6px 0 0 18px; padding: 0; }
-    .ttd ol li { margin-bottom: 28px; }
-    .ttd .nama { margin-top: 70px; font-weight: bold; text-decoration: underline; }
-    .aksi { text-align: center; margin: 10px 0 0; }
+    .kop .alamat { font-size: 11pt; }
+
+    .judul { text-align: center; margin: 9mm 0 6mm; line-height: 1.4; }
+    .judul .utama { font-weight: bold; font-size: 12.5pt; }
+    .judul .nomor { font-size: 11pt; }
+
+    p { margin: 0; text-align: justify; line-height: 1.35; }
+    .hasil { line-height: 1.35; text-align: justify; }
+    .hasil p { margin: 0; }
+    .hasil ol, .hasil ul { margin: 0; padding-left: 7mm; }
+    .hasil ol { list-style-type: lower-alpha; }
+
+    /* Dihadiri oleh */
+    .hadir { width: 100%; border-collapse: collapse; margin-top: 6mm; line-height: 1.3; page-break-inside: avoid; }
+    .hadir td { padding: 0; vertical-align: bottom; }
+    .hadir tr.isi td { height: 9.5mm; padding-bottom: 1mm; }
+    .hadir .no { width: 7mm; }
+    .hadir .nama { width: 66mm; }
+    .hadir .instansi { width: 60mm; }
+    .hadir .ttd { padding-left: 6mm; white-space: nowrap; }
+    .hadir .ttd span { display: inline-block; width: 30mm; border-bottom: 1px dotted #000; }
+
+    /* Lampiran dokumentasi */
+    .lampiran-judul { text-align: center; line-height: 1.45; margin: 5mm 0 4mm; }
+    table.foto { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    table.foto td { border: 1px solid #000; width: 50%; height: 74mm; padding: 4mm; text-align: center; vertical-align: middle; }
+    table.foto img { max-width: 100%; max-height: 66mm; object-fit: contain; display: block; margin: 0 auto; }
+
+    .aksi { text-align: center; padding: 10px 0 0; }
     .aksi button { font-size: 12pt; padding: 8px 24px; cursor: pointer; }
+
     @media print {
       body { background: #fff; }
-      .kertas { width: auto; min-height: 0; margin: 0; padding: 0; box-shadow: none; }
       .aksi { display: none; }
+      .kertas { margin: 0; box-shadow: none; page-break-after: always; break-after: page; }
+      .kertas:last-child { page-break-after: auto; break-after: auto; }
     }
   </style>
 </head>
@@ -62,9 +108,10 @@
     <button type="button" onclick="window.print()">Cetak / Simpan PDF</button>
   </div>
 
+  <!-- ===================== HALAMAN 1 : BERITA ACARA ===================== -->
   <div class="kertas">
     <div class="kop">
-      <img src="<%= k.logo %>" alt="" onerror="this.style.display='none'">
+      <img src="<%= k.logo %>" alt="" onerror="this.style.visibility='hidden'">
       <div class="teks">
         <div class="pemerintah"><%= k.pemerintah %></div>
         <div class="instansi"><%= k.instansi %></div>
@@ -75,86 +122,75 @@
 
     <div class="judul">
       <div class="utama">BERITA ACARA PENINJAUAN LAPANGAN</div>
-      <div><strong>PERMOHONAN IZIN PENEMPATAN JARINGAN UTILITAS</strong></div>
-      <div>Nomor : <%= b.no_ba || '-' %></div>
+      <div class="nomor">Nomor : <%= b.no_ba || '-' %></div>
     </div>
 
-    <p>Pada hari ini <strong><%= b.tanggal_ba ? HARI[new Date(b.tanggal_ba).getDay()] : '..........' %></strong>
-      tanggal <strong><%= tanggal(b.tanggal_ba) %></strong>, Tim Teknis telah melaksanakan
-      peninjauan lapangan atas surat permohonan Nomor <strong><%= b.no_surat_permohonan || '..........' %></strong>
-      tanggal <strong><%= tanggal(b.tanggal_surat_permohonan) %></strong> yang diajukan oleh:</p>
-    <table class="data">
-      <tr><td>Nama Pemohon</td><td>:</td><td><%= p.nama_pemohon || '-' %></td></tr>
-      <tr><td>Jabatan</td><td>:</td><td><%= p.jabatan_pemohon || '-' %></td></tr>
-      <tr><td>Vendor / Pelaksana</td><td>:</td><td><%= p.vendor ? (p.vendor.fullname || p.vendor.username) : '-' %></td></tr>
-      <tr><td>Pemilik Jaringan (Provider)</td><td>:</td><td><%= p.provider || '-' %></td></tr>
-    </table>
+    <p>Pada hari ini <%= tgl ? HARI[tgl.getDay()] : '..........' %>
+      tanggal <%= tgl ? kapital(terbilang(tgl.getDate())) : '..........' %>
+      bulan <%= tgl ? BULAN[tgl.getMonth()] : '..........' %>
+      tahun <%= tgl ? terbilang(tgl.getFullYear()) : '..........' %>
+      (<%= tgl ? dmy(tgl) : '..........' %>) telah dilaksanakan peninjauan lapangan atas permohonan izin
+      Pembangunan/Penempatan Bangunan dan Jaringan Utilitas berdasarkan surat Nomor :
+      <%= no_surat || '..........' %> tanggal : <%= tanggal(b.tanggal_surat_permohonan) %>
+      Perihal Permohonan Izin Pembangunan/Penempatan Bangunan dan Jaringan Utilitas dengan hasil sebagai berikut:</p>
 
-    <p>dengan lokasi rencana penempatan jaringan utilitas sebagai berikut:</p>
-    <table class="ruas">
-      <thead>
-        <tr>
-          <th>No.</th>
-          <th>Ruas Jalan</th>
-          <th>No. Ruas</th>
-          <th>Tiang (Unit)</th>
-          <th>Kabel (m)</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% ruas.forEach(function (r, i) { %>
-        <tr>
-          <td class="c"><%= i + 1 %></td>
-          <td><%= r.label_ruas %></td>
-          <td class="c"><%= r.no || '-' %></td>
-          <td class="c"><%= angka(r.jml_t_k30cm) %></td>
-          <td class="c"><%= angka(r.panjang_kabel, 2) %></td>
-        </tr>
-        <% }) %>
-      </tbody>
-      <tfoot>
-        <tr>
-          <th colspan="3" class="r">Total</th>
-          <th><%= angka(total.tiang) %></th>
-          <th><%= angka(total.kabel, 2) %></th>
-        </tr>
-      </tfoot>
-    </table>
-
-    <p><strong>Hasil peninjauan lapangan:</strong></p>
     <% /* hasil = HTML dari CKEditor yang diisi administrator */ %>
     <div class="hasil"><%- b.hasil || '<p>-</p>' %></div>
 
-    <% if (b.foto && b.foto.length) { %>
-    <p><strong>Dokumentasi:</strong></p>
-    <div class="foto">
-      <% b.foto.forEach(function (f) { %>
-      <div>
-        <img src="/manajemen_perizinan/peninjauan_lapangan/foto/<%= p.permohonan_id %>/<%= f.urutan %>?v=<%= f.permohonan_peninjauan_foto_id %>" alt="">
-        Foto <%= f.urutan %>
-      </div>
+    <p>Demikian Berita Acara ini dibuat untuk digunakan sebagaimana mestinya.</p>
+
+    <table class="hadir">
+      <tr><td colspan="4">Dihadiri oleh :</td></tr>
+      <tr><td colspan="4">Tim Teknis :</td></tr>
+      <% (tim.length ? tim : [{ nama: '.........................................', instansi: '' }]).forEach(function (t, i) { %>
+      <tr class="isi">
+        <td class="no"><%= i + 1 %>.</td>
+        <td class="nama"><%= t.nama %></td>
+        <td class="instansi"><%= t.instansi %></td>
+        <td class="ttd"><%= i + 1 %>. <span></span></td>
+      </tr>
       <% }) %>
-    </div>
-    <% } %>
 
-    <p>Demikian berita acara ini dibuat untuk dipergunakan sebagaimana mestinya.</p>
+      <tr><td colspan="4">Pemohon :</td></tr>
+      <tr class="isi">
+        <td class="no">1.</td>
+        <td class="nama"><%= p.nama_pemohon || '.........................................' %></td>
+        <td class="instansi"><%= p.provider || '' %></td>
+        <td class="ttd">1. <span></span></td>
+      </tr>
 
-    <div class="ttd">
-      <div>
-        <div>Pemohon,</div>
-        <div class="nama"><%= p.nama_pemohon || '.........................................' %></div>
-        <div><%= p.jabatan_pemohon || '' %></div>
-      </div>
-      <div>
-        <div><%= k.tempat %>, <%= tanggal(b.tanggal_ba) %></div>
-        <div>Tim Teknis,</div>
-        <ol>
-          <% (tim.length ? tim : ['.........................................']).forEach(function (t) { %>
-          <li><%= t %> &nbsp; ....................</li>
-          <% }) %>
-        </ol>
-      </div>
+      <tr><td colspan="4">Mengetahui :</td></tr>
+      <tr class="isi">
+        <td class="no">1.</td>
+        <td class="nama"><%= k.nama_ttd %></td>
+        <td class="instansi"><%= k.jabatan_ttd %></td>
+        <td class="ttd">1. <span></span></td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- ===================== HALAMAN 2 : LAMPIRAN ===================== -->
+  <div class="kertas">
+    <div class="lampiran-judul">
+      <div>LAMPIRAN</div>
+      <div>DOKUMENTASI KEGIATAN PENINJAUAN LAPANGAN</div>
+      <div>Permohonan Izin Pembangunan/Penempatan Bangunan dan Jaringan Utilitas</div>
+      <div>Nomor : <%= b.no_ba || '-' %></div>
     </div>
+
+    <table class="foto">
+      <% for (var r = 0; r < slot.length; r += 2) { %>
+      <tr>
+        <% [slot[r], slot[r + 1]].forEach(function (f) { %>
+        <td>
+          <% if (f) { %>
+          <img src="/manajemen_perizinan/peninjauan_lapangan/foto/<%= p.permohonan_id %>/<%= f.urutan %>?v=<%= f.permohonan_peninjauan_foto_id %>" alt="Foto <%= f.urutan %>">
+          <% } %>
+        </td>
+        <% }) %>
+      </tr>
+      <% } %>
+    </table>
   </div>
 </body>
 </html>

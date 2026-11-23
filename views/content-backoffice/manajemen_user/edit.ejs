@@ -30,6 +30,16 @@
 <script type="text/javascript">
   $('#div_pass').empty()
 
+  // Tampilkan #konten-admin-timteknis hanya jika role (is_admin) bernilai 1 atau 4
+  function toggleKontenAdminTimteknis() {
+    var role = String($('#is_admin').val() || '');
+    $('#konten-admin-timteknis').toggle(role === '1' || role === '4');
+  }
+  $(function () {
+    toggleKontenAdminTimteknis();
+    $('#is_admin').on('change', toggleKontenAdminTimteknis);
+  });
+
   function myFunction() {
     $("#iconne").toggleClass("fa fa-eye-slash fa fa-eye");
     var x = document.getElementById("pwd");
@@ -64,6 +74,7 @@
           }
         }
       }
+      toggleKontenAdminTimteknis()
     })
   }
   async function submit() {
@@ -104,7 +115,7 @@
         $('#button_submit').append('<button class="btn btn-primary btn-embossed" disabled>Simpan</button>')
         let formData = new FormData();    
         // nama kolom db
-        let arr = ['username', 'pwd', 'fullname', 'NIP', 'email', 'telp', 'is_admin',]
+        let arr = ['username', 'pwd', 'fullname', 'NIP', 'instansi', 'email', 'telp', 'is_admin',]
         
         formData.append('id_user', user.id_user);
 

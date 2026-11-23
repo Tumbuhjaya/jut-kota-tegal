@@ -49,6 +49,9 @@ async function cekRoleLogin(req, user) {
   }
   if (loginVendor && !isVendor) return 'Akun ini bukan akun vendor';
   if (!loginVendor && isVendor) return 'Akun vendor harus login melalui tab Vendor';
+  // Akun hasil daftar mandiri wajib diverifikasi admin sebelum bisa dipakai
+  if (user.status_verifikasi === 'menunggu') return 'Akun Anda belum diverifikasi oleh administrator';
+  if (user.status_verifikasi === 'ditolak') return 'Pendaftaran akun ditolak' + (user.keterangan_verifikasi ? ': ' + user.keterangan_verifikasi : '');
   return null;
 }
 

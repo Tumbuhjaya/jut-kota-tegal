@@ -154,6 +154,15 @@
           </div>
         </div>
 
+        <div class="row" id="wrap_tahap" style="display: none;">
+          <div class="col-12">
+            <div class="alert alert-info">
+              Permohonan sedang di <b id="tahap_nama"></b>. Setujui / revisi / tolak dilakukan di halaman tahap tersebut.
+              <a href="#" id="tahap_link" class="btn btn-light btn-sm ml-2">Buka Halaman Tahap</a>
+            </div>
+          </div>
+        </div>
+
         <div class="row" id="wrap_proses" style="display: none;">
           <div class="col-12">
             <div class="card">
@@ -305,9 +314,11 @@
     $('html, body').animate({ scrollTop: $('#map').offset().top - 100 }, 300);
   }
 
+  // Zoom ke hasil digitasi (tiang/kabel); garis ruas bisa sepanjang jalan, jadi hanya dipakai bila belum ada digitasi
   function zoomSemua() {
-    var g = L.featureGroup(ruasLayer.getLayers().concat(digitasiLayer.getLayers()));
-    if (g.getLayers().length) map.fitBounds(g.getBounds(), { padding: [30, 30], maxZoom: 19 });
+    var g = digitasiLayer.getLayers().length ? digitasiLayer : ruasLayer;
+    map.invalidateSize();
+    if (g.getLayers().length) map.fitBounds(g.getBounds(), { padding: [40, 40], maxZoom: 19 });
   }
 
   // ---------------- detail ----------------
@@ -375,10 +386,21 @@
       '<th class="text-right">' + rupiah(t.total) + '</th><th></th></tr>');
 
     $('#btn_cetak').attr('href', rooturl + '/manajemen_perizinan/cetak_sk/' + ID_PERMOHONAN).toggle(p.status === 'disetujui');
-    $('#btn_edit').attr('href', rooturl + '/manajemen_perizinan/edit/' + ID_PERMOHONAN).toggle(p.status !== 'disetujui');
+    $('#btn_edit').attr('href', rooturl + '/manajemen_perizinan/edit/' + ID_PERMOHONAN).toggle(['disetujui', 'ditolak'].indexOf(p.status) === -1);
     // Permohonan diajukan baru diproses (SK) setelah melewati tahap verifikasi persyaratan
     var penerbitan = p.status === 'diajukan' && p.tahap === 'penerbitan_izin';
-    $('#wrap_proses').toggle(['disetujui', 'ditolak'].indexOf(p.status) !== -1 || penerbitan);
+    $('#wrap_proses').toggle(p.status === 'disetujui' || penerbitan);
+    // Tahap sebelum penerbitan izin diproses di halaman masing-masing tahap
+    var HALAMAN_TAHAP = {
+      verifikasi: '/manajemen_perizinan/permohonan/verifikasi/' + ID_PERMOHONAN,
+      peninjauan_lapangan: '/manajemen_perizinan/peninjauan_lapangan/detail/' + ID_PERMOHONAN,
+      persetujuan_prinsip: '/manajemen_perizinan/persetujuan_prinsip/detail/' + ID_PERMOHONAN,
+      verifikasi_persyaratan: '/manajemen_perizinan/persetujuan_prinsip/detail/' + ID_PERMOHONAN
+    };
+    var halamanTahap = p.status === 'diajukan' && HALAMAN_TAHAP[p.tahap];
+    $('#wrap_tahap').toggle(!!halamanTahap);
+    $('#tahap_nama').text('Tahap ' + (TAHAP[p.tahap] || p.tahap));
+    $('#tahap_link').attr('href', halamanTahap ? rooturl + halamanTahap : '#');
     $('#no_sk').val(p.no_sk || '');
     $('#tanggal_sk').val(p.tanggal_sk ? moment(p.tanggal_sk).format('YYYY-MM-DD') : '');
     $('#keterangan').val(p.keterangan || '');

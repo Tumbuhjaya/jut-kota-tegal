@@ -26,9 +26,13 @@
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-12">
-                                    <h5><i class="fas fa-map-marked-alt" style="font-size: 26px;"></i>&nbsp;&nbsp;PETA DIGITASI RUAS JALAN</h5>
+                                    <h5><i class="fas fa-map-marked-alt" style="font-size: 24px;"></i>&nbsp;&nbsp;PETA DIGITASI RUAS JALAN</h5>
                                     <hr>
                                     <div id="map" class="w-100" style="height: 500px;background-color: whitesmoke;"></div>
+                                    <div class="mt-2">
+                                        <span class="badge badge-primary">Tiang</span>
+                                        <span class="badge badge-danger">Kabel</span>
+                                    </div>
                                 </div>
                             </div>
                             <div class="row mt-5">
@@ -80,7 +84,7 @@
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-12">
-                                    <h5><i class="fas fa-user" style="font-size: 26px;"></i>&nbsp;&nbsp;PEMOHON / VENDOR</h5>
+                                    <h5><i class="fas fa-user" style="font-size: 24px;"></i>&nbsp;&nbsp;PEMOHON / VENDOR</h5>
                                     <hr>
                                 </div>
                             </div>
@@ -127,13 +131,67 @@
             </div>
 
             <div class="row">
+                <div class="col-12 col-lg-12 col-xl-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-12">
+                                    <h5><i class="fas fa-building" style="font-size: 24px;"></i>&nbsp;&nbsp;INFORMASI PERUSAHAAN</h5>
+                                    <hr>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="alert alert-light mb-3" id="info-perusahaan-kosong" style="display: none;">Provider pada permohonan ini belum terhubung ke data perusahaan.</div>
+
+                                    <div class="form-group mb-0">
+                                        <label for="d_nama_perusahaan">Nama Perusahaan</label>
+                                        <input type="text" class="form-control" id="d_nama_perusahaan" readonly>
+                                    </div>
+
+                                    <hr>
+
+                                    <div class="form-group mb-0">
+                                        <label for="d_provider_perusahaan">Provider</label>
+                                        <input type="text" class="form-control" id="d_provider_perusahaan" readonly>
+                                    </div>
+
+                                    <hr>
+
+                                    <div class="form-group mb-0">
+                                        <label for="d_alamat_perusahaan">Alamat</label>
+                                        <textarea class="form-control" id="d_alamat_perusahaan" rows="2" style="height: auto;" readonly></textarea>
+                                    </div>
+
+                                    <hr>
+
+                                    <div class="form-group mb-0">
+                                        <label for="d_telp_perusahaan">No. Telepon</label>
+                                        <input type="text" class="form-control" id="d_telp_perusahaan" readonly>
+                                    </div>
+
+                                    <hr>
+
+                                    <div class="form-group mb-0">
+                                        <label for="d_email_perusahaan">Email</label>
+                                        <input type="text" class="form-control" id="d_email_perusahaan" readonly>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
                 <% SYARAT.forEach(function (s) { %>
                 <div class="col-12 col-lg-6 col-xl-6">
                     <div class="card">
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-12">
-                                    <h5><i class="fas fa-th-list" style="font-size: 26px;"></i>&nbsp;&nbsp;<%= s.judul %></h5>
+                                    <h5><i class="fas fa-th-list" style="font-size: 20px;"></i>&nbsp;&nbsp;<%= s.judul %></h5>
                                     <hr>
                                 </div>
                             </div>
@@ -161,7 +219,7 @@
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-12">
-                                    <h5><i class="fas fa-clipboard-check" style="font-size: 26px;"></i>&nbsp;&nbsp;VERIFIKASI</h5>
+                                    <h5><i class="fas fa-clipboard-check" style="font-size: 24px;"></i>&nbsp;&nbsp;VERIFIKASI PERMOHONAN IZIN</h5>
                                     <hr>
                                 </div>
                             </div>
@@ -186,8 +244,30 @@
                                         <textarea id="keterangan" class="form-control" rows="4" style="height: auto;"></textarea>
                                     </div>
 
+                                    <div id="konten-tim-teknis">
+                                      <div class="form-group">
+                                        <label for="no_surat_permohonan">Nomor Surat Permohonan</label>
+                                        <input type="text" class="form-control" id="no_surat_permohonan" maxlength="100">
+                                      </div>
+
+                                      <div class="form-group">
+                                          <label for="tim_teknis">Tim Teknis</label>
+                                          <select id="tim_teknis" class="form-control" multiple="multiple" style="width: 100%;"></select>
+                                          <small class="form-text text-muted">Daftar diambil dari pengguna dengan role Tim Teknis (menu Data Pengguna)</small>
+                                      </div>
+
+                                      <div class="form-group">
+                                          <label for="penandatangan_id">Penandatangan</label>
+                                          <select id="penandatangan_id" class="custom-select">
+                                            <option value="">-- Pilih --</option>
+                                          </select>
+                                          <small class="form-text text-muted">Dipakai pada cetak BA Peninjauan Lapangan, Persetujuan Prinsip &amp; SK. Kelola di menu <a href="/manajemen_master/penandatangan" target="_blank">Master Penandatangan</a></small>
+                                      </div>
+                                    </div>
+                                    
+
                                     <hr>
-                                    <button type="button" class="btn btn-primary btn-lg" id="button_submit" onclick="submit()">Submit</button>
+                                    <button type="button" class="btn btn-primary btn-lg" id="button_submit" onclick="submit()"><i class="fas fa-save"></i>&nbsp;&nbsp;Simpan</button>
                                 </div>
                             </div>
                         </div>
@@ -228,7 +308,6 @@
     // ---------------- peta ----------------
     var map = L.map('map', { center: [-6.8694, 109.1402], zoom: 13, maxZoom: 22 });
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 22, maxNativeZoom: 19 }).addTo(map);
-    var ruasLayer = L.featureGroup().addTo(map);
     var digitasiLayer = L.featureGroup().addTo(map);
     var layerPerRuas = {}; // permohonan_ruas_id -> [layer]
 
@@ -248,30 +327,16 @@
       });
     }
 
-    // Garis ruas jalan dari master_retribusi (topojson /peta/sk_jalan)
-    function petaRuas(ruasIds) {
-      if (!ruasIds.length) return $.Deferred().resolve();
-      return $.getJSON(rooturl + '/peta/sk_jalan').then(function (topo) {
-        Object.keys(topo.objects).forEach(function (k) {
-          L.geoJSON(topojson.feature(topo, topo.objects[k]), {
-            filter: function (f) { return ruasIds.indexOf(Number(f.properties.id)) !== -1; },
-            style: { color: '#f7ca18', weight: 7, opacity: 0.9 },
-            onEachFeature: function (f, layer) { layer.bindTooltip(f.properties.nm_ruas || ''); }
-          }).eachLayer(function (l) { ruasLayer.addLayer(l); });
-        });
-        ruasLayer.bringToBack();
-      });
-    }
-
     function zoomRuas(id) {
       var g = L.featureGroup(layerPerRuas[id] || []);
       if (g.getLayers().length) map.fitBounds(g.getBounds(), { padding: [30, 30], maxZoom: 19 });
       $('html, body').animate({ scrollTop: $('#map').offset().top - 100 }, 300);
     }
 
+    // Peta hanya menampilkan hasil digitasi pemohon (garis ruas SK tidak ditampilkan karena posisinya tidak akurat)
     function zoomSemua() {
-      var g = L.featureGroup(ruasLayer.getLayers().concat(digitasiLayer.getLayers()));
-      if (g.getLayers().length) map.fitBounds(g.getBounds(), { padding: [30, 30], maxZoom: 19 });
+      map.invalidateSize();
+      if (digitasiLayer.getLayers().length) map.fitBounds(digitasiLayer.getBounds(), { padding: [40, 40], maxZoom: 19 });
     }
 
     // ---------------- data ----------------
@@ -282,6 +347,15 @@
       $('#d_telp').val(p.telp_pemohon || '');
       $('#d_email').val(p.email_pemohon || '');
       $('#d_provider').val((p.vendor ? (p.vendor.fullname || p.vendor.username) : '-') + ' / ' + (p.provider || '-'));
+
+      // Perusahaan pemilik provider yang dipilih
+      var ps = p.perusahaan || {};
+      $('#info-perusahaan-kosong').toggle(!p.perusahaan);
+      $('#d_nama_perusahaan').val(ps.nama_perusahaan || '-');
+      $('#d_provider_perusahaan').val(p.provider || '-');
+      $('#d_alamat_perusahaan').val(ps.alamat || '-');
+      $('#d_telp_perusahaan').val(ps.no_telepon || '-');
+      $('#d_email_perusahaan').val(ps.email || '-');
 
       data.dokumen.forEach(function (d) {
         $('.dokumen[data-jenis="' + d.jenis_dokumen + '"]').html(
@@ -327,6 +401,11 @@
       var STATUS_FORM = { revisi: 'revisi', ditolak: 'tolak' };
       $('#status_verifikasi').val(bisa ? 'diajukan' : (STATUS_FORM[p.status] || 'lolos')).prop('disabled', !bisa).trigger('change');
       $('#keterangan').val(STATUS_FORM[p.status] ? (p.keterangan || '') : '').prop('disabled', !bisa);
+      $('#no_surat_permohonan').val(p.no_surat_permohonan || '').prop('disabled', !bisa);
+      timTerpilih = data.tim_teknis.map(function (t) { return String(t.id_user); });
+      $('#tim_teknis').val(timTerpilih).trigger('change').prop('disabled', !bisa);
+      ttdTerpilih = p.penandatangan_id ? String(p.penandatangan_id) : '';
+      $('#penandatangan_id').val(ttdTerpilih).prop('disabled', !bisa);
       $('#button_submit').prop('disabled', !bisa);
       if (!bisa) {
         $('#info-tahap').show().text(p.status === 'revisi'
@@ -339,10 +418,9 @@
     function muat() {
       return $.get(rooturl + '/manajemen_perizinan/data/' + ID_PERMOHONAN).done(function (res) {
         tampil(res.data);
-        ruasLayer.clearLayers(); digitasiLayer.clearLayers(); layerPerRuas = {};
+        digitasiLayer.clearLayers(); layerPerRuas = {};
         petaDigitasi(res.data.digitasi);
-        var ruasIds = res.data.ruas.filter(function (r) { return r.ruas_id && !Number(r.luar_ruas); }).map(function (r) { return Number(r.ruas_id); });
-        petaRuas(ruasIds).always(zoomSemua);
+        zoomSemua();
       }).fail(function () {
         swal('Gagal', 'Gagal memuat data permohonan', 'error');
       });
@@ -354,16 +432,40 @@
       $('#label-keterangan').text(v == 'tolak' ? 'Alasan Penolakan' : 'Keterangan Revisi');
     });
 
+    // Pilihan tim teknis & penandatangan bisa termuat setelah data permohonan -> simpan pilihan tersimpan
+    var timTerpilih = [];
+    var ttdTerpilih = '';
+    $.get(rooturl + '/manajemen_perizinan/tim_teknis').done(function (res) {
+      res.data.forEach(function (u) {
+        $('#tim_teknis').append($('<option>').val(u.id_user).text((u.fullname || u.username) + (u.NIP ? ' (' + u.NIP + ')' : '') + (u.instansi ? ' - ' + u.instansi : '')));
+      });
+      $('#tim_teknis').val(timTerpilih).select2({ placeholder: '-- Pilih Tim Teknis --', width: '100%' });
+    });
+    $.get(rooturl + '/penandatangan/list', { aktif: 1 }).done(function (res) {
+      res.data.forEach(function (t) {
+        $('#penandatangan_id').append($('<option>').val(t.penandatangan_id).text(t.nama + ' - ' + t.jabatan));
+      });
+      // Tanpa pilihan tersimpan: otomatis pilih jika hanya ada satu penandatangan aktif
+      $('#penandatangan_id').val(ttdTerpilih || (res.data.length === 1 ? String(res.data[0].penandatangan_id) : ''));
+    });
+
     async function submit() {
       var status = $('#status_verifikasi').val();
       if (!status) return swal('Pilih status', 'Status verifikasi wajib dipilih', 'warning');
       if ((status == 'revisi' || status == 'tolak') && !$('#keterangan').val().trim()) {
         return swal('Keterangan', status == 'tolak' ? 'Alasan penolakan wajib diisi' : 'Keterangan revisi wajib diisi', 'warning');
       }
+      if (status == 'lolos') {
+        var kurang = [];
+        if (!$.trim($('#no_surat_permohonan').val())) kurang.push('Nomor surat permohonan wajib diisi');
+        if (!($('#tim_teknis').val() || []).length) kurang.push('Tim teknis wajib dipilih');
+        if (!$('#penandatangan_id').val()) kurang.push('Penandatangan wajib dipilih');
+        if (kurang.length) return swal('Periksa kembali', kurang.join('\n'), 'warning');
+      }
 
       const yakin = await swal({
         title: "Verifikasi Permohonan",
-        text: status == 'lolos' ? "Permohonan akan dilanjutkan ke tahap Peninjauan Lapangan. Lanjutkan?"
+        text: status == 'lolos' ? "Permohonan akan dilanjutkan ke tahap Peninjauan Lapangan dan pemohon diberi notifikasi email. Lanjutkan?"
           : status == 'revisi' ? "Permohonan akan dikembalikan ke pemohon untuk revisi dan pemohon diberi notifikasi email. Lanjutkan?"
           : status == 'tolak' ? "Permohonan akan ditolak dan pemohon diberi notifikasi email. Lanjutkan?"
           : "Status permohonan tetap menunggu verifikasi. Lanjutkan?",
@@ -374,9 +476,17 @@
       if (!yakin) return;
 
       $('#button_submit').prop('disabled', true);
-      $.post(rooturl + '/manajemen_perizinan/permohonan/verifikasi/' + ID_PERMOHONAN, {
-        status: status,
-        keterangan: $('#keterangan').val()
+      $.ajax({
+        url: rooturl + '/manajemen_perizinan/permohonan/verifikasi/' + ID_PERMOHONAN,
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+          status: status,
+          keterangan: $('#keterangan').val(),
+          no_surat_permohonan: $('#no_surat_permohonan').val(),
+          tim_teknis: $('#tim_teknis').val() || [],
+          penandatangan_id: $('#penandatangan_id').val()
+        })
       }).done(function () {
         swal('Berhasil', 'Verifikasi permohonan berhasil disimpan', 'success').then(function () {
           window.location.href = rooturl + '/manajemen_perizinan/permohonan';
@@ -388,5 +498,25 @@
     }
 
     $('#konten-revisi').hide();
+
+    $('#konten-tim-teknis').hide();
+
+    $('#status_verifikasi').change(function(){
+        if ($(this).val() == '') {
+              $('#konten-tim-teknis').hide();
+        }
+
+        if ($(this).val() == 'revisi') {
+              $('#konten-tim-teknis').hide();
+        } 
+
+        if ($(this).val() == 'tolak') {
+              $('#konten-tim-teknis').hide();
+        }  
+        
+        if ($(this).val() == 'lolos') {
+              $('#konten-tim-teknis').show();
+        }  
+    });
     muat();
 </script>

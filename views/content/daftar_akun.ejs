@@ -614,7 +614,7 @@
                 })
             }).done(function () {
                 keLoginVendor();
-                swal('Pendaftaran berhasil', 'Akun vendor berhasil dibuat. Silakan login melalui tab Vendor.', 'success').then(function () {
+                swal('Pendaftaran berhasil', 'Akun vendor berhasil dibuat dan menunggu verifikasi administrator. Pemberitahuan hasil verifikasi akan dikirim ke email Anda.', 'success').then(function () {
                     window.location.href = rooturl + '/';
                 });
             }).fail(function (xhr) {

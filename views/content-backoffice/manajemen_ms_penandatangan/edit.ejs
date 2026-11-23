@@ -1,0 +1,75 @@
+<% include ../../template-backoffice/header.ejs %>
+  <div class="main-content">
+    <section class="section">
+      <div class="w-100" style="padding: 0 30px;">
+        <div class="section-header" style="border-radius: 0.25rem;">
+          <h1>Edit Data Master Penandatangan</h1>
+          <div class="section-header-breadcrumb">
+            <div class="breadcrumb-item active"><a href="/backoffice">Dashboard</a></div>
+            <div class="breadcrumb-item active"><a href="/manajemen_master/penandatangan">Data</a></div>
+            <div class="breadcrumb-item">Edit Data</div>
+          </div>
+        </div>
+      </div>
+
+      <% include ./komponen.ejs %>
+
+    </section>
+  </div>
+
+  <footer class="main-footer">
+    <div class="footer-left">
+      <% include ../../template-backoffice/copyright-left.ejs %>
+    </div>
+    <div class="footer-right">
+      <% include ../../template-backoffice/copyright-right.ejs %>
+    </div>
+  </footer>
+
+<% include ../../template-backoffice/footer.ejs %>
+<script type="text/javascript">
+  var rooturl = ''
+  var ID = '<%= id %>'
+  var KOLOM = ['nama', 'nip', 'jabatan', 'pangkat', 'aktif'] // nama kolom db
+
+  $.get(rooturl + '/penandatangan/list', { penandatangan_id: ID }).done(function (res) {
+    var d = res.data[0];
+    if (!d) {
+      return swal('Gagal', 'Data penandatangan tidak ditemukan', 'error').then(function () {
+        window.location.href = rooturl + '/manajemen_master/penandatangan';
+      });
+    }
+    KOLOM.forEach(function (k) { $('#' + k).val(d[k] == null ? '' : String(d[k])); });
+  });
+
+  async function submit() {
+    const will_update = await swal({
+      title: "Edit Data",
+      text: "Apakah anda akan mengedit data ini?",
+      icon: "warning",
+      dangerMode: true,
+      buttons: ["Tidak", "Ya"],
+    });
+    if (!will_update) return;
+
+    $('#button_submit button').prop('disabled', true);
+    let data = {};
+    KOLOM.forEach(function (k) { data[k] = $('#' + k).val(); });
+
+    $.ajax({
+      type: 'POST',
+      url: rooturl + '/penandatangan/edit/' + ID,
+      contentType: 'application/json',
+      data: JSON.stringify(data),
+      success: function () {
+        swal({title:text_edit.title,text:text_edit.text, icon: text_edit.icon, type:text_edit.type}).then(function () {
+          window.location.href = rooturl + '/manajemen_master/penandatangan';
+        });
+      },
+      error: function (xhr) {
+        $('#button_submit button').prop('disabled', false);
+        swal('Gagal', (xhr.responseJSON && xhr.responseJSON.message) || text_error.text, 'error');
+      }
+    });
+  }
+</script>

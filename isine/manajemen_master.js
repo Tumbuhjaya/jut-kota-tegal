@@ -96,4 +96,17 @@ router.get('/perusahaan_provider/edit/:id', cek_login_all, function(req, res) {
   res.render('content-backoffice/manajemen_ms_perprov/edit',{id:req.params.id}); 
 });
 
+// penandatangan
+router.get('/penandatangan/', cek_login_all, function(req, res) {
+  res.render('content-backoffice/manajemen_ms_penandatangan/list',{id:req.params.id}); 
+});
+
+router.get('/penandatangan/insert', cek_login_all, function(req, res) {
+  res.render('content-backoffice/manajemen_ms_penandatangan/insert',{id:req.params.id}); 
+});
+
+router.get('/penandatangan/edit/:id', cek_login_all, function(req, res) {
+  res.render('content-backoffice/manajemen_ms_penandatangan/edit',{id:req.params.id}); 
+});
+
 module.exports = router;
