@@ -1,6 +1,6 @@
 <% include ../../template-backoffice/header.ejs %>
   <!-- Main Content -->
-   <style>
+   <!-- <style>
   /* Pertebal garis luar tabel */
   #list-data {
     border: 2px solid #000 !important;
@@ -26,7 +26,7 @@
   #list-data tbody tr:hover {
     background-color: #f5f5f5;
   }
-</style>
+</style> -->
   <div class="main-content">
     <section class="section">
       <div class="w-100" style="padding: 0 30px;">
@@ -59,7 +59,7 @@
               </div>
               <div class="card-body">
                 <div class="table-responsive">
-                  <table class="table table-bordered" id="list-data">
+                  <table class="table table-bordered table-striped" id="list-data">
                     <thead>                                 
                       <tr>
                         <th class="text-center">No.</th>
@@ -145,12 +145,12 @@
           </a>
 
           <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
-            <a class="dropdown-item" href="${rooturl}/manajemen_laporan/provider/cetak_tiang_provider/${data}?id_kec=${idKec}" target="_blank">Cetak Tiang Provider</a>
-            <a class="dropdown-item" href="${rooturl}/manajemen_laporan/provider/cetak_tiang_provider_a3/${data}?id_kec=${idKec}" target="_blank">Cetak A3 Tiang Provider</a>
+            <a class="dropdown-item" href="${rooturl}/manajemen_laporan/provider/cetak_tiang_provider/${data}?id_kec=${idKec}" target="_blank">Tiang (A4)</a>
+            <a class="dropdown-item" href="${rooturl}/manajemen_laporan/provider/cetak_tiang_provider_a3/${data}?id_kec=${idKec}" target="_blank">Tiang (A3)</a>
             <!-- Versi PDF disimpan, sementara tidak ditampilkan:
-            <a class="dropdown-item" href="${rooturl}/manajemen_laporan/provider/cetak_sk/${data}" target="_blank">Cetak SK</a>
+            <a class="dropdown-item" href="${rooturl}/manajemen_laporan/provider/cetak_sk/${data}" target="_blank">SKRD</a>
             -->
-            <a class="dropdown-item" href="${rooturl}/manajemen_laporan/provider/cetak_sk_xlsx/${data}">Cetak SK</a>
+            <a class="dropdown-item" href="${rooturl}/manajemen_laporan/provider/cetak_sk_xlsx/${data}">SKRD</a>
           </div>
         </div>
       </div>`;
