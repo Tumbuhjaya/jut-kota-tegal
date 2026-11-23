@@ -9,7 +9,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
     <link rel="shortcut icon" href="<%= rooturl %>/images/template/shortcut_icon.ico">
-    <title></title>
+    <title>Database Jaringan Utilitas Telekomunikasi Kota Tegal</title>
 
     <link href="<%= rooturl %>/stylesheets/template/css/bootstrap.css" rel="stylesheet">
     <link href="<%= rooturl %>/stylesheets/template/css/style.css" rel="stylesheet">
@@ -23,6 +23,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/1.1.3/sweetalert.min.css">
     <link href="<%= rooturl %>/plugins/slick/slick.css" rel="stylesheet">
     <link href="<%= rooturl %>/plugins/slick/slick-theme.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Blinker:wght@100;200;300;400;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
     
     
     <script src="<%= rooturl %>/javascripts/template/jquery.min.js"></script>
@@ -36,148 +37,869 @@
         <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
     <![endif]-->
     <style type="text/css">
+        :root {
+            --navy: #0d4aa2;
+            --royal: #0f44be;
+            --blue: #1256d7;
+            --bright: #1581ee;
+            --cyan: #17c3ff;
 
+            --gradient-main: linear-gradient(135deg,
+            #0d4aa2 0.000%,
+            #0f44be 25.000%,
+            #1256d7 50.000%,
+            #1581ee 75.000%,
+            #17c3ff 100.000%);
+        }
+
+        * { font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        /* ================================================================
+            BODY
+            ================================================================ */
+        html, body { height: 100%; }
+
+        body {
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            padding: 20px 15px;
+            background: var(--gradient-main);
+            background-size: 200% 200%;
+            animation: gradientShift 15s ease infinite;
+            background-attachment: fixed;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        /* ============================================================
+            PERSPECTIVE GRID
+            ============================================================ */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; right: 0; bottom: 0; left: 0;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.4;
+            background-image:
+            repeating-linear-gradient(0deg, rgba(255,255,255,0.55) 0px, rgba(255,255,255,0.55) 1px, transparent 1px, transparent 60px),
+            repeating-linear-gradient(90deg, rgba(255,255,255,0.45) 0px, rgba(255,255,255,0.45) 1px, transparent 1px, transparent 60px);
+            background-size: 60px 60px, 60px 60px;
+            background-position: center center;
+            transform: perspective(500px) rotateX(45deg);
+            transform-origin: center 70%;
+            animation: gridPerspective 20s linear infinite;
+            -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+            mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+        }
+
+        @keyframes gridPerspective {
+            from { background-position: center 0, center center; }
+            to { background-position: center 60px, center center; }
+        }
+
+        /* ============================================================
+            GLOWING NODES
+            ============================================================ */
+        /* body::after {
+            content: '';
+            position: fixed;
+            top: 0; right: 0; bottom: 0; left: 0;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.55;
+            background-image:
+            radial-gradient(circle, #17c3ff 1.8px, transparent 1.8px),
+            radial-gradient(circle, rgba(255, 255, 255, 0.9) 1.2px, transparent 1.2px);
+            background-size: 60px 60px, 60px 60px;
+            background-position: 0 0, 30px 30px;
+            transform: perspective(500px) rotateX(45deg);
+            transform-origin: center 70%;
+            animation: gridPerspective 20s linear infinite, dotPulse 2.5s ease-in-out infinite;
+            -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+            mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+        }
+
+        @keyframes dotPulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.9; }
+        } */
+
+        /* Fiber optic glow */
+        .fiber-glow {
+            position: fixed;
+            top: 0; right: 0; bottom: 0; left: 0;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.35;
+            background:
+            linear-gradient(115deg, transparent 0%, transparent 40%, rgba(23, 195, 255, 0.4) 45%, rgba(23, 195, 255, 0.6) 48%, rgba(255, 255, 255, 0.7) 50%, rgba(13, 74, 162, 0.6) 52%, rgba(13, 74, 162, 0.4) 55%, transparent 60%, transparent 100%),
+            linear-gradient(115deg, transparent 0%, transparent 30%, rgba(13, 74, 162, 0.3) 35%, rgba(255, 255, 255, 0.5) 38%, rgba(23, 195, 255, 0.3) 42%, transparent 50%);
+            background-size: 300% 300%, 300% 300%;
+            background-position: 0% 0%, 100% 100%;
+            animation: fiberSweep 12s ease-in-out infinite;
+        }
+
+        @keyframes fiberSweep {
+            0%, 100% { background-position: 0% 0%, 100% 100%; }
+            50% { background-position: 100% 100%, 0% 0%; }
+        }
+
+        /* Pulse orbs */
+        .pulse-node {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(100px);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .pulse-node-1 {
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, #17c3ff 0%, transparent 70%);
+            top: -180px; left: -180px;
+            opacity: 0.5;
+            animation: pulse 8s ease-in-out infinite;
+        }
+        .pulse-node-2 {
+            width: 450px; height: 450px;
+            background: radial-gradient(circle, #0d4aa2 0%, transparent 70%);
+            bottom: -150px; right: -150px;
+            opacity: 0.45;
+            animation: pulse 8s ease-in-out infinite;
+            animation-delay: 4s;
+        }
+        .pulse-node-3 {
+            width: 320px; height: 320px;
+            background: radial-gradient(circle, #1581ee 0%, transparent 70%);
+            top: 40%; right: 15%;
+            opacity: 0.3;
+            animation: pulse 10s ease-in-out infinite;
+            animation-delay: 2s;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.45; }
+            50% { transform: scale(1.35); opacity: 0.7; }
+        }
+
+        /* ============================================================
+            MENU WRAPPER
+            ============================================================ */
+        .menu-wrapper {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            max-width: 1000px;
+            padding: 0 15px;
+        }
+
+        /* Header (logo + judul) */
+        .menu-header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: #fff;
+        }
+
+        .menu-brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .brand-logo {
+            width: 52px;
+            height: 52px;
+            background: rgba(255, 255, 255, 0.22);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            border-radius: 14px;
+            border: 1.5px solid rgba(255, 255, 255, 0.45);
+            box-shadow: 0 8px 22px rgba(23, 195, 255, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .brand-logo::before {
+            content: '';
+            position: absolute;
+            top: 8px; right: 8px;
+            width: 8px; height: 8px;
+            background: #17c3ff;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #17c3ff;
+            animation: ping 2s ease-in-out infinite;
+        }
+
+        @keyframes ping {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.4); }
+        }
+
+        .brand-name {
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            text-shadow: 0 2px 20px rgba(13, 74, 162, 0.5);
+        }
+
+        .menu-title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 24px rgba(13, 74, 162, 0.5);
+        }
+
+        .menu-subtitle {
+            font-size: 0.95rem;
+            opacity: 0.9;
+            margin-bottom: 0;
+        }
+
+        /* ============================================================
+            SHORTCUT CARD
+            ============================================================ */
+        .shortcut-card {
+            display: flex;
+            align-items: center;
+            height: 100%;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.12);
+            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
+            border: 1.5px solid rgba(255, 255, 255, 0.3);
+            border-radius: 18px;
+            padding: 20px 22px;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            color: #fff;
+            box-shadow:
+            0 10px 30px -10px rgba(13, 74, 162, 0.5),
+            inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+            min-height: 100px;
+        }
+
+        .shortcut-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .shortcut-card:hover::before { left: 100%; }
+
+        .shortcut-card:hover {
+            transform: translateY(-6px);
+            background: rgba(255, 255, 255, 0.22);
+            border-color: rgba(255, 255, 255, 0.55);
+            color: #fff;
+            text-decoration: none;
+            box-shadow:
+            0 25px 45px -12px rgba(13, 74, 162, 0.7),
+            0 0 40px -5px rgba(23, 195, 255, 0.7),
+            inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+        }
+
+        .shortcut-card:focus {
+            outline: none;
+            color: #fff;
+            text-decoration: none;
+            box-shadow:
+            0 0 0 4px rgba(23, 195, 255, 0.35),
+            0 25px 45px -12px rgba(13, 74, 162, 0.7);
+        }
+
+        .shortcut-icon {
+            width: 56px;
+            height: 56px;
+            background: rgba(255, 255, 255, 0.22);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            border: 1.5px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 8px 20px rgba(23, 195, 255, 0.4);
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-right: 18px;
+        }
+
+        .shortcut-card:hover .shortcut-icon {
+            transform: scale(1.12) rotate(-6deg);
+            background: rgba(255, 255, 255, 0.38);
+            box-shadow: 0 10px 26px rgba(23, 195, 255, 0.7);
+        }
+
+        .shortcut-content { flex: 1; min-width: 0; }
+
+        .shortcut-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+            letter-spacing: -0.01em;
+            color: #fff;
+            line-height: 1.2;
+        }
+
+        .shortcut-desc {
+            font-size: 0.85rem;
+            opacity: 0.85;
+            line-height: 1.4;
+            margin-bottom: 0;
+            color: #fff;
+        }
+
+        .shortcut-arrow {
+            color: rgba(255, 255, 255, 0.7);
+            flex-shrink: 0;
+            margin-left: 10px;
+            transition: all 0.3s;
+        }
+
+        .shortcut-card:hover .shortcut-arrow {
+            color: #fff;
+            transform: translateX(5px);
+        }
+
+        /* Footer */
+        .menu-footer {
+            text-align: center;
+            margin-top: 40px;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 575.98px) {
+            body { padding: 25px 10px; }
+            .menu-wrapper { padding: 0 5px; }
+            .menu-title { font-size: 1.7rem; }
+            .brand-name { font-size: 1.35rem; }
+            .brand-logo { width: 46px; height: 46px; }
+            .menu-header { margin-bottom: 28px; }
+            .menu-footer { margin-top: 28px; }
+            .shortcut-card { padding: 16px 18px; min-height: 90px; }
+            .shortcut-icon { width: 48px; height: 48px; margin-right: 14px; }
+            .shortcut-title { font-size: 1rem; }
+            .shortcut-desc { font-size: 0.78rem; }
+        }
+
+        /* ================================================================
+            LANDING PAGE BERANDA (layout kiri - kanan)
+            ================================================================ */
+        .landing {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            max-width: 1240px;
+            margin: 0 auto;
+            min-height: calc(100vh - 40px);
+            display: flex;
+            align-items: center;
+        }
+        .landing > .row { width: 100%; align-items: center; }
+
+        /* ---------- Animasi dasar ---------- */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeLeft {
+            from { opacity: 0; transform: translateX(-40px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes cardIn {
+            from { opacity: 0; transform: translateY(40px) scale(0.92); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes revealLine {
+            from { transform: translateY(110%); }
+            to   { transform: translateY(0); }
+        }
+        @keyframes shimmerText {
+            0%   { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
+        }
+        @keyframes floatY {
+            0%, 100% { transform: translateY(0); }
+            50%      { transform: translateY(-6px); }
+        }
+        @keyframes roadDash {
+            from { background-position: 0 0; }
+            to   { background-position: 48px 0; }
+        }
+        @keyframes growX {
+            from { transform: scaleX(0); }
+            to   { transform: scaleX(1); }
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50%      { opacity: 0.25; }
+        }
+        @keyframes borderSpin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ---------- SISI KIRI ---------- */
+        .hero-left {
+            color: #fff;
+            padding: 30px 30px 30px 10px;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px 8px 10px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.14);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
+            font-size: 0.82rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            opacity: 0;
+            animation: fadeLeft 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.1s forwards;
+        }
+        .hero-badge .dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            background: #17c3ff;
+            box-shadow: 0 0 0 4px rgba(23, 195, 255, 0.25), 0 0 12px #17c3ff;
+            animation: blink 1.8s ease-in-out infinite;
+        }
+
+        .hero-title {
+            margin: 26px 0 20px;
+            font-weight: 800;
+            line-height: 1.12;
+            letter-spacing: -0.02em;
+            text-shadow: 0 4px 30px rgba(13, 74, 162, 0.45);
+        }
+        .hero-title .line {
+            display: block;
+            overflow: hidden;
+            padding-bottom: 4px;
+        }
+        .hero-title .line > span {
+            display: inline-block;
+            transform: translateY(110%);
+            animation: revealLine 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+        .hero-title .line-1 > span { font-size: 1.15rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.9; animation-delay: 0.35s; }
+        .hero-title .line-2 > span { font-size: 2.9rem; animation-delay: 0.5s; }
+        .hero-title .line-3 > span { font-size: 2.9rem; animation-delay: 0.65s; }
+        .hero-title .line-4 > span { font-size: 2.9rem; animation-delay: 0.8s; }
+
+        .text-glow {
+            background: linear-gradient(90deg, #ffffff 0%, #a9ecff 25%, #17c3ff 50%, #a9ecff 75%, #ffffff 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: revealLine 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) 0.8s forwards,
+                       shimmerText 4s linear 1.7s infinite !important;
+            text-shadow: none;
+        }
+
+        /* Garis jalan animasi */
+        .road-line {
+            position: relative;
+            height: 10px;
+            width: 100%;
+            max-width: 360px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.18);
+            overflow: hidden;
+            margin-bottom: 24px;
+            transform-origin: left center;
+            transform: scaleX(0);
+            animation: growX 1s cubic-bezier(0.2, 0.8, 0.2, 1) 1s forwards;
+        }
+        .road-line::after {
+            content: '';
+            position: absolute;
+            left: 0; right: 0; top: 50%;
+            height: 3px;
+            margin-top: -1.5px;
+            background-image: linear-gradient(90deg, #fff 0, #fff 24px, transparent 24px, transparent 48px);
+            background-size: 48px 3px;
+            animation: roadDash 0.9s linear infinite;
+            opacity: 0.9;
+        }
+
+        .hero-desc {
+            font-size: 1.02rem;
+            line-height: 1.7;
+            max-width: 520px;
+            opacity: 0;
+            animation: fadeUp 0.9s ease 1.1s forwards;
+            color: rgba(255, 255, 255, 0.92);
+        }
+
+        .hero-features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 26px;
+            padding: 0;
+            list-style: none;
+        }
+        .hero-features li {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            opacity: 0;
+            animation: fadeUp 0.7s ease forwards;
+        }
+        .hero-features li:nth-child(1) { animation-delay: 1.3s; }
+        .hero-features li:nth-child(2) { animation-delay: 1.45s; }
+        .hero-features li:nth-child(3) { animation-delay: 1.6s; }
+        .hero-features li i { color: #a9ecff; }
+
+        /* ---------- SISI KANAN ---------- */
+        .hero-right { padding: 30px 10px 30px 30px; }
+
+        .menu-panel {
+            position: relative;
+            border-radius: 28px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1.5px solid rgba(255, 255, 255, 0.3);
+            -webkit-backdrop-filter: blur(22px);
+            backdrop-filter: blur(22px);
+            box-shadow: 0 30px 60px -20px rgba(13, 40, 120, 0.6),
+                        inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+            opacity: 0;
+            animation: fadeUp 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) 0.4s forwards;
+            overflow: hidden;
+        }
+        /* cahaya berputar di belakang panel */
+        .menu-panel::before {
+            content: '';
+            position: absolute;
+            width: 160%; height: 160%;
+            top: -30%; left: -30%;
+            background: conic-gradient(from 0deg, transparent 0deg, rgba(23, 195, 255, 0.22) 60deg, transparent 120deg, transparent 360deg);
+            animation: borderSpin 10s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .menu-panel > * { position: relative; z-index: 1; }
+
+        .menu-panel-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: #fff;
+            margin-bottom: 22px;
+        }
+        .menu-panel-head h2 {
+            font-size: 1.3rem;
+            font-weight: 800;
+            margin: 0;
+            letter-spacing: -0.01em;
+        }
+        .menu-panel-head p {
+            font-size: 0.85rem;
+            margin: 4px 0 0;
+            opacity: 0.85;
+        }
+        .menu-panel-head .head-icon {
+            width: 44px; height: 44px;
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(255, 255, 255, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            animation: floatY 3s ease-in-out infinite;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .menu-card {
+            --mx: 50%;
+            --my: 50%;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 190px;
+            padding: 22px;
+            border-radius: 20px;
+            color: #fff;
+            text-decoration: none;
+            background:
+                radial-gradient(240px circle at var(--mx) var(--my), rgba(255, 255, 255, 0.22), transparent 60%),
+                rgba(255, 255, 255, 0.1);
+            border: 1.5px solid rgba(255, 255, 255, 0.28);
+            box-shadow: 0 12px 30px -12px rgba(13, 40, 120, 0.6);
+            overflow: hidden;
+            opacity: 0;
+            animation: cardIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+                        border-color 0.35s, box-shadow 0.35s, background-color 0.35s;
+            will-change: transform;
+        }
+        .menu-card:nth-child(1) { animation-delay: 0.7s; }
+        .menu-card:nth-child(2) { animation-delay: 0.85s; }
+        .menu-card:nth-child(3) { animation-delay: 1s; }
+        .menu-card:nth-child(4) { animation-delay: 1.15s; }
+
+        .menu-card:hover,
+        .menu-card:focus {
+            color: #fff;
+            text-decoration: none;
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.6);
+            box-shadow: 0 25px 45px -15px rgba(13, 40, 120, 0.75),
+                        0 0 40px -8px rgba(23, 195, 255, 0.8);
+        }
+        .menu-card:focus-visible {
+            box-shadow: 0 0 0 4px rgba(23, 195, 255, 0.5);
+        }
+
+        /* nomor besar transparan di pojok */
+        .menu-card .card-no {
+            position: absolute;
+            right: 14px; top: 6px;
+            font-size: 3.6rem;
+            font-weight: 800;
+            line-height: 1;
+            color: rgba(255, 255, 255, 0.08);
+            transition: color 0.35s, transform 0.35s;
+            pointer-events: none;
+        }
+        .menu-card:hover .card-no {
+            color: rgba(255, 255, 255, 0.18);
+            transform: translateY(4px);
+        }
+
+        .menu-card .card-icon {
+            width: 54px; height: 54px;
+            border-radius: 16px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.35rem;
+            background: linear-gradient(135deg, rgba(255,255,255,0.35), rgba(255,255,255,0.12));
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            box-shadow: 0 8px 20px rgba(23, 195, 255, 0.4);
+            transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s;
+        }
+        .menu-card:hover .card-icon {
+            transform: scale(1.12) rotate(-8deg);
+            box-shadow: 0 12px 28px rgba(23, 195, 255, 0.75);
+        }
+
+        .menu-card .card-title {
+            font-size: 1.08rem;
+            font-weight: 700;
+            margin: 18px 0 4px;
+            line-height: 1.25;
+        }
+        .menu-card .card-desc {
+            font-size: 0.8rem;
+            line-height: 1.45;
+            opacity: 0.82;
+            margin: 0;
+        }
+        .menu-card .card-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 14px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            opacity: 0.75;
+            transition: opacity 0.3s, gap 0.3s;
+        }
+        .menu-card:hover .card-cta { opacity: 1; gap: 14px; }
+
+        /* garis bawah tumbuh saat hover */
+        .menu-card::after {
+            content: '';
+            position: absolute;
+            left: 0; bottom: 0;
+            height: 3px; width: 100%;
+            background: linear-gradient(90deg, #17c3ff, #ffffff);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .menu-card:hover::after { transform: scaleX(1); }
+
+        .landing-copy {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.75);
+            font-size: 0.78rem;
+            margin-top: 18px;
+            opacity: 0;
+            animation: fadeUp 0.8s ease 1.4s forwards;
+        }
+
+        /* ---------- Responsive ---------- */
+        @media (max-width: 1199.98px) {
+            .hero-title .line-2 > span,
+            .hero-title .line-3 > span,
+            .hero-title .line-4 > span { font-size: 2.4rem; }
+        }
+        @media (max-width: 991.98px) {
+            .landing { min-height: auto; }
+            .hero-left { padding: 20px 10px 10px; text-align: center; }
+            .hero-desc { margin-left: auto; margin-right: auto; }
+            .road-line { margin-left: auto; margin-right: auto; transform-origin: center; }
+            .hero-features { justify-content: center; }
+            .hero-right { padding: 20px 10px; }
+        }
+        @media (max-width: 575.98px) {
+            .hero-title .line-1 > span { font-size: 0.9rem; }
+            .hero-title .line-2 > span,
+            .hero-title .line-3 > span,
+            .hero-title .line-4 > span { font-size: 1.75rem; }
+            .menu-panel { padding: 20px; border-radius: 22px; }
+            .menu-grid { grid-template-columns: 1fr; gap: 12px; }
+            .menu-card { min-height: auto; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .landing *, .landing *::before, .landing *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
     </style>
 </head>
 
 <body>
     <% include ../template/header.ejs %>
-    <!-- ============================================
-    HEADER / NAVBAR
-    ============================================ -->
-    <header>
-        <nav class="tech-navbar" id="techNavbar">
-            <div class="d-flex align-items-center justify-content-center flex-wrap" style="background-color: ;">
-                <!-- Logo -->
-                <a href="#" class="tech-logo" title="TechNova - Beranda">
-                    <!-- <div class="tech-logo-icon">
-                        <i class="fas fa-microchip"></i>
-                    </div> -->
-                    <div>
-                         <span class="tech-logo-sub animate-on-load fade-left seq-1" style="text-align: center;">PEMERINTAH KOTA TEGAL</span>
-                        <span class="tech-logo-text animate-on-load fade-right seq-2" style="text-align: center;">DINAS PEKERJAAN UMUM <span>DAN PENATAAN RUANG</span></span>
-                        <!-- <span class="tech-logo-sub">Database Jaringan Utilitas Telekomunikasi</span> -->
-                    </div>
-                </a>
+        <main class="landing container-fluid">
+            <div class="row no-gutters">
 
-                <!-- Menu Desktop -->
-                
+                <!-- ═══ SISI KIRI : Judul ═══ -->
+                <div class="col-12 col-lg-6">
+                    <section class="hero-left">
+                        <span class="hero-badge"><span class="dot"></span> Portal Perizinan Online DPUPR Kota Tegal</span>
 
-                <!-- Trigger Button (Hamburger) -->
-                <!-- <button class="btn-offcanvas-trigger" id="btnToggleOffcanvas"
-                    aria-label="Toggle Sidebar Menu"
-                    title="Buka / Tutup Menu"
-                    onclick="toggleOffcanvas()">
-                    <div class="hamburger-line"></div>
-                    <div class="hamburger-line"></div>
-                    <div class="hamburger-line"></div>
-                </button> -->
+                        <h1 class="hero-title">
+                            <span class="line line-1"><span>Selamat Datang di Website</span></span>
+                            <span class="line line-2"><span>Izin Pemanfaatan</span></span>
+                            <span class="line line-3"><span>Ruang Milik Jalan</span></span>
+                            <span class="line line-4"><span class="text-glow">Kota Tegal</span></span>
+                        </h1>
+
+                        <div class="road-line" aria-hidden="true"></div>
+
+                        <p class="hero-desc">
+                            Layanan pengajuan dan pengelolaan izin pemanfaatan ruang milik jalan
+                            secara terpadu &mdash; mulai dari jaringan utilitas, reklame, hingga bukaan jalan,
+                            dilengkapi peta spasial untuk memantau sebarannya.
+                        </p>
+
+                        <ul class="hero-features">
+                            <li><i class="fas fa-bolt"></i> Cepat</li>
+                            <li><i class="fas fa-shield-alt"></i> Transparan</li>
+                            <li><i class="fas fa-map-marked-alt"></i> Terintegrasi Peta</li>
+                        </ul>
+                    </section>
+                </div>
+
+                <!-- ═══ SISI KANAN : Menu ═══ -->
+                <div class="col-12 col-lg-6">
+                    <section class="hero-right">
+                        <div class="menu-panel">
+                            <div class="menu-panel-head">
+                                <div>
+                                    <h2>Pilih Layanan</h2>
+                                    <p>Silakan pilih menu yang ingin Anda akses</p>
+                                </div>
+                                <div class="head-icon"><i class="fas fa-th-large"></i></div>
+                            </div>
+
+                            <nav class="menu-grid">
+                                <a href="/perizinan/jaringan_utilitas" class="menu-card">
+                                    <span class="card-no">01</span>
+                                    <div>
+                                        <div class="card-icon"><i class="fas fa-network-wired"></i></div>
+                                        <h3 class="card-title">Izin Jaringan Utilitas</h3>
+                                        <p class="card-desc">Tiang, kabel &amp; jaringan utilitas di ruang milik jalan.</p>
+                                    </div>
+                                    <span class="card-cta">Masuk <i class="fas fa-arrow-right"></i></span>
+                                </a>
+
+                                <a href="/perizinan/reklame" class="menu-card">
+                                    <span class="card-no">02</span>
+                                    <div>
+                                        <div class="card-icon"><i class="fas fa-ad"></i></div>
+                                        <h3 class="card-title">Izin Reklame</h3>
+                                        <p class="card-desc">Pemasangan papan reklame &amp; media iklan luar ruang.</p>
+                                    </div>
+                                    <span class="card-cta">Masuk <i class="fas fa-arrow-right"></i></span>
+                                </a>
+
+                                <a href="/perizinan/bukaan_jalan" class="menu-card">
+                                    <span class="card-no">03</span>
+                                    <div>
+                                        <div class="card-icon"><i class="fas fa-road"></i></div>
+                                        <h3 class="card-title">Izin Bukaan Jalan</h3>
+                                        <p class="card-desc">Pembukaan akses atau penggalian pada badan jalan.</p>
+                                    </div>
+                                    <span class="card-cta">Masuk <i class="fas fa-arrow-right"></i></span>
+                                </a>
+
+                                <a href="/peta_spasial" class="menu-card">
+                                    <span class="card-no">04</span>
+                                    <div>
+                                        <div class="card-icon"><i class="fas fa-map-marked-alt"></i></div>
+                                        <h3 class="card-title">Peta Spasial</h3>
+                                        <p class="card-desc">Lihat sebaran data perizinan dalam peta interaktif.</p>
+                                    </div>
+                                    <span class="card-cta">Buka Peta <i class="fas fa-arrow-right"></i></span>
+                                </a>
+                            </nav>
+                        </div>
+
+                        <p class="landing-copy">&copy; <%= new Date().getFullYear() %> Pemerintah Kota Tegal</p>
+                    </section>
+                </div>
+
             </div>
-        </nav>
-    </header>
+        </main>
 
-<!-- ============================================
-MAIN CONTENT / HERO SECTION
-============================================ -->
-<main class="main-content" id="beranda">
-    <div class="container hero-section">
-        <div class="row align-items-center">
-            <div class="col-lg-7">
-                <!-- Badge -->
-                <div class="hero-badge animate-on-load fade-up seq-3">
-                    <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
-                    Geographic Information System (GIS)
-                </div>
+    <!-- ═══ Layer efek background ═══ -->
+        <!-- <div class="fiber-glow"></div>
+        <div class="pulse-node pulse-node-1"></div>
+        <div class="pulse-node pulse-node-2"></div>
+        <div class="pulse-node pulse-node-3"></div> -->
 
-                <!-- Title -->
-                <h1 class="hero-title animate-on-load fade-left seq-4">
-                    Selamat Datang di
-                    <span class="gradient-text">Database Jaringan Utilitas Telekomunikasi</span>
-                    <br>
-                    Kota Tegal
-                </h1>
-
-                <p class="hero-description animate-on-load fade-down seq-5">
-                    Lorem ipsum dolor sit, amet consectetur adipisicing elit. Non tenetur officia voluptatum, accusantium corrupti aperiam aut nisi et aspernatur. Ab laboriosam expedita magni iure quod dicta laborum tenetur atque tempore? Quo quaerat deserunt quae? Itaque culpa veniam dolores provident perspiciatis non reprehenderit, sed assumenda accusamus quas facilis, recusandae possimus minus!
-                </p>
-
-                
-
-                <!-- Description -->
-                <!-- <p class="hero-description">
-                    TechNova adalah platform teknologi revolusioner yang dirancang untuk
-                    mengakselerasi transformasi digital Anda. Kami menyediakan
-                    <strong>solusi cerdas</strong> berbasis data, analitik real-time,
-                    dan infrastruktur cloud yang aman untuk membangun ekosistem digital
-                    yang <strong>tangguh dan futuristik</strong>.
-                </p> -->
-                <!-- <p class="hero-description" style="font-size: 0.95rem;">
-                    Jelajahi berbagai fitur unggulan kami, mulai dari manajemen data
-                    terpadu hingga visualisasi statistik yang interaktif. Dengan antarmuka
-                    yang intuitif dan teknologi mutakhir, TechNova siap menjadi mitra
-                    terpercaya dalam perjalanan digital Anda.
-                </p> -->
-
-                <!-- Actions -->
-                <div class="hero-actions">
-                    <a href="/peta_spasial" class="btn-tech-primary animate-on-load zoom-in seq-11">
-                        <i class="fas fa-rocket mr-2"></i> Mulai Jelajah
-                    </a>
-                    <!-- <button class="btn-tech-outline" onclick="scrollToContent('#statistik')">
-                        <i class="fas fa-chart-bar mr-2"></i> Lihat Statistik
-                    </button> -->
-                </div>
-            </div>
-
-            <!-- Right side decorative element (hidden on mobile) -->
-            <div class="col-lg-5 d-none d-lg-block">
-                <div style="width: 100%;display: flex;justify-content: center;align-items: center;">
-                    <a href="#">
-                    <div class="feature-card animate-on-load flip-in seq-6">
-                        <div class="card-icon">
-                            <i class="fas fa-database"></i>
-                        </div>
-                        <h5>Data Tiang</h5>
-                        <p>Menampilkan data hasil survey yang diambil dari kondisi real dilapangan dalam bentuk tabular.</p>
-                    </div>
-                    </a>
-                    
-                    <a href="#">
-                    <div class="feature-card animate-on-load flip-in seq-7">
-                        <div class="card-icon ">
-                            <i class="fas fa-database"></i>
-                        </div>
-                        <h5>Data Kabel</h5>
-                        <p>Menampilkan data hasil survey yang diambil dari kondisi real dilapangan dalam bentuk tabular.</p>
-                    </div>
-                    </a>
-                </div>
-
-                <div style="width: 100%;display: flex;justify-content: center;align-items: center;">
-                    <a href="/peta_spasial">
-                    <div class="feature-card animate-on-load flip-in seq-8">
-                        <div class="card-icon">
-                            <i class="fas fa-globe-asia"></i>
-                        </div>
-                        <h5>Peta Interaktif</h5>
-                        <p>Menampilkan data hasil survey yang diambil dari kondisi real dilapangan dalam bentuk GIS.</p>
-                    </div>
-                    </a>
-
-                    <a href="/login_pemohon">
-                    <div class="feature-card animate-on-load flip-in seq-9" onclick="scrollToContent('#statistik')">
-                        <div class="card-icon">
-                            <i class="fas fa-file"></i>
-                        </div>
-                        <h5>Permohonan Izin</h5>
-                        <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Autem illum error cum reprehenderit!</p>
-                    </div>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-</main>
+        <!-- ═══ MENU WRAPPER ═══ -->
+        
+          
     <% include ../template/footer.ejs %>
     <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
     <script src="<%= rooturl %>/javascripts/template/bootstrap.bundle.js"></script>
@@ -189,7 +911,37 @@ MAIN CONTENT / HERO SECTION
     <script src="<%= rooturl %>/plugins/slick/slick.min.js"></script>
     <!-- End Plugins This Page -->
     <script type="text/javascript">
-        var rooturl = ''
+        var rooturl = '';
+
+        // Efek tilt 3D + spotlight mengikuti kursor pada kartu menu
+        (function () {
+            var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            var canHover = window.matchMedia && window.matchMedia('(hover: hover)').matches;
+            if (reduce || !canHover) return;
+
+            document.querySelectorAll('.menu-card').forEach(function (card) {
+                card.addEventListener('animationend', function () {
+                    card.style.opacity = 1;
+                    card.style.animation = 'none';
+                }, { once: true });
+
+                card.addEventListener('mousemove', function (e) {
+                    var r = card.getBoundingClientRect();
+                    var x = e.clientX - r.left, y = e.clientY - r.top;
+                    var rx = ((y / r.height) - 0.5) * -10;
+                    var ry = ((x / r.width) - 0.5) * 10;
+                    card.style.setProperty('--mx', x + 'px');
+                    card.style.setProperty('--my', y + 'px');
+                    card.style.transform = 'perspective(700px) rotateX(' + rx + 'deg) rotateY(' + ry + 'deg) translateY(-6px)';
+                });
+                card.addEventListener('mouseleave', function () {
+                    card.style.transform = '';
+                    card.style.setProperty('--mx', '50%');
+                    card.style.setProperty('--my', '50%');
+                });
+            });
+        })();
+
         let data_table  =$('#list-data').DataTable({
             "language": {
                 "sProcessing":   "Sedang memproses...",

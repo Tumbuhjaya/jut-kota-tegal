@@ -397,6 +397,249 @@
             .shortcut-title { font-size: 1rem; }
             .shortcut-desc { font-size: 0.78rem; }
         }
+
+        /* ================================================================
+            MENU CARD (seragam dengan halaman beranda / index.ejs)
+            ================================================================ */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeLeft {
+            from { opacity: 0; transform: translateX(-40px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes cardIn {
+            from { opacity: 0; transform: translateY(40px) scale(0.92); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes revealLine {
+            from { transform: translateY(110%); }
+            to   { transform: translateY(0); }
+        }
+        @keyframes shimmerText {
+            0%   { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
+        }
+        @keyframes floatY {
+            0%, 100% { transform: translateY(0); }
+            50%      { transform: translateY(-6px); }
+        }
+        @keyframes roadDash {
+            from { background-position: 0 0; }
+            to   { background-position: 48px 0; }
+        }
+        @keyframes growX {
+            from { transform: scaleX(0); }
+            to   { transform: scaleX(1); }
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50%      { opacity: 0.25; }
+        }
+        @keyframes borderSpin {
+            to { transform: rotate(360deg); }
+        }
+
+
+
+        .menu-panel {
+            position: relative;
+            border-radius: 28px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1.5px solid rgba(255, 255, 255, 0.3);
+            -webkit-backdrop-filter: blur(22px);
+            backdrop-filter: blur(22px);
+            box-shadow: 0 30px 60px -20px rgba(13, 40, 120, 0.6),
+                        inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+            opacity: 0;
+            animation: fadeUp 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) 0.4s forwards;
+            overflow: hidden;
+        }
+        /* cahaya berputar di belakang panel */
+        .menu-panel::before {
+            content: '';
+            position: absolute;
+            width: 160%; height: 160%;
+            top: -30%; left: -30%;
+            background: conic-gradient(from 0deg, transparent 0deg, rgba(23, 195, 255, 0.22) 60deg, transparent 120deg, transparent 360deg);
+            animation: borderSpin 10s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .menu-panel > * { position: relative; z-index: 1; }
+
+        .menu-panel-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: #fff;
+            margin-bottom: 22px;
+        }
+        .menu-panel-head h2 {
+            font-size: 1.3rem;
+            font-weight: 800;
+            margin: 0;
+            letter-spacing: -0.01em;
+        }
+        .menu-panel-head p {
+            font-size: 0.85rem;
+            margin: 4px 0 0;
+            opacity: 0.85;
+        }
+        .menu-panel-head .head-icon {
+            width: 44px; height: 44px;
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(255, 255, 255, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            animation: floatY 3s ease-in-out infinite;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .menu-card {
+            --mx: 50%;
+            --my: 50%;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 190px;
+            padding: 22px;
+            border-radius: 20px;
+            color: #fff;
+            text-decoration: none;
+            background:
+                radial-gradient(240px circle at var(--mx) var(--my), rgba(255, 255, 255, 0.22), transparent 60%),
+                rgba(255, 255, 255, 0.1);
+            border: 1.5px solid rgba(255, 255, 255, 0.28);
+            box-shadow: 0 12px 30px -12px rgba(13, 40, 120, 0.6);
+            overflow: hidden;
+            opacity: 0;
+            animation: cardIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+                        border-color 0.35s, box-shadow 0.35s, background-color 0.35s;
+            will-change: transform;
+        }
+        .menu-card:nth-child(1) { animation-delay: 0.7s; }
+        .menu-card:nth-child(2) { animation-delay: 0.85s; }
+        .menu-card:nth-child(3) { animation-delay: 1s; }
+        .menu-card:nth-child(4) { animation-delay: 1.15s; }
+
+        .menu-card:hover,
+        .menu-card:focus {
+            color: #fff;
+            text-decoration: none;
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.6);
+            box-shadow: 0 25px 45px -15px rgba(13, 40, 120, 0.75),
+                        0 0 40px -8px rgba(23, 195, 255, 0.8);
+        }
+        .menu-card:focus-visible {
+            box-shadow: 0 0 0 4px rgba(23, 195, 255, 0.5);
+        }
+
+        /* nomor besar transparan di pojok */
+        .menu-card .card-no {
+            position: absolute;
+            right: 14px; top: 6px;
+            font-size: 3.6rem;
+            font-weight: 800;
+            line-height: 1;
+            color: rgba(255, 255, 255, 0.08);
+            transition: color 0.35s, transform 0.35s;
+            pointer-events: none;
+        }
+        .menu-card:hover .card-no {
+            color: rgba(255, 255, 255, 0.18);
+            transform: translateY(4px);
+        }
+
+        .menu-card .card-icon {
+            width: 54px; height: 54px;
+            border-radius: 16px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.35rem;
+            background: linear-gradient(135deg, rgba(255,255,255,0.35), rgba(255,255,255,0.12));
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            box-shadow: 0 8px 20px rgba(23, 195, 255, 0.4);
+            transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s;
+        }
+        .menu-card:hover .card-icon {
+            transform: scale(1.12) rotate(-8deg);
+            box-shadow: 0 12px 28px rgba(23, 195, 255, 0.75);
+        }
+
+        .menu-card .card-title {
+            font-size: 1.08rem;
+            font-weight: 700;
+            margin: 18px 0 4px;
+            line-height: 1.25;
+        }
+        .menu-card .card-desc {
+            font-size: 0.8rem;
+            line-height: 1.45;
+            opacity: 0.82;
+            margin: 0;
+        }
+        .menu-card .card-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 14px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            opacity: 0.75;
+            transition: opacity 0.3s, gap 0.3s;
+        }
+        .menu-card:hover .card-cta { opacity: 1; gap: 14px; }
+
+        /* garis bawah tumbuh saat hover */
+        .menu-card::after {
+            content: '';
+            position: absolute;
+            left: 0; bottom: 0;
+            height: 3px; width: 100%;
+            background: linear-gradient(90deg, #17c3ff, #ffffff);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .menu-card:hover::after { transform: scaleX(1); }
+
+
+        .perizinan-wrap {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            max-width: 1100px;
+            padding: 0 15px;
+        }
+        .menu-grid.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+        @media (max-width: 991.98px) {
+            .menu-grid.cols-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 575.98px) {
+            .perizinan-wrap { padding: 0 5px; }
+            .menu-panel { padding: 20px; border-radius: 22px; }
+            .menu-grid, .menu-grid.cols-3 { grid-template-columns: 1fr; gap: 12px; }
+            .menu-card { min-height: auto; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .perizinan-wrap *, .perizinan-wrap *::before, .perizinan-wrap *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
     </style>
 </head>
 
@@ -409,95 +652,60 @@
         <div class="pulse-node pulse-node-3"></div>
 
         <!-- ═══ MENU WRAPPER ═══ -->
-        <div class="menu-wrapper">
+        <main class="perizinan-wrap">
+            <div class="menu-panel">
+                <h4 style="text-align: center;">Pilih Jenis Izin</h4>
+                <p style="text-align: center;">Silakan pilih salah satu jenis izin pemanfaatan ruang milik jalan di bawah untuk melanjutkan</p>
+                <!-- <div class="menu-panel-head">
+                    <div>
+                        <h2 style="text-align: center;">Pilih Jenis Izin</h2>
+                        <p style="text-align: center;">Silakan pilih salah satu jenis izin pemanfaatan ruang milik jalan di bawah untuk melanjutkan</p>
+                    </div>
+                    <div class="head-icon"><i class="fas fa-th-large"></i></div>
+                </div> -->
 
-        <!-- Header -->
-        <div class="menu-header">
-            <p class="menu-subtitle">Silakan pilih salah satu jenis izin pemanfaatan ruang miliki jalan di bawah untuk melanjutkan</p>
-        </div>
+                <nav class="menu-grid cols-3">
+                    <a href="/perizinan/jaringan_utilitas" class="menu-card">
+                        <span class="card-no">01</span>
+                        <div>
+                            <div class="card-icon"><i class="fas fa-network-wired"></i></div>
+                            <h3 class="card-title">Izin Jaringan Utilitas</h3>
+                            <p class="card-desc">Tiang, kabel &amp; jaringan utilitas di ruang milik jalan.</p>
+                        </div>
+                        <span class="card-cta">Masuk <i class="fas fa-arrow-right"></i></span>
+                    </a>
 
-        <!-- Shortcut Cards -->
-        <div class="row no-gutters">
+                    <a href="/perizinan/reklame" class="menu-card">
+                        <span class="card-no">02</span>
+                        <div>
+                            <div class="card-icon"><i class="fas fa-ad"></i></div>
+                            <h3 class="card-title">Izin Reklame / Papan Iklan</h3>
+                            <p class="card-desc">Pemasangan papan reklame &amp; media iklan luar ruang.</p>
+                        </div>
+                        <span class="card-cta">Masuk <i class="fas fa-arrow-right"></i></span>
+                    </a>
 
-            <!-- Card 1: Sign In -->
-            <div class="col-12 col-sm-4 pl-sm-2 mb-3 mb-sm-0">
-            <a href="/perizinan/jaringan_utilitas" class="shortcut-card">
-                <div class="shortcut-icon">
-                    <i class="fas fa-map-pin" style="font-size: 28px;color: #f7ca18;"></i>
-                <!-- <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
-                    <polyline points="10 17 15 12 10 7"/>
-                    <line x1="15" y1="12" x2="3" y2="12"/>
-                </svg> -->
-                </div>
-                <div class="shortcut-content">
-                <div class="shortcut-title" style="color: #f7ca18;font-weight: bold;">Izin Jaringan Utilitas</div>
-                <!-- <p class="shortcut-desc">Kelola data utilitas tiang yang anda miliki</p> -->
-                </div>
-                <svg class="shortcut-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="9 18 15 12 9 6"/>
-                </svg>
-            </a>
+                    <a href="/tidak_teridentifikasi" class="menu-card">
+                        <span class="card-no">03</span>
+                        <div>
+                            <div class="card-icon"><i class="fas fa-building"></i></div>
+                            <h3 class="card-title">Izin Bangunan / Akses Persil Tertentu</h3>
+                            <p class="card-desc">Bangunan atau akses masuk persil pada ruang milik jalan.</p>
+                        </div>
+                        <span class="card-cta">Masuk <i class="fas fa-arrow-right"></i></span>
+                    </a>
+                </nav>
             </div>
 
-            <!-- Card 2: Register -->
-            <div class="col-12 col-sm-4 pl-sm-2">
-            <a href="/perizinan/reklame" class="shortcut-card">
-                <div class="shortcut-icon">
-                    <i class="fas fa-vector-square" style="font-size: 28px;color: #f7ca18;"></i>
-                <!-- <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                    <circle cx="8.5" cy="7" r="4"/>
-                    <line x1="20" y1="8" x2="20" y2="14"/>
-                    <line x1="23" y1="11" x2="17" y2="11"/>
-                </svg> -->
+            <!-- <div class="row mt-5">
+                <div class="col-12">
+                    <div style="width: 100%;display: flex;justify-content: center;">
+                        <a href="/dokumen/MANUAL_BOOK_PROVIDER_TEGAL.pdf" target="_blank" class="btn btn-outline-warning btn-lg"><i class="fas fa-download"></i> Download Manual Book</a>
+                    </div>
                 </div>
-                <div class="shortcut-content">
-                <div class="shortcut-title" style="color: #f7ca18;font-weight: bold;">Izin Reklame / Papan Iklan</div>
-                <!-- <p class="shortcut-desc">Kelola data utilitas kabel yang anda miliki</p> -->
-                </div>
-                <svg class="shortcut-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="9 18 15 12 9 6"/>
-                </svg>
-            </a>
-            </div>
+            </div> -->
+        </main>
 
-             <!-- Card 2: Register -->
-            <div class="col-12 col-sm-4 pl-sm-2">
-            <a href="/tidak_teridentifikasi" class="shortcut-card">
-                <div class="shortcut-icon">
-                    <i class="fas fa-times" style="font-size: 28px;color: #f7ca18;"></i>
-                <!-- <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                    <circle cx="8.5" cy="7" r="4"/>
-                    <line x1="20" y1="8" x2="20" y2="14"/>
-                    <line x1="23" y1="11" x2="17" y2="11"/>
-                </svg> -->
-                </div>
-                <div class="shortcut-content">
-                <div class="shortcut-title" style="color: #f7ca18;font-weight: bold;">Izin Bangunan / Akses Persil Tertentu</div>
-                <!-- <p class="shortcut-desc">Kelola data utilitas kabel yang anda miliki</p> -->
-                </div>
-                <svg class="shortcut-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="9 18 15 12 9 6"/>
-                </svg>
-            </a>
-            </div>
-
-        </div>
-
-        <!-- <div class="row mt-5">
-            <div class="col-12">
-                <div style="width: 100%;display: flex;justify-content: center;">
-                    <a href="/dokumen/MANUAL_BOOK_PROVIDER_TEGAL.pdf" target="_blank" class="btn btn-outline-warning btn-lg"><i class="fas fa-download"></i> Download Manual Book</a>
-                </div>
-            </div>
-        </div> -->
-
-        
-
-        </div>
-          
     <% include ../template/footer.ejs %>
     <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
     <script src="<%= rooturl %>/javascripts/template/bootstrap.bundle.js"></script>
@@ -509,7 +717,36 @@
     <script src="<%= rooturl %>/plugins/slick/slick.min.js"></script>
     <!-- End Plugins This Page -->
     <script type="text/javascript">
-        var rooturl = ''
+        var rooturl = '';
+
+        // Efek tilt 3D + spotlight mengikuti kursor pada kartu menu
+        (function () {
+            var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            var canHover = window.matchMedia && window.matchMedia('(hover: hover)').matches;
+            if (reduce || !canHover) return;
+
+            document.querySelectorAll('.menu-card').forEach(function (card) {
+                card.addEventListener('animationend', function () {
+                    card.style.opacity = 1;
+                    card.style.animation = 'none';
+                }, { once: true });
+
+                card.addEventListener('mousemove', function (e) {
+                    var r = card.getBoundingClientRect();
+                    var x = e.clientX - r.left, y = e.clientY - r.top;
+                    var rx = ((y / r.height) - 0.5) * -10;
+                    var ry = ((x / r.width) - 0.5) * 10;
+                    card.style.setProperty('--mx', x + 'px');
+                    card.style.setProperty('--my', y + 'px');
+                    card.style.transform = 'perspective(700px) rotateX(' + rx + 'deg) rotateY(' + ry + 'deg) translateY(-6px)';
+                });
+                card.addEventListener('mouseleave', function () {
+                    card.style.transform = '';
+                    card.style.setProperty('--mx', '50%');
+                    card.style.setProperty('--my', '50%');
+                });
+            });
+        })();
         
         let data_table  =$('#list-data').DataTable({
             "language": {
