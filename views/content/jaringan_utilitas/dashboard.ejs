@@ -582,6 +582,26 @@
             ditolak:   { label: 'Ditolak',           badge: 'danger' }
         };
 
+        // Posisi permohonan berstatus 'diajukan' di backoffice, urut sesuai alur proses
+        var TAHAP = [
+            { kode: 'verifikasi',             label: 'Permohonan Izin (Verifikasi)' },
+            { kode: 'peninjauan_lapangan',    label: 'Peninjauan Lapangan' },
+            { kode: 'persetujuan_prinsip',    label: 'Persetujuan Prinsip' },
+            { kode: 'verifikasi_persyaratan', label: 'Verifikasi Persyaratan' },
+            { kode: 'penerbitan_izin',        label: 'Penerbitan Izin' }
+        ];
+
+        function badgeStatus(r) {
+            for (var i = 0; r.status === 'diajukan' && i < TAHAP.length; i++) {
+                if (TAHAP[i].kode === r.tahap) {
+                    return '<span class="badge badge-' + (r.tahap === 'penerbitan_izin' ? 'primary' : 'info') + '">' + TAHAP[i].label + '</span>' +
+                           '<br/><small class="text-muted">Tahap ' + (i + 1) + ' dari ' + TAHAP.length + '</small>';
+                }
+            }
+            var s = STATUS[r.status] || { label: r.status, badge: 'light' };
+            return '<span class="badge badge-' + s.badge + '">' + s.label + '</span>';
+        }
+
         function rupiah(n) {
             return 'Rp ' + Number(n || 0).toLocaleString('id-ID', { maximumFractionDigits: 0 }) + ',-';
         }
@@ -626,8 +646,7 @@
                 { data: 'jml_kabel', className: 'text-center', render: function (d) { return Number(d).toLocaleString('id-ID') + ' m'; } },
                 { data: 'retribusi', className: 'text-right', render: rupiah },
                 { data: null, render: function (r) {
-                    var s = STATUS[r.status] || { label: r.status, badge: 'light' };
-                    return '<span class="badge badge-' + s.badge + '">' + s.label + '</span>' +
+                    return badgeStatus(r) +
                            (r.keterangan ? '<br/><span>' + esc(r.keterangan) + '</span>' : '');
                 } },
                 { data: null, render: function (r) {

@@ -406,6 +406,11 @@ async function getDataSk(permohonan) {
 }
 
 var STATUS_LABEL = { draft: 'Draft', diajukan: 'Menunggu Verifikasi', revisi: 'Perlu Revisi', disetujui: 'Disetujui', ditolak: 'Ditolak' };
+// Posisi permohonan berstatus 'diajukan' di backoffice (permohonan.tahap)
+var TAHAP_LABEL = {
+  verifikasi: 'Permohonan Izin (Verifikasi)', peninjauan_lapangan: 'Peninjauan Lapangan', persetujuan_prinsip: 'Persetujuan Prinsip',
+  verifikasi_persyaratan: 'Verifikasi Persyaratan', penerbitan_izin: 'Penerbitan Izin'
+};
 
 function tglIndo(d) {
   if (!d) return '-';
@@ -438,7 +443,7 @@ async function buatExcel(data) {
     ['Pemohon', (p.nama_pemohon || '-') + (p.jabatan_pemohon ? ' (' + p.jabatan_pemohon + ')' : '')],
     ['Telp / Email', (p.telp_pemohon || '-') + ' / ' + (p.email_pemohon || '-')],
     ['Provider', p.provider || '-'],
-    ['Status', STATUS_LABEL[p.status] || p.status],
+    ['Status', p.status === 'diajukan' && TAHAP_LABEL[p.tahap] ? 'Diproses - ' + TAHAP_LABEL[p.tahap] : (STATUS_LABEL[p.status] || p.status)],
     ['Tgl. Diajukan', tglIndo(p.diajukanAt)],
     ['No. / Tgl. SK', (p.no_sk || '-') + (p.tanggal_sk ? ' / ' + tglIndo(p.tanggal_sk) : '')]
   ].forEach(function (info, i) {

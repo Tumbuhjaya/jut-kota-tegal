@@ -11,7 +11,7 @@ const email = function (email, subject, isi, lampiran) {
         service: 'Gmail',
         auth: {
          user: 'dsr010192@gmail.com',
-         pass: 'utxobdjezzlrzeln'
+         pass: 'blwzygtgounhpfcr'
         }
         });
     var mainOptions = {
