@@ -826,7 +826,7 @@ function updateLegendTiang(tiangRows) {
             $('#val_jml_provider').text(stats.jumlah_provider);
             $('#val_jml_tiang').text(stats.jumlah_tiang);
             $('#val_jml_kabel').text(stats.jumlah_kabel);
-            $('#val_ttl_p_kabel').text(Math.ceil(stats.total_panjang_kabel).toLocaleString('id-ID') +' m');
+            $('#val_ttl_p_kabel').text(Math.round(stats.total_panjang_kabel).toLocaleString('id-ID') +' m');
 
 
             

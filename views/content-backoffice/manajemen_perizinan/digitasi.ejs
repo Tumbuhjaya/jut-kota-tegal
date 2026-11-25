@@ -970,7 +970,7 @@ function loadGeoJsonRuasKabel(data) {
                             '<b>No:</b> ' + (item.no || '-') + '<br>' +
                             '<b>Provider:</b> ' + (item.provider || '-') + '<br>' +
                             '<b>Kode Ruas:</b> ' + (item.kode_ruas || '-') + '<br>' +
-                            '<b>Panjang:</b> ' + (item.panjang || '-') + ' m' +
+                            '<b>Panjang:</b> ' + (item.panjang != null ? Math.round(item.panjang).toLocaleString('id-ID') : '-') + ' m' +
                                                         '<b>Jumlah Kabel:</b> ' + (item.jumlah || '-') + '' +
                                                         '<b>Total Retribusi:</b> ' + (item.retribusi_k ) + '' +
 
@@ -1227,7 +1227,7 @@ let response2 = await $.get('/api/detail_kabel_by_kode_ruas/' + props.no);
                         <h6 class="filter-label-white m-0" style="font-family: 'Inter Tight', sans-serif;color: #4a9eff;text-shadow: 0 0 16px rgba(74, 158, 255, 0.4);">Pemasangan Pipa/Kabel/Jaringan Utilitas Atas Tanah ${item.jr_atk15cm?'':' >15cm'}</h6>
                         <hr class="divider-light mt-2 mb-2" />
                         <div class="label" style=" font-family: 'Orbitron', sans-serif;">Panjang Kabel</div>
-                        <h6 class="filter-label-white m-0" style="font-family: 'Orbitron', sans-serif;color: #4a9eff;text-shadow: 0 0 16px rgba(74, 158, 255, 0.4);">${(item.jumlah * item.panjang).toFixed(2)} Meter</h6>
+                        <h6 class="filter-label-white m-0" style="font-family: 'Orbitron', sans-serif;color: #4a9eff;text-shadow: 0 0 16px rgba(74, 158, 255, 0.4);">${Math.round(item.jumlah * item.panjang).toLocaleString('id-ID')} Meter</h6>
                         <hr class="divider-light mt-2 mb-2" />
                         <div class="label" style=" font-family: 'Orbitron', sans-serif;">Retribusi</div>
                         <h6 class="filter-label-white m-0" style="font-family: 'Orbitron', sans-serif;color: #4ade80;text-shadow: 0 0 12px rgba(74, 222, 128, 0.2);">Rp ${(item.retribusi_k.toFixed(2)+'').replace(/\B(?=(\d{3})+(?!\d))/g, '.')}</h6>
@@ -1759,7 +1759,7 @@ function loadGeoJsoninovasi(data) {
             if (JENIS !== 'kabel') return 0;
             var ll = layer.getLatLngs(), total = 0;
             for (var i = 1; i < ll.length; i++) total += ll[i - 1].distanceTo(ll[i]);
-            return Math.round(total * 100) / 100;
+            return Math.round(total); // panjang kabel dibulatkan ke meter, tanpa desimal
         }
 
         function buatLayer(f) {
@@ -1767,7 +1767,7 @@ function loadGeoJsoninovasi(data) {
             var layer = JENIS === 'tiang'
                 ? L.marker([c[1], c[0]], { icon: ikonTiang })
                 : L.polyline(c.map(function (p) { return [p[1], p[0]]; }), { color: '#e74c3c', weight: 4 });
-            layer.fitur = { id: f.id, jumlah: f.jumlah, keterangan: f.keterangan || '', panjang: Number(f.panjang || 0) };
+            layer.fitur = { id: f.id, jumlah: f.jumlah, keterangan: f.keterangan || '', panjang: Math.round(Number(f.panjang || 0)) };
             return layer;
         }
 

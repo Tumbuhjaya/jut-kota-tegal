@@ -6,6 +6,7 @@ var passport = require('passport')
 var sql_enak = require('../database/mysql_enak.js').connection;
 var helper = require('../helpper/permohonan.js');
 var tahapan = require('../helpper/tahapan_perizinan.js');
+var pengingat = require('../helpper/pengingat_pp.js');
 
 router.use(bodyParser.json());
 router.use(bodyParser.urlencoded({ extended: true }));
@@ -160,14 +161,29 @@ router.post('/list', cek_admin, async function (req, res) {
     // Status langkah penerbitan izin per baris: draft perjanjian sewa -> perjanjian TTD -> draft SK -> SK TTD
     var [data] = await sql_enak.raw(
       `SELECT x.*, (ps.permohonan_id IS NOT NULL) AS ada_sewa, (ps.file_ttd IS NOT NULL) AS ada_sewa_ttd,
-              ps.no_perjanjian, (pk.file_sk IS NOT NULL) AS ada_sk_ttd, pk.uploadSkAt
+              ps.no_perjanjian, (pk.file_sk IS NOT NULL) AS ada_sk_ttd, pk.uploadSkAt,
+              pp.tanggal_pp, pp.pengingat_terakhir, pp.pengingat_jumlah,
+              IF(pp.uploadTtdAt IS NULL, NULL, DATEDIFF(CURDATE(), pp.tanggal_pp)) AS hari_pp,
+              ${tahapan.JAMINAN.map(function (j) {
+                return `pp.${j.kode}_tgl_akhir, DATEDIFF(pp.${j.kode}_tgl_akhir, CURDATE()) AS ${j.kode}_sisa_hari,
+                        (pp.${j.kode}_tgl_akhir <= DATE_ADD(CURDATE(), INTERVAL ${Number(tahapan.BULAN_PERINGATAN_JAMINAN)} MONTH)) AS ${j.kode}_dekat`;
+              }).join(',\n              ')}
          FROM (${sql}) x
          JOIN permohonan pk ON pk.permohonan_id = x.permohonan_id
          LEFT JOIN permohonan_perjanjian_sewa ps ON ps.permohonan_id = x.permohonan_id
+         LEFT JOIN permohonan_persetujuan_prinsip pp ON pp.permohonan_id = x.permohonan_id
         ORDER BY FIELD(x.status, 'diajukan') DESC, IFNULL(x.diajukanAt, x.insertedAt) DESC`, val);
     data.forEach(function (d) {
       d.bisa_ubah = helper.bisaUbah(d);
       d.bisa_edit = helper.bisaUbah(d, true);
+      // Sudah >= 21 hari sejak persetujuan prinsip terbit tapi permohonan belum selesai
+      d.terlambat_pp = d.status === 'diajukan' && d.hari_pp != null && d.hari_pp >= pengingat.HARI_MULAI;
+      // Surat jaminan yang tanggal akhirnya tersisa <= 2 bulan (atau sudah lewat); permohonan ditolak tidak diperhatikan
+      d.jaminan_habis = d.status === 'ditolak' ? [] : tahapan.JAMINAN.filter(function (j) {
+        return d[j.kode + '_tgl_akhir'] && Number(d[j.kode + '_dekat']);
+      }).map(function (j) {
+        return { label: j.label, tgl_akhir: d[j.kode + '_tgl_akhir'], sisa_hari: Number(d[j.kode + '_sisa_hari']) };
+      });
     });
     res.json({ status: 200, message: 'sukses', data: data });
   } catch (err) { gagal(res, err); }
@@ -518,7 +534,7 @@ router.post('/permohonan/hapus/:id', cek_admin, async function (req, res) {
 
 // ---------------- Peninjauan lapangan (berita acara) ----------------
 router.get('/peninjauan_lapangan', cek_admin, function (req, res) {
-  res.render('content-backoffice/manajemen_perizinan/peninjauan_lapangan/list', { user: getUser(req), jumlah_foto: tahapan.JUMLAH_FOTO });
+  res.render('content-backoffice/manajemen_perizinan/peninjauan_lapangan/list', { user: getUser(req) });
 });
 
 router.post('/peninjauan_lapangan/list', cek_admin, kirimList('peninjauan_lapangan', ['diajukan']));
@@ -544,7 +560,7 @@ router.get('/peninjauan_lapangan/data/:id', cek_admin, async function (req, res)
   } catch (err) { gagal(res, err); }
 });
 
-// multipart: tim_teknis, no_ba, tanggal_ba, no_surat_permohonan, tanggal_surat_permohonan, hasil, kelayakan, foto_1..foto_6
+// multipart: tim_teknis, no_ba, tanggal_ba, no_surat_permohonan, tanggal_surat_permohonan, hasil, kelayakan, foto (boleh banyak file, tanpa batas)
 router.post('/peninjauan_lapangan/simpan/:id', cek_admin, tahapan.upload_foto, async function (req, res) {
   try {
     var p = await ambilTahap(req, res, 'peninjauan_lapangan');
@@ -620,7 +636,7 @@ router.get('/peninjauan_lapangan/file/:id', cek_admin, async function (req, res)
 
 // ---------------- Persetujuan prinsip ----------------
 router.get('/persetujuan_prinsip', cek_admin, function (req, res) {
-  res.render('content-backoffice/manajemen_perizinan/persetujuan_prinsip/list', { user: getUser(req) });
+  res.render('content-backoffice/manajemen_perizinan/persetujuan_prinsip/list', { user: getUser(req), jaminan: tahapan.JAMINAN });
 });
 
 // Termasuk yang sudah upload persetujuan prinsip TTD dan menunggu verifikasi persyaratan
@@ -647,7 +663,7 @@ router.get('/persetujuan_prinsip/data/:id', cek_admin, async function (req, res)
   } catch (err) { gagal(res, err); }
 });
 
-// body: { no_pp, tanggal_pp, persyaratan }
+// body: { no_pp, tanggal_pp, no_skrd, persyaratan, <kolom jaminan> }
 router.post('/persetujuan_prinsip/simpan/:id', cek_admin, async function (req, res) {
   try {
     var p = await ambilTahap(req, res, 'persetujuan_prinsip');
@@ -656,7 +672,7 @@ router.post('/persetujuan_prinsip/simpan/:id', cek_admin, async function (req, r
     if (!b.no_pp || !b.tanggal_pp) return gagal(res, 'Nomor & tanggal persetujuan prinsip wajib diisi', 400);
     await tahapan.simpanPersetujuan(p.permohonan_id, b, getUser(req).id_user);
     res.json({ status: 200, message: 'sukses', data: null });
-  } catch (err) { gagal(res, err); }
+  } catch (err) { gagal(res, err, err.status); }
 });
 
 router.get('/persetujuan_prinsip/cetak/:id', cek_admin, async function (req, res) {

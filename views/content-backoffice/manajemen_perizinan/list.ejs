@@ -333,7 +333,7 @@
         { "data": 'provider', "render": function (d) { return esc(d || '-'); } },
         { "data": 'jml_ruas', "className": 'text-center' },
         { "data": 'jml_tiang', "className": 'text-center' },
-        { "data": 'jml_kabel', "className": 'text-center', "render": function (d) { return Number(d).toLocaleString('id-ID'); } },
+        { "data": 'jml_kabel', "className": 'text-center', "render": function (d) { return Math.round(Number(d)).toLocaleString('id-ID'); } },
         { "data": 'retribusi', "className": 'text-right', "render": rupiah },
         { "data": 'no_sk', "render": function (d) { return esc(d || '-'); } },
         { "data": null, "render": function (r) {
@@ -341,18 +341,44 @@
             var langkah = langkahPenerbitan(r);
             langkah = langkah ? '<br/><small class="text-muted">' + langkah + '</small>' : '';
             if (r.status === 'diajukan' && TAHAP[r.tahap]) {
-              return '<span class="badge badge-' + (r.tahap === 'penerbitan_izin' ? 'primary' : 'info') + '">' + TAHAP[r.tahap] + '</span>' + langkah;
+              return '<span class="badge badge-' + (r.tahap === 'penerbitan_izin' ? 'primary' : 'info') + '">' + TAHAP[r.tahap] + '</span>' + langkah + alertTerlambat(r) + keteranganJaminan(r);
             }
             var s = STATUS[r.status] || { label: r.status, badge: 'light' };
-            return '<span class="badge badge-' + s.badge + '">' + s.label + '</span>' + langkah;
+            return '<span class="badge badge-' + s.badge + '">' + s.label + '</span>' + langkah + keteranganJaminan(r);
         } },
         
     ],
     "columnDefs": [
         { "width": "30px", "targets": 0 },
         { "width": "170px", "targets": 10 }
-    ]
+    ],
+    "createdRow": function (row, r) {
+        if (r.terlambat_pp) $(row).addClass('table-danger');
+    }
   });
+
+  // Peringatan: >= 21 hari sejak persetujuan prinsip terbit, permohonan belum selesai
+  function alertTerlambat(r) {
+    if (!r.terlambat_pp) return '';
+    var info = r.pengingat_jumlah > 0
+      ? 'Email pengingat terkirim ' + r.pengingat_jumlah + 'x, terakhir ' + moment(r.pengingat_terakhir).format('DD/MM/YYYY')
+      : 'Email pengingat belum terkirim';
+    return '<div class="mt-1"><span class="badge badge-danger" title="' + info + '">' +
+      '<i class="fas fa-exclamation-triangle"></i> ' + r.hari_pp + ' hari sejak Persetujuan Prinsip</span>' +
+      '<br/><small class="text-danger">Belum selesai &middot; ' + info + '</small></div>';
+  }
+
+  // Keterangan surat jaminan (persetujuan prinsip) yang tanggal akhirnya tersisa <= 2 bulan atau sudah lewat
+  function keteranganJaminan(r) {
+    if (!r.jaminan_habis || !r.jaminan_habis.length) return '';
+    return '<div class="mt-1"><small class="text-warning font-weight-bold"><i class="fas fa-file-contract"></i> Ada surat jaminan yang akan habis:</small>' +
+      r.jaminan_habis.map(function (j) {
+        var sisa = j.sisa_hari < 0 ? 'sudah habis ' + Math.abs(j.sisa_hari) + ' hari lalu'
+          : j.sisa_hari === 0 ? 'habis hari ini' : 'sisa ' + j.sisa_hari + ' hari';
+        return '<br/><small' + (j.sisa_hari <= 0 ? ' class="text-danger"' : '') + '>&bull; ' + esc(j.label) +
+          ' s.d. ' + moment(j.tgl_akhir).format('DD/MM/YYYY') + ' (' + sisa + ')</small>';
+      }).join('') + '</div>';
+  }
 
   data_table.on('draw.dt', function () {
     let PageInfo = $('#list-data').DataTable().page.info();

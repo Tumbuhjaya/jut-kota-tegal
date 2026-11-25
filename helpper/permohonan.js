@@ -268,7 +268,7 @@ async function sinkronTotalRuas(permohonan_ruas_id) {
     `UPDATE permohonan_ruas r
         SET r.jumlah_tiang = (SELECT IFNULL(SUM(jumlah), 0) FROM permohonan_tiang
                                WHERE permohonan_ruas_id = r.permohonan_ruas_id AND deletedAt IS NULL),
-            r.panjang_kabel = (SELECT IFNULL(SUM(panjang * jumlah), 0) FROM permohonan_kabel
+            r.panjang_kabel = (SELECT IFNULL(SUM(ROUND(panjang) * jumlah), 0) FROM permohonan_kabel
                                 WHERE permohonan_ruas_id = r.permohonan_ruas_id AND deletedAt IS NULL),
             r.lastUpdateAt = NOW()
       WHERE r.permohonan_ruas_id = ?`,

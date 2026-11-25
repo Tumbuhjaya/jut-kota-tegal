@@ -284,4 +284,6 @@ app.use(function (req, res, next) {
 // Pastikan baris ini ada di paling bawah file Anda
 server.listen(app.get('port'), () => {
   console.log('Express server listening on port ' + app.get('port'));
+  // Email pengingat permohonan yang belum selesai 21-28 hari setelah persetujuan prinsip
+  require('./helpper/pengingat_pp.js').mulai();
 });

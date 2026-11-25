@@ -102,7 +102,7 @@
         { "data": 'provider', "render": esc },
         { "data": 'jml_ruas', "className": 'text-center' },
         { "data": 'jml_tiang', "className": 'text-center' },
-        { "data": 'jml_kabel', "className": 'text-center', "render": function (d) { return Number(d).toLocaleString('id-ID'); } },
+        { "data": 'jml_kabel', "className": 'text-center', "render": function (d) { return Math.round(Number(d)).toLocaleString('id-ID'); } },
         { "data": 'retribusi', "className": 'text-right', "render": rupiah },
         { "data": 'status', "render": function (d) {
             var s = STATUS[d] || { label: d, badge: 'light' };

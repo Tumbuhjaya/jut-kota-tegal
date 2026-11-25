@@ -642,7 +642,7 @@
                 { data: 'provider', render: function (d) { return esc(d || '-'); } },
                 { data: 'jml_ruas', className: 'text-center' },
                 { data: 'jml_tiang', className: 'text-center' },
-                { data: 'jml_kabel', className: 'text-center', render: function (d) { return Number(d).toLocaleString('id-ID') + ' m'; } },
+                { data: 'jml_kabel', className: 'text-center', render: function (d) { return Math.round(Number(d)).toLocaleString('id-ID') + ' m'; } },
                 { data: 'retribusi', className: 'text-right', render: rupiah },
                
                 { data: null, render: function (r) {

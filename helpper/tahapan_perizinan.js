@@ -21,12 +21,11 @@ var TAHAP = {
 
 var KELAYAKAN = { layak: 'Layak', tidak_layak: 'Tidak Layak' };
 
-var JUMLAH_FOTO = 6;
-var FIELD_FOTO = [];
-for (var i = 1; i <= JUMLAH_FOTO; i++) FIELD_FOTO.push('foto_' + i);
+// Foto dokumentasi peninjauan lapangan tidak dibatasi jumlahnya; semua dikirim lewat satu field
+var FIELD_FOTO = 'foto';
 
-// maks_mb: batas ukuran per file (default 10 MB)
-function buatUpload(ekstensi, pesan, fields, maks_mb) {
+// maks_mb: batas ukuran per file (default 10 MB); maks_jumlah: file per field (default 1, null = tanpa batas)
+function buatUpload(ekstensi, pesan, fields, maks_mb, maks_jumlah) {
   return multer({
     storage: multer.diskStorage({
       destination: function (req, file, cb) { cb(null, DIR_DOKUMEN); },
@@ -40,11 +39,11 @@ function buatUpload(ekstensi, pesan, fields, maks_mb) {
       if (ekstensi.indexOf(path.extname(file.originalname).toLowerCase()) === -1) return cb(new Error(pesan));
       cb(null, true);
     }
-  }).fields(fields.map(function (f) { return { name: f, maxCount: 1 }; }));
+  }).fields(fields.map(function (f) { return { name: f, maxCount: maks_jumlah === undefined ? 1 : maks_jumlah }; }));
 }
 
 // Foto dokumentasi ditampilkan di cetak BA, jadi hanya gambar
-var upload_foto = buatUpload(['.jpg', '.jpeg', '.png'], 'Foto dokumentasi harus JPG / PNG', FIELD_FOTO);
+var upload_foto = buatUpload(['.jpg', '.jpeg', '.png'], 'Foto dokumentasi harus JPG / PNG', [FIELD_FOTO], undefined, null);
 var upload_ttd = buatUpload(['.pdf', '.jpg', '.jpeg', '.png'], 'File harus PDF / JPG / PNG', ['file']);
 // Kelengkapan persyaratan persetujuan prinsip dari pemohon, dijadikan satu file ZIP
 var MAKS_MB_PERSYARATAN = 50;
@@ -117,7 +116,7 @@ async function getPeninjauan(permohonan_id) {
   return rows[0];
 }
 
-// Buat / ubah draft BA; foto yang diupload mengganti slot urutan yang sama
+// Buat / ubah draft BA; foto yang diupload ditambahkan setelah foto yang sudah ada
 async function simpanPeninjauan(permohonan_id, b, files, id_user) {
   var kolom = [b.tim_teknis || null, b.no_ba || null, b.tanggal_ba || null,
     b.no_surat_permohonan || null, b.tanggal_surat_permohonan || null, b.hasil || null, b.kelayakan || null];
@@ -142,18 +141,18 @@ async function simpanPeninjauan(permohonan_id, b, files, id_user) {
     id = hasil.insertId;
   }
 
-  for (var i = 0; i < FIELD_FOTO.length; i++) {
-    var f = files && files[FIELD_FOTO[i]] && files[FIELD_FOTO[i]][0];
-    if (!f) continue;
-    var [lama] = await sql_enak.raw(
-      `SELECT nama_file FROM permohonan_peninjauan_foto WHERE permohonan_peninjauan_id = ? AND urutan = ?`, [id, i + 1]);
-    if (lama.length) hapusFile(lama[0].nama_file);
-    await sql_enak.raw(
-      `INSERT INTO permohonan_peninjauan_foto (permohonan_peninjauan_id, urutan, nama_file, nama_asli, insertedAt, lastUpdateAt)
-       VALUES (?, ?, ?, ?, NOW(), NOW()) AS baru
-       ON DUPLICATE KEY UPDATE nama_file = baru.nama_file, nama_asli = baru.nama_asli, lastUpdateAt = NOW()`,
-      [id, i + 1, f.filename, f.originalname]
-    );
+  var baru = (files && files[FIELD_FOTO]) || [];
+  if (baru.length) {
+    var [maks] = await sql_enak.raw(
+      `SELECT IFNULL(MAX(urutan), 0) AS urutan FROM permohonan_peninjauan_foto WHERE permohonan_peninjauan_id = ?`, [id]);
+    var urutan = Number(maks[0].urutan);
+    for (var i = 0; i < baru.length; i++) {
+      await sql_enak.raw(
+        `INSERT INTO permohonan_peninjauan_foto (permohonan_peninjauan_id, urutan, nama_file, nama_asli, insertedAt, lastUpdateAt)
+         VALUES (?, ?, ?, ?, NOW(), NOW())`,
+        [id, ++urutan, baru[i].filename, baru[i].originalname]
+      );
+    }
   }
   return id;
 }
@@ -176,21 +175,57 @@ async function getPersetujuan(permohonan_id) {
   return rows[0] || null;
 }
 
+// Jaminan pada persetujuan prinsip; kolom tabel = <kode>_<field> (database/jaminan_persetujuan_prinsip.sql)
+var JAMINAN = [
+  { kode: 'jaminan_pelaksanaan',   label: 'Jaminan Pelaksanaan' },
+  { kode: 'jaminan_pemeliharaan',  label: 'Jaminan Pemeliharaan' },
+  { kode: 'asuransi_pihak_ketiga', label: 'Asuransi Kerugian Pihak Ketiga (Polis Asuransi Public Liability)' }
+];
+var FIELD_JAMINAN = ['bank', 'nomor', 'nominal', 'tgl_awal', 'tgl_akhir'];
+var KOLOM_JAMINAN = [];
+JAMINAN.forEach(function (j) {
+  FIELD_JAMINAN.forEach(function (f) { KOLOM_JAMINAN.push(j.kode + '_' + f); });
+});
+// Keterangan di daftar izin bila tanggal akhir jaminan tersisa <= sekian bulan
+var BULAN_PERINGATAN_JAMINAN = 2;
+
+// Isian jaminan dari body form -> nilai kolom (kosong = NULL); error bila tanggal akhir sebelum tanggal awal
+function nilaiJaminan(b) {
+  var nilai = {};
+  KOLOM_JAMINAN.forEach(function (k) {
+    var v = b[k] == null ? '' : String(b[k]).trim();
+    if (/_nominal$/.test(k)) v = v === '' ? null : Math.max(0, parseFloat(v) || 0);
+    nilai[k] = v === '' ? null : v;
+  });
+  JAMINAN.forEach(function (j) {
+    var awal = nilai[j.kode + '_tgl_awal'], akhir = nilai[j.kode + '_tgl_akhir'];
+    if (awal && akhir && akhir < awal) {
+      var err = new Error('Tanggal akhir ' + j.label + ' tidak boleh sebelum tanggal awal');
+      err.status = 400;
+      throw err;
+    }
+  });
+  return nilai;
+}
+
 async function simpanPersetujuan(permohonan_id, b, id_user) {
-  var kolom = [b.no_pp || null, b.tanggal_pp || null, b.persyaratan || null];
+  var jaminan = nilaiJaminan(b);
+  var kolom = ['no_pp', 'tanggal_pp', 'no_skrd', 'persyaratan'].concat(KOLOM_JAMINAN);
+  var nilai = [b.no_pp || null, b.tanggal_pp || null, String(b.no_skrd || '').trim() || null, b.persyaratan || null]
+    .concat(KOLOM_JAMINAN.map(function (k) { return jaminan[k]; }));
   var ada = await getPersetujuan(permohonan_id);
   if (ada) {
     await sql_enak.raw(
-      `UPDATE permohonan_persetujuan_prinsip SET no_pp = ?, tanggal_pp = ?, persyaratan = ?, lastUpdateAt = NOW()
+      `UPDATE permohonan_persetujuan_prinsip SET ${kolom.map(function (k) { return k + ' = ?'; }).join(', ')}, lastUpdateAt = NOW()
         WHERE permohonan_persetujuan_prinsip_id = ?`,
-      kolom.concat([ada.permohonan_persetujuan_prinsip_id])
+      nilai.concat([ada.permohonan_persetujuan_prinsip_id])
     );
     return ada.permohonan_persetujuan_prinsip_id;
   }
   var [hasil] = await sql_enak.raw(
-    `INSERT INTO permohonan_persetujuan_prinsip (permohonan_id, no_pp, tanggal_pp, persyaratan, dibuat_oleh, insertedAt, lastUpdateAt)
-     VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
-    [permohonan_id].concat(kolom, [id_user])
+    `INSERT INTO permohonan_persetujuan_prinsip (permohonan_id, ${kolom.join(', ')}, dibuat_oleh, insertedAt, lastUpdateAt)
+     VALUES (?, ${kolom.map(function () { return '?'; }).join(', ')}, ?, NOW(), NOW())`,
+    [permohonan_id].concat(nilai, [id_user])
   );
   return hasil.insertId;
 }
@@ -328,7 +363,6 @@ async function kirimNotifikasi(permohonan, judul, isi, berkas) {
 module.exports = {
   TAHAP: TAHAP,
   KELAYAKAN: KELAYAKAN,
-  JUMLAH_FOTO: JUMLAH_FOTO,
   upload_foto: pakaiUpload(upload_foto),
   upload_ttd: pakaiUpload(upload_ttd),
   MAKS_MB_PERSYARATAN: MAKS_MB_PERSYARATAN,
@@ -351,5 +385,7 @@ module.exports = {
   escHtml: escHtml,
   lampiran: lampiran,
   urlPersyaratan: urlPersyaratan,
-  kirimNotifikasi: kirimNotifikasi
+  kirimNotifikasi: kirimNotifikasi,
+  JAMINAN: JAMINAN,
+  BULAN_PERINGATAN_JAMINAN: BULAN_PERINGATAN_JAMINAN
 };

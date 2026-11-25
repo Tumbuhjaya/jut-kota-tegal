@@ -178,7 +178,7 @@
                   <%- selNoRuas(r.no) %>
                   <td class="c"><%= angka(jumlahTiang(r)) %></td>
                   <td class="c"><%= panjangMeter(r) %></td>
-                  <td class="c"><%= angka(r.panjang_kabel, 2) %></td>
+                  <td class="c"><%= angka(r.panjang_kabel) %></td>
                   <td><%= keteranganRuas(r) %></td>
                 </tr>
                 <% }) %>
@@ -189,7 +189,7 @@
                   <th></th><th></th><th></th>
                   <th><%= angka(totalTiang) %></th>
                   <th></th>
-                  <th><%= angka(totalKabel, 2) %></th>
+                  <th><%= angka(totalKabel) %></th>
                   <th></th>
                 </tr>
               </tfoot>

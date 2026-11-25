@@ -32,12 +32,9 @@
   var no_surat = p.no_surat_permohonan || b.no_surat_permohonan;
   var tgl = b.tanggal_ba ? new Date(b.tanggal_ba) : null;
 
-  // Lampiran: 6 slot foto (2 kolom x 3 baris), diisi sesuai urutan
-  var slot = [null, null, null, null, null, null];
-  (b.foto || []).forEach(function (f) {
-    var i = Number(f.urutan) - 1;
-    if (i >= 0 && i < slot.length) slot[i] = f; else slot.push(f);
-  });
+  // Lampiran: semua foto (jumlah bebas) sesuai urutan, 2 kolom per baris
+  var slot = (b.foto || []).slice();
+  if (!slot.length) slot = [null, null];
   if (slot.length % 2) slot.push(null);
 %>
 <!DOCTYPE html>
@@ -89,6 +86,7 @@
     /* Lampiran dokumentasi */
     .lampiran-judul { text-align: center; line-height: 1.45; margin: 5mm 0 4mm; }
     table.foto { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    table.foto tr { page-break-inside: avoid; break-inside: avoid; }
     table.foto td { border: 1px solid #000; width: 50%; height: 74mm; padding: 4mm; text-align: center; vertical-align: middle; }
     table.foto img { max-width: 100%; max-height: 66mm; object-fit: contain; display: block; margin: 0 auto; }
 

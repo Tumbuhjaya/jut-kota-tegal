@@ -917,7 +917,7 @@
             var selKomponen = KOMPONEN.map(function (k) {
                 var d = digitasi[k.jumlah];
                 var kunci = !BISA_UBAH || (d && d[0] > 0) ? 'readonly' : '';
-                return '<td><input type="number" min="0" step="' + (k.satuan === 'Unit' ? '1' : '0.01') + '" class="form-control in-jml" data-kolom="' + k.jumlah + '" ' + kunci + '>' +
+                return '<td><input type="number" min="0" step="' + (k.satuan === 'Unit' || k.jumlah === 'panjang_kabel' ? '1' : '0.01') + '" class="form-control in-jml" data-kolom="' + k.jumlah + '" ' + kunci + '>' +
                         (d && d[0] > 0 ? '<small class="text-muted">digitasi: ' + d[0] + ' ' + d[1] + '</small>' : '') + '</td>' +
                     '<td class="text-right c-tarif" data-kode="' + k.kode + '"></td>' +
                     '<td class="text-right c-ret" data-kode="' + k.kode + '"></td>';
@@ -939,7 +939,10 @@
                 '</tr>');
             $tr.data('row', row);
             $tr.find('.pilih-ruas').val(row.ruas_id || idRuasLain);
-            KOMPONEN.forEach(function (k) { $tr.find('.in-jml[data-kolom=' + k.jumlah + ']').val(row[k.jumlah] || 0); });
+            KOMPONEN.forEach(function (k) {
+                var v = Number(row[k.jumlah] || 0);
+                $tr.find('.in-jml[data-kolom=' + k.jumlah + ']').val(k.jumlah === 'panjang_kabel' ? Math.round(v) : v);
+            });
             $('#tbody_ruas').append($tr);
             $tr.find('.pilih-ruas').select2({ theme: 'bootstrap4', width: '100%' });
             if (!row.permohonan_ruas_id) adaPerubahan = true;

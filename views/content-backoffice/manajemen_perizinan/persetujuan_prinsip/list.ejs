@@ -82,6 +82,11 @@
                         <label for="no_pp">Nomor Persetujuan Prinsip</label>
                         <input type="text" class="form-control" id="no_pp">
                     </div>
+
+                    <div class="form-group">
+                        <label for="no_skrd">Nomor SKRD</label>
+                        <input type="text" class="form-control" id="no_skrd" maxlength="100">
+                    </div>
                 </div>
             </div>
             <div class="row">
@@ -92,6 +97,42 @@
                     </div>
                 </div>
             </div>
+            <% jaminan.forEach(function (j, n) { %>
+            <hr>
+            <h6 class="mb-3"><%= n + 1 %>. <%= j.label %></h6>
+            <div class="row">
+                <div class="col-12 col-md-6">
+                    <div class="form-group">
+                        <label for="<%= j.kode %>_bank">Bank</label>
+                        <input type="text" class="form-control in-jaminan" id="<%= j.kode %>_bank" maxlength="150">
+                    </div>
+                </div>
+                <div class="col-12 col-md-6">
+                    <div class="form-group">
+                        <label for="<%= j.kode %>_nomor">Nomor</label>
+                        <input type="text" class="form-control in-jaminan" id="<%= j.kode %>_nomor" maxlength="100">
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="form-group">
+                        <label for="<%= j.kode %>_nominal">Nominal (Rp)</label>
+                        <input type="number" min="0" step="1" class="form-control in-jaminan" id="<%= j.kode %>_nominal">
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="form-group">
+                        <label for="<%= j.kode %>_tgl_awal">Tanggal Awal</label>
+                        <input type="date" class="form-control in-jaminan" id="<%= j.kode %>_tgl_awal">
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="form-group">
+                        <label for="<%= j.kode %>_tgl_akhir">Tanggal Akhir</label>
+                        <input type="date" class="form-control in-jaminan" id="<%= j.kode %>_tgl_akhir">
+                    </div>
+                </div>
+            </div>
+            <% }) %>
         </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal"><i class="fas fa-times"></i>&nbsp;&nbsp;Tutup</button>
@@ -222,7 +263,7 @@
         { "data": 'provider', "render": esc },
         { "data": 'jml_ruas', "className": 'text-center' },
         { "data": 'jml_tiang', "className": 'text-center' },
-        { "data": 'jml_kabel', "className": 'text-center', "render": function (d) { return Number(d).toLocaleString('id-ID'); } },
+        { "data": 'jml_kabel', "className": 'text-center', "render": function (d) { return Math.round(Number(d)).toLocaleString('id-ID'); } },
         { "data": 'retribusi', "className": 'text-right', "render": rupiah },
         { "data": 'tim_teknis', "render": function (d) { return d ? esc(d).replace(/\n/g, '<br/>') : '-'; } },
         { "data": null, "className": 'text-center', "render": function (r) {
@@ -283,20 +324,31 @@
         var pp = res.data.persetujuan || {};
         $('#judulDraft').text((res.data.persetujuan ? 'Ubah' : 'Buat') + ' Draft Persetujuan Prinsip');
         $('#no_pp').val(pp.no_pp || '');
+        $('#no_skrd').val(pp.no_skrd || '');
         $('#tanggal_pp').val(pp.tanggal_pp ? moment(pp.tanggal_pp).format('YYYY-MM-DD') : '');
         CKEDITOR.instances.editor1.setData(pp.persyaratan || '');
+        $('.in-jaminan').each(function () {
+          var v = pp[this.id];
+          if (v == null) v = '';
+          else if (this.type === 'date') v = moment(v).format('YYYY-MM-DD');
+          else if (this.type === 'number') v = Number(v);
+          $(this).val(v);
+        });
         $('#modalDraft').modal('show');
       }).fail(function (xhr) { pesanGagal(xhr, 'Gagal memuat data'); });
     }
 
     function simpanDraft() {
       if (!$('#no_pp').val() || !$('#tanggal_pp').val()) return swal('Lengkapi data', 'Nomor & tanggal persetujuan prinsip wajib diisi', 'warning');
-      $('#btn-simpan-draft').prop('disabled', true);
-      $.post(URL_TAHAP + '/simpan/' + id_aktif, {
+      var data = {
         no_pp: $('#no_pp').val(),
         tanggal_pp: $('#tanggal_pp').val(),
+        no_skrd: $('#no_skrd').val(),
         persyaratan: CKEDITOR.instances.editor1.getData()
-      }).done(function () {
+      };
+      $('.in-jaminan').each(function () { data[this.id] = $(this).val(); });
+      $('#btn-simpan-draft').prop('disabled', true);
+      $.post(URL_TAHAP + '/simpan/' + id_aktif, data).done(function () {
         $('#modalDraft').modal('hide');
         swal({title:text_insert.title,text:text_insert.text, icon: text_insert.icon, type:text_insert.type})
         data_table.ajax.reload(null, false);

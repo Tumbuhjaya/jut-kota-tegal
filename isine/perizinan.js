@@ -408,7 +408,10 @@ router.post(JU + '/api/simpan/:id_permohonan', cek_pemohon, async function (req,
       var nilai = [ruas_id, tarif.t_k30cm || 0, tarif.jr_atk15cm || 0];
       helper.KOMPONEN_RETRIBUSI.forEach(function (k) {
         kolom.push(k.jumlah);
-        nilai.push(Math.max(0, (k.satuan === 'Unit' ? parseInt(r[k.jumlah]) : parseFloat(r[k.jumlah])) || 0));
+        // Unit & panjang kabel bilangan bulat; panjang kabel dibulatkan ke meter terdekat
+        var n = k.satuan === 'Unit' ? parseInt(r[k.jumlah]) : parseFloat(r[k.jumlah]);
+        if (k.jumlah === 'panjang_kabel') n = Math.round(n);
+        nilai.push(Math.max(0, n || 0));
       });
       var id_ruas_tersimpan = null;
       if (r.permohonan_ruas_id) {
@@ -594,7 +597,8 @@ router.post(JU + '/api/digitasi/:jenis/:id_permohonan/:id_ruas', cek_pemohon, as
     for (var j = 0; j < fitur.length; j++) {
       var f = fitur[j];
       var kolom = { jumlah: Math.max(1, parseInt(f.jumlah) || 1), keterangan: f.keterangan || null };
-      if (req.params.jenis === 'kabel') kolom.panjang = Math.max(0, parseFloat(f.panjang) || 0);
+      // Panjang kabel disimpan dalam meter bulat (tanpa desimal)
+      if (req.params.jenis === 'kabel') kolom.panjang = Math.max(0, Math.round(parseFloat(f.panjang) || 0));
       var set = Object.keys(kolom);
       var nilai = set.map(function (k) { return kolom[k]; });
       if (f.id) {

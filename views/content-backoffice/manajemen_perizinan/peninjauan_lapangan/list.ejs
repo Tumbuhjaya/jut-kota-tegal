@@ -130,18 +130,17 @@
                 </div>
             </div>
             <div class="row">
-                <% for (var i = 1; i <= jumlah_foto; i++) { %>
-                <div class="col-12 col-lg-6 col-xl-6">
+                <div class="col-12">
                     <div class="form-group">
-                        <label for="foto_<%= i %>">Upload Dokumentasi Peninjauan Lapangan <%= i %></label>
+                        <label for="foto">Upload Dokumentasi Peninjauan Lapangan</label>
                         <div class="custom-file">
-                            <input type="file" class="custom-file-input" id="foto_<%= i %>" accept=".jpg,.jpeg,.png">
-                            <label class="custom-file-label" for="foto_<%= i %>">Pilih File</label>
+                            <input type="file" class="custom-file-input" id="foto" accept=".jpg,.jpeg,.png" multiple>
+                            <label class="custom-file-label" for="foto">Pilih File</label>
                         </div>
-                        <div class="foto-lama mt-2" data-urutan="<%= i %>"></div>
+                        <small class="text-muted">Bisa memilih banyak foto sekaligus (JPG / PNG), jumlah tidak dibatasi. Foto baru ditambahkan setelah foto yang sudah ada.</small>
+                        <div id="foto-lama" class="d-flex flex-wrap mt-2" style="gap: 10px;"></div>
                     </div>
                 </div>
-                <% } %>
             </div>
         </div>
       <div class="modal-footer">
@@ -186,7 +185,6 @@
 <script type="text/javascript">
     var rooturl = ''
     var URL_TAHAP = rooturl + '/manajemen_perizinan/peninjauan_lapangan';
-    var JUMLAH_FOTO = <%= jumlah_foto %>;
     var id_aktif = null;
 
     CKEDITOR.replace('editor1', {
@@ -237,7 +235,7 @@
         { "data": 'provider', "render": esc },
         { "data": 'jml_ruas', "className": 'text-center' },
         { "data": 'jml_tiang', "className": 'text-center' },
-        { "data": 'jml_kabel', "className": 'text-center', "render": function (d) { return Number(d).toLocaleString('id-ID'); } },
+        { "data": 'jml_kabel', "className": 'text-center', "render": function (d) { return Math.round(Number(d)).toLocaleString('id-ID'); } },
         { "data": 'retribusi', "className": 'text-right', "render": rupiah },
         { "data": 'tim_teknis', "render": function (d) { return d ? esc(d).replace(/\n/g, '<br/>') : '<i class="text-muted">belum ditentukan</i>'; } },
         { "data": 'kelayakan', "className": 'text-center', "render": function (d) {
@@ -283,14 +281,22 @@
     }
 
     function tampilFoto(foto) {
-      $('.foto-lama').empty();
-      (foto || []).forEach(function (f) {
+      $('#foto-lama').empty();
+      (foto || []).forEach(function (f, i) {
         var url = URL_TAHAP + '/foto/' + id_aktif + '/' + f.urutan + '?v=' + f.permohonan_peninjauan_foto_id;
-        $('.foto-lama[data-urutan="' + f.urutan + '"]').html(
-          '<a href="' + url + '" target="_blank"><img src="' + url + '" style="max-height: 80px;max-width: 100%;" class="img-thumbnail"></a> ' +
-          '<button type="button" class="btn btn-sm btn-outline-danger" onclick="hapusFoto(' + f.urutan + ')"><i class="fas fa-trash"></i></button>');
+        $('#foto-lama').append(
+          '<div class="text-center foto-item" data-urutan="' + f.urutan + '">' +
+          '<a href="' + url + '" target="_blank"><img src="' + url + '" style="height: 80px;max-width: 140px;object-fit: cover;" class="img-thumbnail"></a><br/>' +
+          '<small>Foto ' + (i + 1) + '</small> ' +
+          '<button type="button" class="btn btn-sm btn-outline-danger" onclick="hapusFoto(' + f.urutan + ')"><i class="fas fa-trash"></i></button>' +
+          '</div>');
       });
     }
+
+    $('#foto').on('change', function () {
+      var n = this.files.length;
+      $(this).next('.custom-file-label').text(n ? (n === 1 ? this.files[0].name : n + ' foto dipilih') : 'Pilih File');
+    });
 
     function bukaDraft(id) {
       id_aktif = id;
@@ -305,7 +311,7 @@
         $('#tanggal_surat_permohonan').val(tglInput(b.tanggal_surat_permohonan || p.diajukanAt));
         $('#kelayakan').val(b.kelayakan || '');
         CKEDITOR.instances.editor1.setData(b.hasil || '');
-        for (var i = 1; i <= JUMLAH_FOTO; i++) resetFile($('#foto_' + i));
+        resetFile($('#foto'));
         tampilFoto(b.foto);
         $('#modalDraft').modal('show');
       }).fail(function (xhr) { pesanGagal(xhr, 'Gagal memuat data'); });
@@ -320,10 +326,7 @@
         formData.append(k, $('#' + k).val());
       });
       formData.append('hasil', CKEDITOR.instances.editor1.getData());
-      for (var i = 1; i <= JUMLAH_FOTO; i++) {
-        var f = $('#foto_' + i)[0].files[0];
-        if (f) formData.append('foto_' + i, f);
-      }
+      $.each($('#foto')[0].files, function (i, f) { formData.append('foto', f); });
 
       $('#btn-simpan-draft').prop('disabled', true);
       $.ajax({
@@ -344,10 +347,11 @@
     }
 
     async function hapusFoto(urutan) {
-      const yakin = await swal({ title: 'Hapus Foto', text: 'Hapus foto dokumentasi ' + urutan + '?', icon: 'warning', dangerMode: true, buttons: ['Tidak', 'Ya'] });
+      const yakin = await swal({ title: 'Hapus Foto', text: 'Hapus foto dokumentasi ini?', icon: 'warning', dangerMode: true, buttons: ['Tidak', 'Ya'] });
       if (!yakin) return;
       $.post(URL_TAHAP + '/hapus_foto/' + id_aktif + '/' + urutan).done(function () {
-        $('.foto-lama[data-urutan="' + urutan + '"]').empty();
+        $('#foto-lama .foto-item[data-urutan="' + urutan + '"]').remove();
+        $('#foto-lama .foto-item small').each(function (i) { $(this).text('Foto ' + (i + 1)); });
       }).fail(function (xhr) { pesanGagal(xhr, 'Gagal menghapus foto'); });
     }
 
