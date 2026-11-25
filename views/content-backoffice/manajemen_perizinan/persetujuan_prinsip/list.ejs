@@ -24,7 +24,8 @@
                     <thead>
                       <tr>
                         <th class="text-center" rowspan="2">No.</th>
-                        <th class="text-center" rowspan="2">Pemohon/Vendor</th>
+                        <th class="text-center" rowspan="2">Tanggal Permohonan</th>
+                        <th class="text-center" rowspan="2">Pemohon</th>
                         <th class="text-center" rowspan="2">Provider</th>
                         <th class="text-center" colspan="4">Total</th>
                         <th class="text-center" rowspan="2" style="min-width: 100px;">Tim Teknis</th>
@@ -33,9 +34,9 @@
                       </tr>
 
                       <tr>
-                        <th class="text-center">Ruas</th>
+                        <th class="text-center">Ruas Jalan</th>
                         <th class="text-center">Tiang</th>
-                        <th class="text-center" style="min-width: 130px;">Panjang Kabel (m)</th>
+                        <th class="text-center" style="min-width: 100px;">Panjang<br/>Kabel (m)</th>
                         <th class="text-center" style="min-width: 130px;">Retribusi (Rp)</th>
                       </tr>
                     </thead>
@@ -179,7 +180,9 @@
     CKEDITOR.replace('editor1', {
         height: 300, // Mengatur tinggi editor (dalam piksel)
         versionCheck: false, // Menonaktifkan notifikasi peringatan versi LTS di layar
-        toolbar: []
+        toolbar: [
+      { name: 'paragraph', items: ['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent'] }
+    ]
     });
 
     function rupiah(n) {
@@ -214,7 +217,8 @@
       "ajax": { url: URL_TAHAP + '/list', type: 'POST' },
       "columns": [
         { "data": null, "defaultContent": '', "className": 'text-center' },
-        { "data": null, "render": function (r) { return esc(r.nama_pemohon) + '<br/><small class="text-muted">' + esc(r.nama_vendor || r.username_vendor) + '</small>'; } },
+         { "data": 'diajukanAt', "render": function (d) { return d ? moment(d).format('DD/MM/YYYY HH:mm') : '-'; } },
+        { "data": null, "render": function (r) { return esc(r.nama_pemohon) } },
         { "data": 'provider', "render": esc },
         { "data": 'jml_ruas', "className": 'text-center' },
         { "data": 'jml_tiang', "className": 'text-center' },
@@ -225,10 +229,10 @@
             if (r.tahap !== 'verifikasi_persyaratan') return '<span class="badge badge-info">Persetujuan Prinsip</span>';
             // uploadPersyaratanAt kosong = pemohon belum (kembali) mengirim ZIP persyaratan
             if (!r.uploadPersyaratanAt) {
-              return '<span class="badge badge-secondary">Menunggu Persyaratan Pemohon</span>' +
+              return '<span class="badge badge-secondary">Menunggu Persyaratan<br/>Persetujuan Prinsip Pemohon</span>' +
                 (r.keterangan_persyaratan ? '<br/><small class="text-danger">belum terpenuhi, menunggu kiriman ulang</small>' : '');
             }
-            return '<span class="badge badge-warning">Verifikasi Persyaratan</span>' +
+            return '<span class="badge badge-warning">Pemohon Telah Mengupload<br/>Persyaratan Persetujuan Prinsip</span>' +
               '<br/><small class="text-muted">dikirim ' + moment(r.uploadPersyaratanAt).format('DD/MM/YYYY HH:mm') + '</small>';
         } },
         { "data": null, "render": function (r) {

@@ -117,13 +117,13 @@
             to { background-position: center 60px, center center; }
         }
 
-        th{
+        /* th{
             font-size:12px !important
         }
 
         td{
             font-size:12px !important
-        }
+        } */
 
         
 
@@ -528,18 +528,17 @@
                                                 <thead>
                                                     <tr>
                                                         <th class="text-center" rowspan="2">No.</th>
-                                                        <th class="text-center" rowspan="2">Tanggal</th>
-                                                        <th class="text-center" rowspan="2">No. SK</th>
+                                                        <th class="text-center" rowspan="2">Tanggal Permohonan</th>
                                                         <th class="text-center" rowspan="2">Provider</th>
-                                                        
                                                         <th class="text-center" colspan="4">Total</th>
                                                         <th class="text-center" style="min-width: 100px;" rowspan="2">Status</th>
+                                                         <th class="text-center" rowspan="2">Nomor SK</th>
                                                         <th class="text-center" style="min-width: 100px;" rowspan="2">Option</th>
                                                     </tr>
                                                     <tr>
-                                                        <th>Ruas</th>
+                                                        <th>Ruas Jalan</th>
                                                         <th>Tiang</th>
-                                                        <th>Kabel (m)</th>
+                                                        <th style="min-width: 80px;;">Panjang<br/>Kabel (m)</th>
                                                         <th style="min-width: 140px;">Retribusi</th>
                                                     </tr>
                                                 </thead>
@@ -639,16 +638,18 @@
             "columns": [
                 { data: null, defaultContent: '' },
                 { data: null, render: function (r) { return tanggal(r.diajukanAt || r.insertedAt); } },
-                { data: 'no_sk', render: function (d) { return esc(d || '-'); } },
+                
                 { data: 'provider', render: function (d) { return esc(d || '-'); } },
                 { data: 'jml_ruas', className: 'text-center' },
                 { data: 'jml_tiang', className: 'text-center' },
                 { data: 'jml_kabel', className: 'text-center', render: function (d) { return Number(d).toLocaleString('id-ID') + ' m'; } },
                 { data: 'retribusi', className: 'text-right', render: rupiah },
+               
                 { data: null, render: function (r) {
                     return badgeStatus(r) +
                            (r.keterangan ? '<br/><span>' + esc(r.keterangan) + '</span>' : '');
                 } },
+                { data: 'no_sk', render: function (d) { return esc(d || '-'); } },
                 { data: null, render: function (r) {
                     var url = rooturl + '/perizinan/jaringan_utilitas/ruas_jalan/' + r.permohonan_id;
                     var html = '<div class="w-100-flex" style="justify-content: center;flex-wrap: wrap;align-items: center;gap: 5px;">';
@@ -666,7 +667,9 @@
                         html += '<a href="' + rooturl + '/perizinan/jaringan_utilitas/cetak_sk/' + r.permohonan_id + '" target="_blank" class="btn btn-success btn-sm" title="Cetak SK"><i class="fas fa-print"></i></a>';
                     }
                     return html + '</div>';
-                } }
+                } },
+
+                 
             ]
         });
 

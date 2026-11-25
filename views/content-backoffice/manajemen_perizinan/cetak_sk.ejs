@@ -1,7 +1,10 @@
 <%
+  // Data dari tahapan.getDataCetak(): permohonan, ruas, total, konfig, persetujuan, perjanjian_sewa
+  // Data yang tidak tersedia di backend ditampilkan sebagai "......."
+  var KOSONG = '.......';
   var BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
   function tanggal(t) {
-    if (!t) return '-';
+    if (!t) return KOSONG;
     var d = new Date(t);
     return d.getDate() + ' ' + BULAN[d.getMonth()] + ' ' + d.getFullYear();
   }
@@ -9,38 +12,92 @@
     var x = Number(n || 0).toFixed(desimal || 0).split('.');
     return x[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.') + (x[1] && Number(x[1]) ? ',' + x[1] : '');
   }
-  function rp(n) { return 'Rp ' + angka(n); }
+  function judulKata(t) { return String(t || '').replace(/\s+/g, ' ').trim().toLowerCase().replace(/(^|\s)\S/g, function (c) { return c.toUpperCase(); }); }
+  function isi(v) { return v == null || v === '' ? KOSONG : v; }
+
   var p = permohonan, k = konfig;
+  var pp = typeof persetujuan !== 'undefined' && persetujuan ? persetujuan : {};
+  var ps = typeof perjanjian_sewa !== 'undefined' && perjanjian_sewa ? perjanjian_sewa : {};
+  var perusahaan = p.perusahaan || {};
+  var namaPerusahaan = perusahaan.nama_perusahaan || p.provider || KOSONG;
+  var jabatanPemohon = p.jabatan_pemohon || KOSONG;
+
+  // No. ruas "33.76.758" -> 3 kolom seperti format surat; selain itu digabung 1 sel
+  function selNoRuas(no) {
+    var b = String(no || '').split(/[^0-9A-Za-z]+/).filter(Boolean);
+    if (b.length === 3) return b.map(function (x) { return '<td class="c">' + x + '</td>'; }).join('');
+    return '<td class="c" colspan="3">' + (no || '-') + '</td>';
+  }
+  // Panjang ruas tersimpan dalam Km, surat memakai meter
+  function panjangMeter(r) { return r.panjang != null && r.panjang !== '' ? angka(Number(r.panjang) * 1000) : '-'; }
+  function jumlahTiang(r) { return Number(r.jumlah_tiang != null ? r.jumlah_tiang : r.jml_t_k30cm) || 0; }
+  // Jenis jaringan dari komponen retribusi yang terisi
+  function keteranganRuas(r) {
+    var j = [];
+    if (Number(r.panjang_kabel) > 0 || Number(r.jml_jr_atl15cm) > 0) j.push('Kabel Udara');
+    if (Number(r.jml_jr_btk15cm) > 0 || Number(r.jml_jr_btl15cm) > 0) j.push('Kabel Bawah Tanah');
+    return j.join(', ');
+  }
+  var totalTiang = ruas.reduce(function (s, r) { return s + jumlahTiang(r); }, 0);
+  var totalKabel = ruas.reduce(function (s, r) { return s + Number(r.panjang_kabel || 0); }, 0);
 %>
 <!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SK <%= p.no_sk %></title>
+  <title>Izin Pemanfaatan <%= p.no_sk %></title>
   <style>
-    @page { size: A4; margin: 15mm 15mm 20mm 20mm; }
+    @page { size: A4; margin: 15mm 20mm 20mm 25mm; }
     * { box-sizing: border-box; }
-    body { font-family: "Times New Roman", Times, serif; font-size: 12pt; color: #000; margin: 0; background: #e5e5e5; }
-    .kertas { width: 210mm; min-height: 297mm; margin: 10mm auto; padding: 15mm 15mm 20mm 20mm; background: #fff; box-shadow: 0 0 6px rgba(0,0,0,.2); }
-    .kop { display: flex; align-items: center; border-bottom: 3px double #000; padding-bottom: 6px; }
-    .kop img { width: 75px; height: auto; margin-right: 12px; }
-    .kop .teks { flex: 1; text-align: center; line-height: 1.25; }
-    .kop .pemerintah { font-size: 14pt; font-weight: bold; }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 11.5pt; color: #000; margin: 0; background: #e5e5e5; }
+    .kertas { width: 210mm; min-height: 297mm; margin: 10mm auto; padding: 15mm 20mm 20mm 25mm; background: #fff; box-shadow: 0 0 6px rgba(0,0,0,.2); }
+
+    .kop { display: flex; align-items: center; padding-bottom: 6px; border-bottom: 4px double #000; }
+    .kop img { width: 80px; height: auto; margin-right: 10px; }
+    .kop .teks { flex: 1; text-align: center; line-height: 1.3; }
+    .kop .pemerintah { font-size: 15pt; }
     .kop .instansi { font-size: 16pt; font-weight: bold; }
-    .kop .alamat { font-size: 10pt; }
-    .judul { text-align: center; margin: 18px 0 14px; line-height: 1.4; }
-    .judul .utama { font-weight: bold; text-decoration: underline; font-size: 13pt; }
-    p { margin: 6px 0; text-align: justify; line-height: 1.5; }
-    table.data td { padding: 2px 4px; vertical-align: top; }
-    table.data td:first-child { width: 190px; }
-    table.ruas { width: 100%; border-collapse: collapse; font-size: 10pt; margin: 8px 0; }
-    table.ruas th, table.ruas td { border: 1px solid #000; padding: 4px 5px; }
-    table.ruas th { background: #f0f0f0; text-align: center; }
-    .c { text-align: center; } .r { text-align: right; }
-    ol { margin: 4px 0 4px 18px; padding: 0; line-height: 1.5; text-align: justify; }
-    .ttd { width: 320px; margin-left: auto; margin-top: 24px; text-align: center; line-height: 1.4; }
-    .ttd .nama { margin-top: 70px; font-weight: bold; text-decoration: underline; }
+    .kop .alamat { font-size: 11pt; }
+
+    .kepala { display: flex; justify-content: space-between; margin-top: 14px; }
+    table.surat { border-collapse: collapse; }
+    table.surat td { padding: 1px 6px 1px 0; vertical-align: top; line-height: 1.4; }
+    table.surat td:first-child { width: 90px; padding-left: 10px; }
+    table.surat td.hal { width: 300px; }
+
+    .tujuan { margin: 22px 0 0; line-height: 1.4; }
+    .tujuan .alamat { padding-left: 38px; }
+    .tujuan .di { padding-left: 38px; margin-top: 14px; }
+
+    p { margin: 8px 0; text-align: justify; line-height: 1.45; }
+    .paragraf { margin-top: 22px; }
+    .menjorok { text-indent: 50px; }
+
+    ol.angka { list-style: none; counter-reset: n; margin: 6px 0; padding-left: 0; }
+    ol.angka > li { counter-increment: n; position: relative; padding-left: 26px; text-align: justify; line-height: 1.45; margin-bottom: 2px; }
+    ol.angka > li::before { content: counter(n) "."; position: absolute; left: 2px; }
+    ol.ketentuan > li { padding-left: 40px; }
+    ol.ketentuan > li::before { left: 6px; }
+    ol.huruf { list-style: none; counter-reset: h; margin: 2px 0; padding-left: 0; }
+    ol.huruf > li { counter-increment: h; position: relative; padding-left: 26px; }
+    ol.huruf > li::before { content: counter(h, lower-alpha) "."; position: absolute; left: 0; }
+    ul.titik { margin: 4px 0; padding-left: 22px; list-style: disc; }
+    ul.titik > li { line-height: 1.45; margin-bottom: 4px; }
+
+    table.ruas { width: 100%; border-collapse: collapse; margin: 8px 0 10px; font-size: 10.5pt; }
+    table.ruas th, table.ruas td { border: 1px solid #000; padding: 2px 5px; vertical-align: middle; }
+    table.ruas th { text-align: center; font-weight: bold; }
+    .c { text-align: center; }
+
+    table.pj { border-collapse: collapse; margin: 2px 0; }
+    table.pj td { padding: 0 4px 0 0; vertical-align: top; line-height: 1.4; }
+    table.pj td:first-child { width: 95px; }
+
+    .ttd { width: 300px; margin-left: auto; margin-top: 28px; line-height: 1.35; page-break-inside: avoid; }
+    .ttd .ruang { height: 85px; }
+    .ttd .nama { text-decoration: underline; }
+
     .aksi { text-align: center; margin: 10px 0 0; }
     .aksi button { font-size: 12pt; padding: 8px 24px; cursor: pointer; }
     @media print {
@@ -66,87 +123,107 @@
       </div>
     </div>
 
-    <div class="judul">
-      <div class="utama">SURAT KEPUTUSAN IZIN PEMANFAATAN RUANG MILIK JALAN</div>
-      <div><strong>UNTUK PENEMPATAN JARINGAN UTILITAS</strong></div>
-      <div>Nomor : <%= p.no_sk %></div>
+    <div class="kepala">
+      <table class="surat">
+        <tr><td>Nomor</td><td>:</td><td class="hal"><%= isi(p.no_sk) %></td></tr>
+        <tr><td>Sifat</td><td>:</td><td class="hal">Segera</td></tr>
+        <tr><td>Lampiran</td><td>:</td><td class="hal">1 (satu) bandel</td></tr>
+        <tr><td>Hal</td><td>:</td><td class="hal">Izin Pemanfaatan Ruang Milik Jalan Kota Untuk Pembangunan / Penempatan Bangunan dan Jaringan Utilitas</td></tr>
+      </table>
+      <div style="white-space: nowrap;"><%= k.tempat || 'Tegal' %>, <%= tanggal(p.tanggal_sk) %></div>
     </div>
 
-    <p>Berdasarkan permohonan izin pemanfaatan ruang milik jalan yang diajukan oleh:</p>
-    <table class="data">
-      <tr><td>Nama Pemohon</td><td>:</td><td><%= p.nama_pemohon || '-' %></td></tr>
-      <tr><td>Jabatan</td><td>:</td><td><%= p.jabatan_pemohon || '-' %></td></tr>
-      <tr><td>Vendor / Pelaksana</td><td>:</td><td><%= p.vendor ? (p.vendor.fullname || p.vendor.username) : '-' %></td></tr>
-      <tr><td>Pemilik Jaringan (Provider)</td><td>:</td><td><%= p.provider || '-' %></td></tr>
-      <tr><td>No. Telepon</td><td>:</td><td><%= p.telp_pemohon || '-' %></td></tr>
-      <tr><td>Email</td><td>:</td><td><%= p.email_pemohon || '-' %></td></tr>
-      <tr><td>Tanggal Permohonan</td><td>:</td><td><%= tanggal(p.diajukanAt) %></td></tr>
-    </table>
+    <div class="tujuan">
+      <div>Yth. <%= jabatanPemohon %> <%= namaPerusahaan %></div>
+      <div class="alamat"><%= isi(perusahaan.alamat) %></div>
+      <div class="di">di</div>
+      <div class="alamat"><%= KOSONG %></div>
+    </div>
 
-    <p>dan setelah dilakukan verifikasi terhadap persyaratan administrasi dan teknis, dengan ini diberikan
-      <strong>IZIN</strong> untuk penempatan jaringan utilitas pada lokasi sebagai berikut:</p>
-
-    <table class="ruas">
-      <thead>
-        <tr>
-          <th rowspan="2">No.</th>
-          <th rowspan="2">Ruas Jalan</th>
-          <th rowspan="2">No. Ruas</th>
-          <th colspan="2">Komponen</th>
-          <th colspan="3">Retribusi per Tahun (Rp)</th>
-        </tr>
-        <tr>
-          <th>Tiang (Unit)</th>
-          <th>Kabel (m)</th>
-          <th>Tiang</th>
-          <th>Kabel</th>
-          <th>Jumlah</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% ruas.forEach(function (r, i) { %>
-        <tr>
-          <td class="c"><%= i + 1 %></td>
-          <td><%= r.label_ruas %></td>
-          <td class="c"><%= r.no || '-' %></td>
-          <td class="c"><%= angka(r.jml_t_k30cm) %></td>
-          <td class="c"><%= angka(r.panjang_kabel, 2) %></td>
-          <td class="r"><%= angka(r.retribusi_tiang) %></td>
-          <td class="r"><%= angka(r.retribusi_kabel) %></td>
-          <td class="r"><%= angka(r.retribusi_total) %></td>
-        </tr>
-        <% }) %>
-      </tbody>
-      <tfoot>
-        <tr>
-          <th colspan="3" class="r">Total</th>
-          <th><%= angka(total.tiang) %></th>
-          <th><%= angka(total.kabel, 2) %></th>
-          <th class="r"><%= angka(total.retribusi_tiang) %></th>
-          <th class="r"><%= angka(total.retribusi_kabel) %></th>
-          <th class="r"><%= angka(total.retribusi) %></th>
-        </tr>
-      </tfoot>
-    </table>
-
-    <p>Besarnya retribusi pemanfaatan ruang milik jalan adalah <strong><%= rp(total.retribusi) %></strong>
-      (<em><%= total.terbilang %></em>) per tahun.</p>
-
-    <p>Dengan ketentuan:</p>
-    <ol>
-      <li>Pemegang izin wajib membayar retribusi sesuai ketentuan peraturan daerah yang berlaku.</li>
-      <li>Penempatan jaringan utilitas wajib sesuai dengan lokasi, jumlah dan rencana teknis yang diajukan.</li>
-      <li>Pemegang izin wajib menjaga keamanan, ketertiban dan kelancaran lalu lintas, serta mengembalikan kondisi jalan seperti semula.</li>
-      <li>Izin ini dapat dicabut apabila pemegang izin tidak memenuhi ketentuan di atas.</li>
+    <p class="paragraf">Berdasarkan Surat Kepala Dinas Pekerjaan Umum dan Penataan Ruang Kota Tegal Nomor : <%= isi(pp.no_pp) %>
+      tanggal <%= tanggal(pp.tanggal_pp) %> perihal Persetujuan Prinsip Izin Pembangunan/Penempatan Bangunan dan Jaringan Utilitas
+      dan Perjanjian Kerjasama Pemanfaatan Ruang Milik Jalan Kota antara Kepala Dinas Pekerjaan Umum dan Penataan Ruang Kota Tegal
+      dengan <%= jabatanPemohon %> <%= namaPerusahaan %> Nomor : <%= isi(ps.no_perjanjian) %> tanggal <%= tanggal(ps.tanggal_perjanjian) %>,
+      Serta sehubungan dengan telah dilakukannya :</p>
+    <ol class="angka">
+      <li>Penyerahan Jaminan Pelaksanaan berupa Bank Garansi dari <%= KOSONG %>, Nomor : <%= KOSONG %> Tanggal <%= KOSONG %> sebesar Rp. <%= KOSONG %> (<%= KOSONG %>) yang berlaku mulai tanggal <%= KOSONG %> sampai dengan <%= KOSONG %>;</li>
+      <li>Penyerahan Jaminan Pemeliharaan berupa Bank Garansi dari <%= KOSONG %>, Nomor : <%= KOSONG %> Tanggal <%= KOSONG %> sebesar Rp. <%= KOSONG %> (<%= KOSONG %>) yang berlaku mulai tanggal <%= KOSONG %> sampai dengan <%= KOSONG %>;</li>
+      <li>Penyerahan Asuransi kerugian pihak ketiga (Polis Asuransi Public Liability) dari <%= KOSONG %> Nomor Polis : <%= KOSONG %> Tanggal <%= KOSONG %> dengan nilai pertanggungan Rp. <%= KOSONG %> (<%= KOSONG %>) Per Ruas Jalan yang berlaku mulai tanggal <%= KOSONG %> sampai dengan <%= KOSONG %>.</li>
     </ol>
-    <% if (p.keterangan) { %>
-    <p>Catatan: <%= p.keterangan %></p>
-    <% } %>
+
+    <p class="menjorok" style="margin-top: 16px;">Dengan ini diberikan Izin Sementara Pemanfaatan Ruang Milik Jalan Kota Untuk Pembangunan/Penempatan Bangunan dan Jaringan Utilitas dengan ketentuan sebagai berikut :</p>
+
+    <ol class="angka ketentuan">
+      <li>Lokasi yang diizinkan untuk dimanfaatkan dan jenis pemanfaatannya :
+        <ul class="titik">
+          <li>Lokasi di Ruas Jalan Kota Tegal.</li>
+          <li>Ruang Milik Jalan yang dimanfaatkan di Ruas Jalan
+            <table class="ruas">
+              <thead>
+                <tr>
+                  <th style="width: 34px;">No</th>
+                  <th>Nama Ruas Jalan</th>
+                  <th colspan="3">No. Ruas Jalan</th>
+                  <th style="width: 60px;">Jumlah Tiang</th>
+                  <th style="width: 70px;">Panjang Jalan (meter)</th>
+                  <th style="width: 70px;">Panjang Kabel (meter)</th>
+                  <th style="width: 100px;">Keterangan</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% ruas.forEach(function (r, i) { %>
+                <tr>
+                  <td class="c"><%= i + 1 %></td>
+                  <td><%= r.label_ruas %></td>
+                  <%- selNoRuas(r.no) %>
+                  <td class="c"><%= angka(jumlahTiang(r)) %></td>
+                  <td class="c"><%= panjangMeter(r) %></td>
+                  <td class="c"><%= angka(r.panjang_kabel, 2) %></td>
+                  <td><%= keteranganRuas(r) %></td>
+                </tr>
+                <% }) %>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <th colspan="2">TOTAL</th>
+                  <th></th><th></th><th></th>
+                  <th><%= angka(totalTiang) %></th>
+                  <th></th>
+                  <th><%= angka(totalKabel, 2) %></th>
+                  <th></th>
+                </tr>
+              </tfoot>
+            </table>
+          </li>
+          <li>Pemanfaatan Untuk Pembangunan/Penempatan Bangunan dan Jaringan Utilitas <%= KOSONG %></li>
+        </ul>
+      </li>
+      <li>Pemegang Izin, wajib melaksanakan pekerjaan sesuai persyaratan teknis dan wajib menjaga, memelihara bangunan dimaksud serta bertanggungjawab terhadap segala kerusakan jalan yang disebabkan oleh Pembangunan/Penempatan Bangunan dan Jaringan Utilitas dimaksud selama jangka waktu Pemanfaatan dan memenuhi besaran biaya retribusi yang ditetapkan oleh Dinas Pekerjaan Umum dan Penataan Ruang Kota Tegal.</li>
+      <li>Bersedia membongkar, memindahkan, menanggung biaya, dan mengembalikan kondisi jalan sesuai standar Surat Edaran Direktorat Jenderal Bina Marga Nomor : 07/SE/Db/2025 tentang Spesifikasi Umum Bina Marga 2025 untuk Pekerjaan Konstruksi Jalan dan Jembatan, dalam hal :
+        <ol class="huruf">
+          <li>Berakhirnya jangka waktu perizinan dan tidak diperpanjang kembali.</li>
+          <li>Penyelenggara jalan membutuhkan lahan untuk kepentingan dinas.</li>
+        </ol>
+      </li>
+      <li>Jangka waktu izin untuk pemanfaatan ini berlaku sejak di tandatangani sampai dengan <%= KOSONG %>.</li>
+      <li>Dalam hal terkait pelaksanaan pekerjaan dan pemeliharaan Bangunan dimaksud, wajib berkoordinasi dengan pihak Dinas Pekerjaan Umum dan Penataan Ruang Kota Tegal.</li>
+      <li>Sebagai penanggung jawab dalam pelaksanaan dan pemeliharaan Bangunan dan Jaringan Utilitas adalah sebagai berikut :
+        <table class="pj">
+          <tr><td>Nama</td><td>: <%= isi(p.nama_pemohon) %></td></tr>
+          <tr><td>Jabatan</td><td>: <%= jabatanPemohon %></td></tr>
+          <tr><td>Perusahaan</td><td>: <%= namaPerusahaan %></td></tr>
+          <tr><td>Alamat</td><td>: <%= isi(perusahaan.alamat) %></td></tr>
+          <tr><td>No Telepon</td><td>: <%= isi(perusahaan.no_telepon || p.telp_pemohon) %></td></tr>
+        </table>
+      </li>
+      <li>Apabila pemegang izin masih membutuhkan lahan, maka 45 (empat puluh lima) hari kalender sebelum masa izin berakhir pemohon dapat mengajukan perpanjangan Izin Pemanfaatan Ruang Milik Jalan Kota dimaksud.</li>
+    </ol>
+
+    <p class="menjorok" style="margin-top: 16px;">Demikian izin ini diberikan dan akan dilakukan peninjauan kembali untuk perbaikan apabila terdapat kesalahan dalam penetapannya.</p>
 
     <div class="ttd">
-      <div>Ditetapkan di <%= k.tempat %></div>
-      <div>pada tanggal <%= tanggal(p.tanggal_sk || p.diprosesAt) %></div>
-      <div style="margin-top: 8px;"><%= k.jabatan_ttd %></div>
+      <div><%= judulKata(k.jabatan_ttd) %></div>
+      <div class="ruang"></div>
       <div class="nama"><%= k.nama_ttd %></div>
       <div><%= k.pangkat_ttd %></div>
       <div>NIP. <%= k.nip_ttd %></div>

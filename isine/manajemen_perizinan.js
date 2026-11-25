@@ -160,7 +160,14 @@ router.post('/list', cek_admin, async function (req, res) {
     var val = [];
     if (req.body.status) { sql += ` AND p.status = ?`; val.push(req.body.status); }
     else sql += ` AND p.status <> 'draft'`;
-    var [data] = await sql_enak.raw(sql + ` ORDER BY FIELD(p.status, 'diajukan') DESC, IFNULL(p.diajukanAt, p.insertedAt) DESC`, val);
+    // Status langkah penerbitan izin per baris: draft perjanjian sewa -> perjanjian TTD -> draft SK -> SK TTD
+    var [data] = await sql_enak.raw(
+      `SELECT x.*, (ps.permohonan_id IS NOT NULL) AS ada_sewa, (ps.file_ttd IS NOT NULL) AS ada_sewa_ttd,
+              ps.no_perjanjian, (pk.file_sk IS NOT NULL) AS ada_sk_ttd, pk.uploadSkAt
+         FROM (${sql}) x
+         JOIN permohonan pk ON pk.permohonan_id = x.permohonan_id
+         LEFT JOIN permohonan_perjanjian_sewa ps ON ps.permohonan_id = x.permohonan_id
+        ORDER BY FIELD(x.status, 'diajukan') DESC, IFNULL(x.diajukanAt, x.insertedAt) DESC`, val);
     data.forEach(function (d) {
       d.bisa_ubah = helper.bisaUbah(d);
       d.bisa_edit = helper.bisaUbah(d, true);
@@ -181,8 +188,11 @@ router.get('/vendor', cek_admin, async function (req, res) {
 
 router.get('/cetak_sk/:id', cek_admin, async function (req, res) {
   var p = await helper.getPermohonan(req.params.id);
-  if (!p || p.status !== 'disetujui') return res.status(404).send('SK belum tersedia');
-  res.render('content-backoffice/manajemen_perizinan/cetak_sk', await helper.getDataSk(p));
+  // Disetujui, atau draft SK (No. SK) sudah disimpan di tahap penerbitan izin
+  var draft = p && p.status === 'diajukan' && p.tahap === 'penerbitan_izin' && p.no_sk;
+  if (!p || !(p.status === 'disetujui' || draft)) return res.status(404).send('SK belum tersedia');
+  // getDataCetak = getDataSk + persetujuan prinsip + perjanjian sewa (dirujuk di surat izin)
+  res.render('content-backoffice/manajemen_perizinan/cetak_sk', await tahapan.getDataCetak(p));
 });
 
 router.get('/data/:id', cek_admin, async function (req, res) {
@@ -215,9 +225,48 @@ router.get('/dokumen/:id_dokumen', cek_admin, async function (req, res) {
 });
 
 // body: { aksi: setujui | tolak | revisi, no_sk, tanggal_sk, keterangan }
+// Draft SK boleh disimpan di tahap penerbitan izin setelah perjanjian sewa TTD diupload, atau untuk SK yang sudah disetujui
+async function simpanDraftSk(req, res, b) {
+  var p = await helper.getPermohonan(req.params.id);
+  var penerbitan = p && p.status === 'diajukan' && p.tahap === 'penerbitan_izin';
+  if (!p || !(penerbitan || p.status === 'disetujui')) return gagal(res, 'Draft SK tidak bisa disimpan untuk permohonan ini', 400);
+  if (penerbitan) {
+    var sewa = await tahapan.getPerjanjianSewa(p.permohonan_id);
+    if (!sewa || !sewa.file_ttd) return gagal(res, 'Upload perjanjian sewa yang sudah ditandatangani terlebih dahulu', 400);
+  }
+  if (!b.no_sk) return gagal(res, 'No. SK wajib diisi', 400);
+  await sql_enak.raw(
+    `UPDATE permohonan SET no_sk = ?, tanggal_sk = ?, keterangan = ?, lastUpdateAt = NOW() WHERE permohonan_id = ?`,
+    [b.no_sk, b.tanggal_sk || null, b.keterangan || null, p.permohonan_id]
+  );
+  res.json({ status: 200, message: 'sukses', data: null });
+}
+
+// Menyetujui permohonan (SK terbit): digitasi masuk ke tabel tiang & kabel, status -> disetujui
+async function setujuiPermohonan(p, no_sk, tanggal_sk, keterangan, id_user) {
+  var masuk = await helper.salinKeDataUtama(p.permohonan_id);
+  await sql_enak.raw(
+    `UPDATE permohonan
+        SET status = 'disetujui', keterangan = ?, no_sk = ?, tanggal_sk = ?,
+            diprosesAt = NOW(), diproses_oleh = ?, lastUpdateAt = NOW()
+      WHERE permohonan_id = ?`,
+    [keterangan || null, no_sk, tanggal_sk || null, id_user, p.permohonan_id]
+  );
+  return masuk;
+}
+
+// Draft SK tersimpan di tahap penerbitan izin + perjanjian sewa TTD sudah diupload -> SK siap ditandatangani
+async function draftSkSiap(p) {
+  if (!p || p.status !== 'diajukan' || p.tahap !== 'penerbitan_izin' || !p.no_sk) return false;
+  var sewa = await tahapan.getPerjanjianSewa(p.permohonan_id);
+  return !!(sewa && sewa.file_ttd);
+}
+
 router.post('/proses/:id', cek_admin, async function (req, res) {
   try {
     var b = req.body || {};
+    // aksi 'simpan': hanya menyimpan data draft SK (untuk dicetak), status permohonan tidak berubah
+    if (b.aksi === 'simpan') return await simpanDraftSk(req, res, b);
     var status = AKSI[b.aksi];
     if (!status) return gagal(res, 'Aksi tidak dikenal', 400);
     var p = await helper.getPermohonan(req.params.id);
@@ -231,10 +280,14 @@ router.post('/proses/:id', cek_admin, async function (req, res) {
     if (status === 'disetujui' && !b.no_sk) return gagal(res, 'No. SK wajib diisi', 400);
     if (status !== 'disetujui' && !b.keterangan) return gagal(res, 'Keterangan wajib diisi', 400);
 
-    // Disetujui -> digitasi masuk ke tabel tiang & kabel; dicabut -> salinannya dihapus lagi
+    if (status === 'disetujui') {
+      var masukSetujui = await setujuiPermohonan(p, b.no_sk, b.tanggal_sk, b.keterangan, getUser(req).id_user);
+      return res.json({ status: 200, message: 'sukses', data: { masuk_data_utama: masukSetujui } });
+    }
+
+    // Revisi / tolak; SK yang dicabut -> salinan digitasi di data utama dihapus lagi
     var masuk = null;
-    if (status === 'disetujui') masuk = await helper.salinKeDataUtama(p.permohonan_id);
-    else if (p.status === 'disetujui') await helper.hapusDariDataUtama(p.permohonan_id);
+    if (p.status === 'disetujui') await helper.hapusDariDataUtama(p.permohonan_id);
 
     await sql_enak.raw(
       `UPDATE permohonan
@@ -653,10 +706,13 @@ router.post('/izin/upload/:id', cek_admin, tahapan.upload_ttd, async function (r
   try {
     if (!file) return gagal(res, 'File izin wajib dipilih', 400);
     var p = await helper.getPermohonan(req.params.id);
-    if (!p || p.status !== 'disetujui') {
+    var draft = !!(p && p.status !== 'disetujui' && await draftSkSiap(p));
+    if (!p || !(p.status === 'disetujui' || draft)) {
       tahapan.hapusFile(file.filename);
-      return gagal(res, 'Izin hanya bisa diupload untuk permohonan yang sudah disetujui', 400);
+      return gagal(res, 'Izin hanya bisa diupload setelah data draft SK disimpan', 400);
     }
+    // SK TTD dari draft yang belum disetujui: upload sekaligus menerbitkan izin (sama seperti "Simpan Draft SK")
+    if (draft) await setujuiPermohonan(p, p.no_sk, p.tanggal_sk, p.keterangan, getUser(req).id_user);
     await tahapan.simpanTtd('sk', p.permohonan_id, file);
     tahapan.kirimNotifikasi(p, 'Izin Pemanfaatan Ruang Milik Jalan Telah Terbit',
       '<p>Izin pemanfaatan ruang milik jalan untuk jaringan utilitas atas permohonan Anda <b>telah terbit</b> ' +

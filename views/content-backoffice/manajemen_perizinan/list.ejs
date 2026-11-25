@@ -4,10 +4,10 @@
     <section class="section">
       <div class="w-100" style="padding: 0 30px;">
         <div class="section-header">
-          <h1>Permohonan Izin Jaringan Utilitas</h1>
+          <h1>Izin Pemanfaatan Rumija</h1>
           <div class="section-header-breadcrumb">
             <div class="breadcrumb-item active"><a href="/backoffice">Dashboard</a></div>
-            <div class="breadcrumb-item">Permohonan Izin</div>
+            <div class="breadcrumb-item">Data</div>
           </div>
         </div>
       </div>
@@ -16,7 +16,7 @@
         <div class="row">
           <div class="col-lg-12 col-xl-12">
             <div class="card">
-              <div class="card-header">
+              <!-- <div class="card-header">
                 <button type="button" class="btn btn-primary custom-btn-card-header mr-3" data-toggle="modal" data-target="#modal-vendor"><i class="fas fa-plus"></i> Tambah Permohonan</button>
                 <div class="form-inline">
                   <label for="filter_status" class="mr-2">Status</label>
@@ -29,26 +29,26 @@
                     <option value="draft">Draft (belum diajukan)</option>
                   </select>
                 </div>
-              </div>
+              </div> -->
               <div class="card-body">
                 <div class="table-responsive">
                   <table class="table table-bordered" id="list-data">
                     <thead>
                       <tr>
                         <th class="text-center" rowspan="2">No.</th>
-                        <th class="text-center" rowspan="2">Tgl. Diajukan</th>
-                        <th class="text-center" rowspan="2">Vendor</th>
+                        <th class="text-center" rowspan="2">Option</th>
+                        <th class="text-center" rowspan="2">Tanggal Permohonan</th>
                         <th class="text-center" rowspan="2">Pemohon</th>
                         <th class="text-center" rowspan="2">Provider</th>
                         <th class="text-center" colspan="4">Total</th>
-                        <th class="text-center" rowspan="2">No. SK</th>
+                        <th class="text-center" rowspan="2">Nomor SK</th>
                         <th class="text-center" rowspan="2" style="min-width: 120px;">Status</th>
-                        <th class="text-center" rowspan="2">Option</th>
+                        
                       </tr>
                       <tr>
-                        <th class="text-center">Ruas</th>
+                        <th class="text-center">Ruas Jalan</th>
                         <th class="text-center">Tiang</th>
-                        <th class="text-center">Kabel (m)</th>
+                        <th class="text-center" style="min-width: 100px;">Panjang<br/>Kabel (m)</th>
                         <th class="text-center" style="min-width: 130px;">Retribusi</th>
                       </tr>
                     </thead>
@@ -96,6 +96,110 @@
   </footer>
 <% include ../../template-backoffice/footer.ejs %>
 
+<!-- Langkah 1: draft perjanjian sewa -->
+<div class="modal fade" id="modalSewa" tabindex="-1" aria-labelledby="judulSewa" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="judulSewa">Buat Draft Perjanjian Sewa</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <div class="col-md-6 form-group">
+            <label for="tanggal_perjanjian">Tanggal Perjanjian Sewa</label>
+            <input type="date" class="form-control" id="tanggal_perjanjian">
+          </div>
+          <div class="col-md-6 form-group">
+            <label for="no_perjanjian">Nomor Perjanjian Sewa</label>
+            <input type="text" class="form-control" id="no_perjanjian">
+          </div>
+        </div>
+        <div class="form-group mb-0">
+          <label for="isi_perjanjian">Ketentuan Perjanjian Sewa</label>
+          <textarea id="isi_perjanjian" class="form-control" rows="5"></textarea>
+          <small class="text-muted d-block mt-1">
+            Isi dengan <b>Pasal 5 s.d. Pasal 10</b> (lanjutan BAB II Pelaksanaan, setelah tabel objek perjanjian Pasal 4). Pasal lainnya sudah otomatis tercetak sesuai format perjanjian.
+            Penanda berikut otomatis diganti data permohonan saat dicetak:
+            <code>[TOTAL_RETRIBUSI]</code> <code>[TERBILANG_RETRIBUSI]</code> <code>[NAMA_PERUSAHAAN]</code>
+            <code>[ALAMAT_PERUSAHAAN]</code> <code>[TELP_PERUSAHAAN]</code> <code>[EMAIL_PERUSAHAAN]</code> <code>[NAMA_PEMOHON]</code>
+            <code>[JABATAN_PEMOHON]</code> <code>[NO_PERJANJIAN]</code> <code>[TANGGAL_PERJANJIAN]</code> <code>[NAMA_PENANDATANGAN]</code>
+            <code>[JABATAN_PENANDATANGAN]</code> <code>[NIP_PENANDATANGAN]</code>.
+          </small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal"><i class="fas fa-times"></i>&nbsp;&nbsp;Tutup</button>
+        <button type="button" class="btn btn-primary" id="btn-simpan-sewa" onclick="simpanSewa()"><i class="fas fa-check"></i>&nbsp;&nbsp;Simpan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Langkah 2: draft SK (setujui permohonan) / revisi / tolak -->
+<div class="modal fade" id="modalSk" tabindex="-1" aria-labelledby="judulSk" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="judulSk">Buat Draft SK Izin</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-light mb-3" id="info-sewa-sk"></div>
+        <div class="row">
+          <div class="col-md-6 form-group">
+            <label for="tanggal_sk">Tanggal SK</label>
+            <input type="date" class="form-control" id="tanggal_sk">
+          </div>
+          <div class="col-md-6 form-group">
+            <label for="no_sk">Nomor SK <small class="text-muted">(wajib jika disetujui)</small></label>
+            <input type="text" class="form-control" id="no_sk">
+          </div>
+        </div>
+        <div class="form-group mb-0">
+          <label for="keterangan_sk">Keterangan <small class="text-muted">(wajib jika revisi / ditolak)</small></label>
+          <textarea id="keterangan_sk" class="form-control" rows="3" style="height: auto;"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary mr-auto" data-dismiss="modal"><i class="fas fa-times"></i>&nbsp;&nbsp;Tutup</button>
+        <button type="button" class="btn btn-warning btn-proses" onclick="proses('revisi')"><i class="fas fa-undo"></i>&nbsp;&nbsp;Kembalikan untuk Revisi</button>
+        <button type="button" class="btn btn-danger btn-proses" onclick="proses('tolak')"><i class="fas fa-ban"></i>&nbsp;&nbsp;Tolak</button>
+        <button type="button" class="btn btn-info btn-proses" id="btn-simpan-data-sk" onclick="simpanDataSk()"><i class="fas fa-save"></i>&nbsp;&nbsp;Simpan</button>
+        <button type="button" class="btn btn-primary btn-proses" onclick="proses('setujui')"><i class="fas fa-check"></i>&nbsp;&nbsp;Simpan Draft SK</button>
+        <% /* Muncul setelah data draft SK tersimpan (No. SK terisi) */ %>
+        <a href="#" id="btn-cetak-sk" target="_blank" class="btn btn-success" style="display: none;"><i class="fas fa-print"></i>&nbsp;&nbsp;Cetak Draft SK</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Upload dokumen bertanda tangan: perjanjian sewa / SK izin -->
+<div class="modal fade" id="modalUpload" tabindex="-1" aria-labelledby="judulUpload" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="judulUpload">Upload</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group mb-0">
+          <label for="file_ttd" id="label-upload"></label>
+          <div class="custom-file">
+            <input type="file" class="custom-file-input" id="file_ttd" accept=".pdf,.jpg,.jpeg,.png">
+            <label class="custom-file-label" for="file_ttd">Pilih File</label>
+          </div>
+          <small class="text-muted" id="info-upload"></small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal"><i class="fas fa-times"></i>&nbsp;&nbsp;Tutup</button>
+        <button type="button" class="btn btn-primary" id="btn-simpan-upload" onclick="simpanUpload()"><i class="fas fa-check"></i>&nbsp;&nbsp;Simpan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script type="text/javascript">
   var rooturl = ''
   var STATUS = {
@@ -105,13 +209,78 @@
     disetujui: { label: 'Disetujui', badge: 'success' },
     ditolak:   { label: 'Ditolak', badge: 'danger' }
   };
-  var TAHAP = { verifikasi: 'Verifikasi', peninjauan_lapangan: 'Peninjauan Lapangan', persetujuan_prinsip: 'Persetujuan Prinsip', verifikasi_persyaratan: 'Verifikasi Persyaratan', penerbitan_izin: 'Penerbitan Izin' };
+  var TAHAP = { verifikasi: 'Tahap Verifikasi', peninjauan_lapangan: 'Tahap Peninjauan Lapangan', persetujuan_prinsip: 'Tahap Persetujuan Prinsip', verifikasi_persyaratan: 'Tahap Verifikasi Persyaratan<br/>Persetujuan Prinsip', penerbitan_izin: 'Tahap Penerbitan Izin' };
 
   function rupiah(n) {
     return 'Rp ' + Number(n || 0).toLocaleString('id-ID', { maximumFractionDigits: 0 }) + ',-';
   }
   function esc(t) {
     return $('<div>').text(t == null ? '' : t).html();
+  }
+  function pesanGagal(xhr, def) {
+    swal('Gagal', (xhr.responseJSON && xhr.responseJSON.message) || def, 'error');
+  }
+
+  CKEDITOR.replace('isi_perjanjian', {
+    height: 300,
+    versionCheck: false, // Menonaktifkan notifikasi peringatan versi LTS di layar
+    toolbar: [
+      { name: 'paragraph', items: ['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent'] }
+    ]
+  });
+
+  var id_aktif = null;
+  var BARIS = {}; // permohonan_id -> baris list (dipakai modal draft SK)
+
+  // Menu dropdown aksi tidak terpotong oleh overflow .table-responsive
+  $(document).on('show.bs.dropdown', '#list-data .dropdown', function () { $(this).closest('.table-responsive').css('overflow', 'visible'); });
+  $(document).on('hidden.bs.dropdown', '#list-data .dropdown', function () { $(this).closest('.table-responsive').css('overflow', ''); });
+
+  // Penerbitan izin: 1) draft perjanjian sewa -> 2) upload perjanjian TTD -> 3) draft SK (setujui) -> 4) upload SK TTD
+  function tahapPenerbitan(r) { return r.status === 'diajukan' && r.tahap === 'penerbitan_izin'; }
+  // Item dropdown: aksi diawali '/' = link (tab baru), selain itu onclick. Item nonaktif menampilkan alasan di bawah label.
+  function itemDropdown(ikon, label, aksi, aktif, alasan) {
+    var isi = '<i class="fas fa-' + ikon + ' fa-fw mr-1"></i>' + label;
+    if (!aktif) return '<span class="dropdown-item disabled" title="' + alasan + '">' + isi +
+      '<small class="d-block text-muted" style="white-space: normal;">' + alasan + '</small></span>';
+    if (aksi.indexOf('/') === 0) return '<a class="dropdown-item" href="' + rooturl + aksi + '" target="_blank">' + isi + '</a>';
+    return '<a class="dropdown-item" href="javascript:void(0)" onclick="' + aksi + '">' + isi + '</a>';
+  }
+  function dropdown(kelas, ikon, label, items) {
+    return '<div class="btn-group dropdown w-100 mt-2">' +
+      '<button type="button" class="btn btn-' + kelas + ' btn-sm dropdown-toggle w-100" data-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false">' +
+      '<i class="fas fa-' + ikon + ' mr-1"></i>' + label + '</button>' +
+      '<div class="dropdown-menu dropdown-menu-right" style="min-width: 230px;">' + items + '</div></div>';
+  }
+  function aksiPenerbitan(r) {
+    var id = r.permohonan_id, penerbitan = tahapPenerbitan(r), disetujui = r.status === 'disetujui';
+    var adaSewa = Number(r.ada_sewa), sewaTtd = Number(r.ada_sewa_ttd);
+    var belumSewa = 'Buat draft perjanjian sewa terlebih dahulu';
+    var belumTtd = 'Upload perjanjian sewa yang sudah ditandatangani terlebih dahulu';
+    var sewaFinal = 'Perjanjian sewa sudah final (izin disetujui)';
+    var sewa = itemDropdown('pen-square', (adaSewa ? 'Ubah' : 'Buat') + ' Draft', 'bukaSewa(' + id + ')', penerbitan, sewaFinal) +
+      itemDropdown('print', 'Cetak Draft', '/manajemen_perizinan/perjanjian_sewa/cetak/' + id, adaSewa, belumSewa) +
+      itemDropdown('file-upload', 'Upload File TTD', "bukaUpload('sewa', " + id + ')', penerbitan && adaSewa, penerbitan ? belumSewa : sewaFinal) +
+      (sewaTtd ? '<div class="dropdown-divider"></div>' + itemDropdown('file-signature', 'Lihat File TTD', '/manajemen_perizinan/perjanjian_sewa/file/' + id, true) : '');
+    var bisaSk = !!(sewaTtd || disetujui);
+    var adaDraftSk = !!(disetujui || (sewaTtd && r.no_sk));
+    // Upload SK TTD aktif setelah data draft SK disimpan (No. SK terisi) atau SK sudah disetujui
+    var bisaUploadSk = !!(disetujui || (penerbitan && sewaTtd && r.no_sk));
+    var belumDraftSk = bisaSk ? 'Simpan data draft SK terlebih dahulu' : belumTtd;
+    var sk = itemDropdown('file-contract', (disetujui ? 'Ubah' : 'Buat') + ' Draft', 'bukaSk(' + id + ')', bisaSk, belumTtd) +
+      itemDropdown('print', 'Cetak Draft', '/manajemen_perizinan/cetak_sk/' + id, adaDraftSk, belumDraftSk) +
+      itemDropdown('file-upload', 'Upload File TTD', "bukaUpload('sk', " + id + ')', bisaUploadSk, belumDraftSk) +
+      (Number(r.ada_sk_ttd) ? '<div class="dropdown-divider"></div>' + itemDropdown('file-signature', 'Lihat File TTD', '/manajemen_perizinan/izin/file/' + id, true) : '');
+    return dropdown('warning', 'file-alt', 'Perjanjian Sewa', sewa) +
+      dropdown('primary', 'file-contract', 'SK Izin', sk);
+  }
+  // Keterangan langkah berikutnya di bawah badge status
+  function langkahPenerbitan(r) {
+    if (r.status === 'disetujui') return Number(r.ada_sk_ttd) ? 'izin terbit' : 'menunggu upload SK TTD';
+    if (!tahapPenerbitan(r)) return '';
+    if (!Number(r.ada_sewa)) return 'buat draft perjanjian sewa';
+    if (!Number(r.ada_sewa_ttd)) return 'menunggu upload perjanjian sewa TTD';
+    return r.no_sk ? 'draft SK tersimpan, belum disetujui' : 'siap buat draft SK';
   }
 
   let data_table = $('#list-data').DataTable({
@@ -136,14 +305,30 @@
     "ajax": {
         url: `${rooturl}/manajemen_perizinan/list`,
         type: 'POST',
-        data: function (d) { return { status: $('#filter_status').val() }; }
+        data: function (d) { return { status: $('#filter_status').val() }; },
+        dataSrc: function (res) {
+          BARIS = {};
+          res.data.forEach(function (r) { BARIS[r.permohonan_id] = r; });
+          return res.data;
+        }
     },
     "columns": [
         { "data": null, "defaultContent": '' },
-        { "data": 'diajukanAt', "render": function (d) { return d ? moment(d).format('DD/MM/YYYY HH:mm') : '<i>belum diajukan</i>'; } },
         { "data": null, "render": function (r) {
-            return esc(r.nama_vendor || r.username_vendor) + (Number(r.diisi_admin) ? '<br/><span class="badge badge-light">diisi admin</span>' : '');
+            var id = r.permohonan_id, html = '<div class="w-100-flex" style="justify-content: center;gap: 5px;">';
+
+            if (r.status !== 'draft') html += '<a href="' + rooturl + '/manajemen_perizinan/detail/' + id + '" class="btn btn-info btn-sm" title="Lihat Detail"><i class="fas fa-eye"></i></a>';
+            if (r.status !== 'draft') html += '<a href="' + rooturl + '/manajemen_perizinan/export_excel/' + id + '" class="btn btn-success btn-sm" title="Export Excel"><i class="fas fa-file-excel"></i></a>';
+            // if (r.bisa_edit) html += '<a href="' + rooturl + '/manajemen_perizinan/edit/' + id + '" class="btn btn-warning btn-sm" title="Isi / Edit Data"><i class="fas fa-edit"></i></a>';
+            // if (r.bisa_ubah) html += '<button type="button" class="btn btn-danger btn-sm" title="Hapus" onclick="hapus(' + id + ')"><i class="fas fa-trash"></i></button>';
+            html += '</div>';
+            if (tahapPenerbitan(r) || r.status === 'disetujui') html += aksiPenerbitan(r);
+            return html;
         } },
+        { "data": 'diajukanAt', "render": function (d) { return d ? moment(d).format('DD/MM/YYYY HH:mm') : '<i>belum diajukan</i>'; } },
+        // { "data": null, "render": function (r) {
+        //     return esc(r.nama_vendor || r.username_vendor) + (Number(r.diisi_admin) ? '<br/><span class="badge badge-light">diisi admin</span>' : '');
+        // } },
         { "data": 'nama_pemohon', "render": esc },
         { "data": 'provider', "render": function (d) { return esc(d || '-'); } },
         { "data": 'jml_ruas', "className": 'text-center' },
@@ -153,26 +338,19 @@
         { "data": 'no_sk', "render": function (d) { return esc(d || '-'); } },
         { "data": null, "render": function (r) {
             // Permohonan yang sedang berjalan: tampilkan tahapnya
+            var langkah = langkahPenerbitan(r);
+            langkah = langkah ? '<br/><small class="text-muted">' + langkah + '</small>' : '';
             if (r.status === 'diajukan' && TAHAP[r.tahap]) {
-              return '<span class="badge badge-' + (r.tahap === 'penerbitan_izin' ? 'primary' : 'info') + '">' + TAHAP[r.tahap] + '</span>';
+              return '<span class="badge badge-' + (r.tahap === 'penerbitan_izin' ? 'primary' : 'info') + '">' + TAHAP[r.tahap] + '</span>' + langkah;
             }
             var s = STATUS[r.status] || { label: r.status, badge: 'light' };
-            return '<span class="badge badge-' + s.badge + '">' + s.label + '</span>';
+            return '<span class="badge badge-' + s.badge + '">' + s.label + '</span>' + langkah;
         } },
-        { "data": null, "render": function (r) {
-            var id = r.permohonan_id, html = '<div class="w-100-flex" style="justify-content: center;gap: 5px;">';
-              
-            if (r.status !== 'draft') html += '<a href="' + rooturl + '/manajemen_perizinan/detail/' + id + '" class="btn btn-info btn-sm" title="Lihat & Proses"><i class="fas fa-eye"></i></a>';
-             if (r.status !== 'draft') html += '<a href="' + rooturl + '/manajemen_perizinan/export_excel/' + id + '" class="btn btn-success btn-sm" title="Export Excel"><i class="fas fa-file-excel"></i></a>';
-            if (r.bisa_edit) html += '<a href="' + rooturl + '/manajemen_perizinan/edit/' + id + '" class="btn btn-warning btn-sm" title="Isi / Edit Data"><i class="fas fa-edit"></i></a>';
-            if (r.bisa_ubah) html += '<button type="button" class="btn btn-danger btn-sm" title="Hapus" onclick="hapus(' + id + ')"><i class="fas fa-trash"></i></button>';
-            if (r.status === 'disetujui') html += '<a href="' + rooturl + '/manajemen_perizinan/cetak_sk/' + id + '" target="_blank" class="btn btn-success btn-sm" title="Cetak SK"><i class="fas fa-print"></i></a>';
-            return html + '</div>';
-        } }
+        
     ],
     "columnDefs": [
         { "width": "30px", "targets": 0 },
-        { "width": "130px", "targets": 11 }
+        { "width": "170px", "targets": 10 }
     ]
   });
 
@@ -198,6 +376,159 @@
     if (!id) return swal('Pilih vendor', 'Vendor pemohon wajib dipilih', 'warning');
     window.location.href = rooturl + '/manajemen_perizinan/insert?id_user=' + encodeURIComponent(id);
   });
+
+  // Nama file terpilih tampil di label custom-file
+  $(document).on('change', '.custom-file-input', function () {
+    $(this).next('.custom-file-label').text(this.files[0] ? this.files[0].name : 'Pilih File');
+  });
+
+  // ---------------- langkah 1: perjanjian sewa ----------------
+  function bukaSewa(id) {
+    id_aktif = id;
+    $.get(rooturl + '/manajemen_perizinan/data/' + id).done(function (res) {
+      var ps = res.data.perjanjian_sewa || {};
+      $('#judulSewa').text((res.data.perjanjian_sewa ? 'Ubah' : 'Buat') + ' Draft Perjanjian Sewa');
+      $('#no_perjanjian').val(ps.no_perjanjian || '');
+      $('#tanggal_perjanjian').val(ps.tanggal_perjanjian ? moment(ps.tanggal_perjanjian).format('YYYY-MM-DD') : '');
+      CKEDITOR.instances.isi_perjanjian.setData(ps.isi || '');
+      $('#modalSewa').modal('show');
+    }).fail(function (xhr) { pesanGagal(xhr, 'Gagal memuat data'); });
+  }
+
+  function simpanSewa() {
+    if (!$('#no_perjanjian').val() || !$('#tanggal_perjanjian').val()) return swal('Lengkapi data', 'Nomor & tanggal perjanjian sewa wajib diisi', 'warning');
+    $('#btn-simpan-sewa').prop('disabled', true);
+    $.post(rooturl + '/manajemen_perizinan/perjanjian_sewa/simpan/' + id_aktif, {
+      no_perjanjian: $('#no_perjanjian').val(),
+      tanggal_perjanjian: $('#tanggal_perjanjian').val(),
+      isi: CKEDITOR.instances.isi_perjanjian.getData()
+    }).done(function () {
+      $('#modalSewa').modal('hide');
+      swal({title:text_insert.title,text:text_insert.text, icon: text_insert.icon, type:text_insert.type});
+      data_table.ajax.reload(null, false);
+    }).fail(function (xhr) {
+      pesanGagal(xhr, 'Gagal menyimpan draft perjanjian sewa');
+    }).always(function () {
+      $('#btn-simpan-sewa').prop('disabled', false);
+    });
+  }
+
+  // ---------------- langkah 2: draft SK ----------------
+  function bukaSk(id) {
+    var r = BARIS[id] || {};
+    id_aktif = id;
+    $('#judulSk').text((r.status === 'disetujui' ? 'Ubah' : 'Buat') + ' Draft SK Izin');
+    $('#info-sewa-sk').html('Perjanjian sewa' + (r.no_perjanjian ? ' No. <b>' + esc(r.no_perjanjian) + '</b>' : '') +
+      ' sudah ditandatangani. <a href="' + rooturl + '/manajemen_perizinan/perjanjian_sewa/file/' + id + '" target="_blank">Lihat file</a>');
+    $('#no_sk').val(r.no_sk || '');
+    $('#tanggal_sk').val(r.tanggal_sk ? moment(r.tanggal_sk).format('YYYY-MM-DD') : moment().format('YYYY-MM-DD'));
+    $('#keterangan_sk').val(r.keterangan || '');
+    tombolCetakSk(id, !!r.no_sk);
+    $('#modalSk').modal('show');
+  }
+
+  // Cetak draft SK hanya tersedia setelah data draft SK disimpan
+  function tombolCetakSk(id, ada) {
+    $('#btn-cetak-sk').attr('href', rooturl + '/manajemen_perizinan/cetak_sk/' + id).toggle(!!ada);
+  }
+
+  // Tombol "Simpan": hanya menyimpan data draft SK (status permohonan tidak berubah), lalu draft bisa dicetak
+  function simpanDataSk() {
+    if (!$('#no_sk').val()) return swal('Lengkapi data', 'Nomor SK wajib diisi', 'warning');
+    var id = id_aktif;
+    $('.btn-proses').prop('disabled', true);
+    $.post(rooturl + '/manajemen_perizinan/proses/' + id, {
+      aksi: 'simpan',
+      no_sk: $('#no_sk').val(),
+      tanggal_sk: $('#tanggal_sk').val(),
+      keterangan: $('#keterangan_sk').val()
+    }).done(function () {
+      tombolCetakSk(id, true);
+      swal('Berhasil', 'Data draft SK disimpan. Silakan cetak draft SK melalui tombol "Cetak Draft SK".', 'success');
+      data_table.ajax.reload(null, false);
+    }).fail(function (xhr) {
+      pesanGagal(xhr, 'Gagal menyimpan data draft SK');
+    }).always(function () {
+      $('.btn-proses').prop('disabled', false);
+    });
+  }
+
+  var LABEL_AKSI = { setujui: 'menyetujui permohonan dan membuat draft SK', tolak: 'menolak permohonan', revisi: 'mengembalikan permohonan untuk revisi' };
+  async function proses(aksi) {
+    if (aksi === 'setujui' && !$('#no_sk').val()) return swal('Lengkapi data', 'Nomor SK wajib diisi', 'warning');
+    if (aksi !== 'setujui' && !$('#keterangan_sk').val().trim()) return swal('Lengkapi data', 'Keterangan wajib diisi', 'warning');
+    var yakin = await swal({
+      title: 'Proses Permohonan',
+      text: 'Anda akan ' + LABEL_AKSI[aksi] + '.' +
+        (aksi === 'setujui' ? ' Tiang & kabel hasil digitasi akan dimasukkan ke data utama.' : ' Pemohon akan diberi tahu lewat email.') + ' Lanjutkan?',
+      icon: aksi === 'setujui' ? 'info' : 'warning',
+      dangerMode: aksi !== 'setujui',
+      buttons: ['Batal', 'Ya']
+    });
+    if (!yakin) return;
+    $('.btn-proses').prop('disabled', true);
+    $.post(rooturl + '/manajemen_perizinan/proses/' + id_aktif, {
+      aksi: aksi,
+      no_sk: $('#no_sk').val(),
+      tanggal_sk: $('#tanggal_sk').val(),
+      keterangan: $('#keterangan_sk').val()
+    }).done(function (res) {
+      var m = res.data && res.data.masuk_data_utama;
+      $('#modalSk').modal('hide');
+      swal('Berhasil', m
+        ? 'Draft SK disimpan. ' + m.tiang + ' tiang dan ' + m.kabel + ' kabel masuk ke data utama. Silakan cetak SK lalu upload SK yang sudah ditandatangani.'
+        : 'Permohonan berhasil diproses', 'success');
+      data_table.ajax.reload(null, false);
+    }).fail(function (xhr) {
+      pesanGagal(xhr, 'Gagal memproses permohonan');
+    }).always(function () {
+      $('.btn-proses').prop('disabled', false);
+    });
+  }
+
+  // ---------------- upload TTD: sewa (perjanjian sewa) | sk (izin) ----------------
+  var UPLOAD = {
+    sewa: { judul: 'Upload Perjanjian Sewa', url: '/manajemen_perizinan/perjanjian_sewa/upload/', nama: 'perjanjian sewa',
+            info: 'Setelah perjanjian sewa yang ditandatangani diupload, draft SK izin dapat dibuat. Upload ulang akan mengganti file.',
+            konfirmasi: 'Upload perjanjian sewa yang sudah ditandatangani?',
+            berhasil: 'Perjanjian sewa berhasil diupload. Silakan lanjut membuat draft SK.' },
+    sk:   { judul: 'Upload SK Izin', url: '/manajemen_perizinan/izin/upload/', nama: 'SK izin',
+            info: 'Setelah diupload, SK izin dikirim ke email pemohon sebagai pemberitahuan izin telah terbit. Upload ulang akan mengganti file dan mengirim email lagi.',
+            konfirmasi: 'Permohonan yang belum disetujui akan otomatis disetujui (tiang & kabel hasil digitasi masuk ke data utama), lalu SK izin dikirim ke email pemohon sebagai pemberitahuan izin telah terbit. Lanjutkan?',
+            berhasil: 'SK izin berhasil diupload dan dikirim ke email pemohon.' }
+  };
+  var jenis_upload = null;
+
+  function bukaUpload(jenis, id) {
+    var u = UPLOAD[jenis];
+    id_aktif = id; jenis_upload = jenis;
+    $('#judulUpload').text(u.judul);
+    $('#label-upload').text('Upload ' + u.nama + ' yang sudah ditandatangani');
+    $('#info-upload').text(u.info);
+    $('#file_ttd').val('').next('.custom-file-label').text('Pilih File');
+    $('#modalUpload').modal('show');
+  }
+
+  async function simpanUpload() {
+    var u = UPLOAD[jenis_upload];
+    var f = $('#file_ttd')[0].files[0];
+    if (!f) return swal('Pilih file', 'File ' + u.nama + ' yang sudah ditandatangani wajib dipilih', 'warning');
+    var yakin = await swal({ title: u.judul, text: u.konfirmasi, icon: 'warning', buttons: ['Tidak', 'Ya'] });
+    if (!yakin) return;
+    var formData = new FormData();
+    formData.append('file', f);
+    $('#btn-simpan-upload').prop('disabled', true);
+    $.ajax({ type: 'POST', url: rooturl + u.url + id_aktif, data: formData, processData: false, contentType: false })
+      .done(function () {
+        $('#modalUpload').modal('hide');
+        swal('Berhasil', u.berhasil, 'success');
+        data_table.ajax.reload(null, false);
+      }).fail(function (xhr) {
+        pesanGagal(xhr, 'Gagal mengupload ' + u.nama);
+      }).always(function () {
+        $('#btn-simpan-upload').prop('disabled', false);
+      });
+  }
 
   async function hapus(id) {
     const yakin = await swal({
