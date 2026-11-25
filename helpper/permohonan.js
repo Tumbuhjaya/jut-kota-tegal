@@ -85,6 +85,17 @@ function bisaUbah(permohonan, admin) {
   return permohonan.status === 'draft' || permohonan.status === 'revisi';
 }
 
+// Tahap awal: provider (diketik pemohon) + dokumen persyaratan diverifikasi admin bersamaan.
+// Ruas jalan, simpan & ajukan baru terbuka setelah terverifikasi (status_provider mencakup provider & persyaratan).
+function providerTerverifikasi(permohonan) {
+  return !!permohonan && permohonan.status_provider === 'terverifikasi' && !!permohonan.provider_id;
+}
+
+// Pemohon hanya boleh mengubah provider & dokumen persyaratan sebelum dikirim verifikasi / setelah ditolak
+function bisaIsiAwal(permohonan) {
+  return bisaUbah(permohonan) && ['menunggu', 'terverifikasi'].indexOf(permohonan.status_provider) === -1;
+}
+
 // Rekap ruas per permohonan (dipakai list vendor & list backoffice)
 var SQL_REKAP = `
   SELECT p.permohonan_id, p.id_user, p.provider_id, p.status, p.tahap, p.keterangan, p.no_sk, p.tanggal_sk,
@@ -615,6 +626,8 @@ module.exports = {
   KONFIG_SK: KONFIG_SK,
   buatExcel: buatExcel,
   bisaUbah: bisaUbah,
+  providerTerverifikasi: providerTerverifikasi,
+  bisaIsiAwal: bisaIsiAwal,
   SQL_REKAP: SQL_REKAP,
   buatDraft: buatDraft,
   getPermohonan: getPermohonan,

@@ -1,0 +1,226 @@
+<% include ../../../template-backoffice/header.ejs %>
+  <!-- Main Content -->
+  <div class="main-content">
+    <section class="section">
+      <div class="w-100" style="padding: 0 30px;">
+        <div class="section-header">
+          <h1>Verifikasi Provider & Persyaratan</h1>
+          <div class="section-header-breadcrumb">
+            <div class="breadcrumb-item active"><a href="#">Dashboard</a></div>
+            <div class="breadcrumb-item">Data</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-body">
+        <div class="row">
+          <div class="col-lg-12 col-xl-12">
+            <div class="card">
+              <div class="card-header">
+                <small class="text-muted"><i>Periksa dokumen persyaratan dan pilihkan provider yang sesuai agar pemohon bisa melanjutkan pengisian ruas jalan.</i></small>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table class="table table-bordered table-striped table-hover" id="list-data">
+                    <thead>
+                      <tr>
+                        <th class="text-center">No.</th>
+                        <th class="text-center">Tanggal<br/>Diusulkan</th>
+                        <th class="text-center">Vendor</th>
+                        <th class="text-center">Pemohon</th>
+                        <th class="text-center">Provider Diketik Pemohon</th>
+                        <th class="text-center">Option</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal fade" id="modalProvider" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Verifikasi Provider & Persyaratan</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="modal-body">
+          <h6>Pemohon / Penanggung Jawab</h6>
+          <table class="table table-sm table-borderless mb-2">
+            <tbody id="m_pemohon"></tbody>
+          </table>
+          <h6>Dokumen Persyaratan</h6>
+          <table class="table table-sm table-bordered">
+            <tbody id="m_dokumen"></tbody>
+          </table>
+          <hr>
+          <div class="form-group">
+            <label>Provider diketik pemohon</label>
+            <input type="text" class="form-control" id="m_usulan" readonly>
+          </div>
+          <div class="form-group">
+            <label for="m_provider_id">Pilih Provider</label>
+            <select id="m_provider_id" class="form-control" style="width: 100%;">
+              <option value="">-- Pilih Provider --</option>
+            </select>
+          </div>
+          <hr>
+          <div class="form-group mb-0">
+            <label for="m_keterangan">Keterangan (wajib jika ditolak)</label>
+            <textarea id="m_keterangan" class="form-control" rows="3" maxlength="500" placeholder="Contoh: provider tidak terdaftar / dokumen KTP tidak terbaca, mohon upload ulang"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-danger" onclick="tolak()"><i class="fas fa-times"></i>&nbsp; Tolak</button>
+          <button type="button" class="btn btn-primary" onclick="verifikasi()"><i class="fas fa-check"></i>&nbsp; Verifikasi</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="main-footer">
+    <div class="footer-left">
+      <% include ../../../template-backoffice/copyright-left.ejs %>
+    </div>
+    <div class="footer-right">
+      <% include ../../../template-backoffice/copyright-right.ejs %>
+    </div>
+  </footer>
+<% include ../../../template-backoffice/footer.ejs %>
+
+
+<script type="text/javascript">
+    var rooturl = ''
+    var API = rooturl + '/manajemen_perizinan/provider/';
+    var masterProvider = [];
+    var idAktif = null;
+
+    function esc(t) {
+      return $('<div>').text(t == null || t === '' ? '-' : t).html();
+    }
+    function pesanGagal(xhr, def) {
+      return (xhr && xhr.responseJSON && xhr.responseJSON.message) || def;
+    }
+
+    let data_table  =$('#list-data').DataTable({
+      "language": {
+          "sProcessing":   "Sedang memproses...",
+          "sLengthMenu":   "_MENU_",
+          "sZeroRecords":  "Tidak ada provider yang menunggu verifikasi",
+          "sInfo":         "Menampilkan _START_ sampai _END_ dari _TOTAL_ entri",
+          "sInfoEmpty":    "Menampilkan 0 sampai 0 dari 0 entri",
+          "sInfoFiltered": "(disaring dari _MAX_ entri keseluruhan)",
+          "sInfoPostFix":  "",
+          "sUrl":          "",
+          "oPaginate": {
+            "sFirst":    "Pertama",
+            "sPrevious": "Sebelumnya",
+            "sNext":     "Selanjutnya",
+            "sLast":     "Terakhir"
+          }
+      },
+      "processing": true,
+      "ordering": false,
+      "ajax": { url: API + 'list', type: 'POST' },
+      "columns": [
+        { "data": null, "defaultContent": '', "className": 'text-center' },
+        { "data": 'provider_diusulkanAt', "render": function (d) { return d ? moment(d).format('DD/MM/YYYY HH:mm') : '-'; } },
+        { "data": null, "render": function (r) { return esc(r.nama_vendor || r.username_vendor); } },
+        { "data": 'nama_pemohon', "render": esc },
+        { "data": 'provider_usulan', "render": function (d) { return '<b>' + esc(d) + '</b>'; } },
+        { "data": null, "className": 'text-center', "render": function (r) {
+            return '<button type="button" class="btn btn-warning btn-verifikasi" title="Verifikasi Provider"><i class="fas fa-tasks"></i></button>';
+        } }
+      ],
+      "columnDefs": [
+        { "width": "30px", "targets": 0},
+        { "width": "80px", "targets": 5}
+      ],
+    });
+
+    data_table.on( 'draw.dt', function () {
+      let PageInfo = $('#list-data').DataTable().page.info();
+      data_table.column(0, { page: 'current' }).nodes().each( function (cell, i) {
+        cell.innerHTML = i + 1 + PageInfo.start;
+      });
+    });
+
+    // Buka modal; provider yang namanya sama persis dengan ketikan pemohon langsung terpilih
+    $('#list-data').on('click', '.btn-verifikasi', function () {
+      var r = data_table.row($(this).closest('tr')).data();
+      idAktif = r.permohonan_id;
+      var usulan = $.trim(r.provider_usulan || '').toLowerCase();
+      var cocok = masterProvider.find(function (p) { return $.trim(p.provider).toLowerCase() === usulan; });
+      $('#m_usulan').val(r.provider_usulan);
+      $('#m_provider_id').val(cocok ? cocok.provider_id : '').trigger('change');
+      $('#m_keterangan').val('');
+      $('#m_pemohon, #m_dokumen').html('<tr><td><i>Memuat...</i></td></tr>');
+      $('#modalProvider').modal('show');
+
+      $.get(API + 'detail/' + idAktif)
+        .done(function (res) {
+          var d = res.data;
+          $('#m_pemohon').html(
+            [['Nama', d.pemohon.nama], ['Jabatan', d.pemohon.jabatan], ['No. Telepon', d.pemohon.telp], ['Email', d.pemohon.email]]
+              .map(function (x) { return '<tr><td style="width: 130px;">' + x[0] + '</td><td>: ' + esc(x[1]) + '</td></tr>'; }).join(''));
+          var perJenis = {};
+          d.dokumen.forEach(function (x) { perJenis[x.jenis_dokumen] = x; });
+          $('#m_dokumen').html(Object.keys(d.jenis_dokumen).map(function (j) {
+            var x = perJenis[j];
+            var wajib = d.dokumen_wajib.indexOf(j) !== -1;
+            var file = x
+              ? '<a href="' + rooturl + '/manajemen_perizinan/dokumen/' + x.permohonan_dokumen_id + '" target="_blank"><i class="fas fa-file"></i> ' + esc(x.nama_asli) + '</a>'
+              : '<span class="' + (wajib ? 'text-danger' : 'text-muted') + '"><i>Belum diupload' + (wajib ? '' : ' (opsional)') + '</i></span>';
+            return '<tr><td>' + esc(d.jenis_dokumen[j]) + '</td><td style="width: 40%;">' + file + '</td></tr>';
+          }).join(''));
+        })
+        .fail(function (xhr) { $('#m_pemohon, #m_dokumen').html('<tr><td class="text-danger">' + esc(pesanGagal(xhr, 'Gagal memuat data')) + '</td></tr>'); });
+    });
+
+    function kirim(aksi, data, pesan) {
+      $('#modalProvider .modal-footer button').prop('disabled', true);
+      $.post(API + aksi + '/' + idAktif, data)
+        .done(function () {
+          $('#modalProvider').modal('hide');
+          swal('Berhasil', pesan, 'success');
+          data_table.ajax.reload();
+        })
+        .fail(function (xhr) { swal('Gagal', pesanGagal(xhr, 'Gagal menyimpan'), 'error'); })
+        .always(function () { $('#modalProvider .modal-footer button').prop('disabled', false); });
+    }
+
+    function verifikasi() {
+      var provider_id = $('#m_provider_id').val();
+      if (!provider_id) return swal('Belum dipilih', 'Pilih provider terlebih dahulu', 'warning');
+      kirim('verifikasi', { provider_id: provider_id }, 'Provider & persyaratan terverifikasi, pemohon dapat melanjutkan pengisian ruas jalan');
+    }
+
+    async function tolak() {
+      var keterangan = $.trim($('#m_keterangan').val());
+      if (!keterangan) return swal('Belum diisi', 'Isi keterangan penolakan terlebih dahulu', 'warning');
+      var yakin = await swal({
+        title: 'Tolak Verifikasi',
+        text: 'Pemohon akan diminta memperbaiki provider / dokumen persyaratan. Lanjutkan?',
+        icon: 'warning', dangerMode: true, buttons: ['Tidak', 'Ya']
+      });
+      if (yakin) kirim('tolak', { keterangan: keterangan }, 'Verifikasi ditolak, pemohon diminta memperbaiki');
+    }
+
+    $(document).ready(function () {
+      $('#m_provider_id').select2({ width: '100%', dropdownParent: $('#modalProvider') });
+      $.get(API + 'master')
+        .done(function (res) {
+          masterProvider = res.data;
+          res.data.forEach(function (p) {
+            $('#m_provider_id').append($('<option>').val(p.provider_id).text(p.provider));
+          });
+        })
+        .fail(function (xhr) { swal('Gagal', pesanGagal(xhr, 'Gagal memuat data provider'), 'error'); });
+    });
+</script>

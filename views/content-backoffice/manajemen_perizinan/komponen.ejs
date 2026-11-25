@@ -29,6 +29,9 @@
               <select name="provider_id" id="provider_id" class="form-control" style="width: 100%;" <%= bisa_ubah ? '' : 'disabled' %>>
                 <option value="">-- Pilih Provider --</option>
               </select>
+              <% if (permohonan.provider_usulan) { %>
+              <small class="text-muted"><i>Provider diketik pemohon: <b><%= permohonan.provider_usulan %></b></i></small>
+              <% } %>
             </div>
           </div>
 

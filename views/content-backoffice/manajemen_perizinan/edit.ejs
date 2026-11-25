@@ -370,9 +370,6 @@
             }
             var row = rows ? rows[index] : $tr.data('row');
             if (!row || !row.permohonan_ruas_id) return;
-            if (jenis === 'kabel' && !(row.digitasi_tiang > 0) && !(row.digitasi_kabel > 0)) {
-                return swal('Tiang belum ada', 'Digitasi tiang pada ruas ini terlebih dahulu, baru kemudian kabel.', 'warning');
-            }
             window.location.href = rooturl + '/manajemen_perizinan/' + jenis + '/' + ID_PERMOHONAN + '/' + row.permohonan_ruas_id;
         });
 

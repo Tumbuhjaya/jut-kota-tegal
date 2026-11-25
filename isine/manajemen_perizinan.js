@@ -88,9 +88,6 @@ function viewDigitasi(jenis) {
       [req.params.id_ruas, p.permohonan_id]
     );
     if (!ruas.length) return res.redirect('/manajemen_perizinan/edit/' + p.permohonan_id);
-    // Kabel baru bisa didigitasi setelah ruas punya tiang
-    var jumlah = await helper.hitungDigitasi(ruas[0].permohonan_ruas_id);
-    if (jenis === 'kabel' && !jumlah.tiang && !jumlah.kabel) return res.redirect('/manajemen_perizinan/edit/' + p.permohonan_id);
     // Jalan Lain hanya punya titik dummy: peta tidak di-zoom ke sana
     if (ruas[0].nm_ruas === helper.NAMA_RUAS_LAIN) ruas[0].ruas_id = null;
     var locals = await localsPengisian(p);
@@ -336,6 +333,89 @@ function kirimList(tahap, status) {
     } catch (err) { gagal(res, err); }
   };
 }
+
+// ---------------- Verifikasi provider & persyaratan ----------------
+// Pemohon mengetik nama provider (provider_usulan) + upload dokumen persyaratan;
+// admin memeriksa dokumen, memilihkan provider dari master, atau menolak keduanya sekaligus
+router.get('/provider', cek_admin, function (req, res) {
+  res.render('content-backoffice/manajemen_perizinan/provider/list', { user: getUser(req) });
+});
+
+router.post('/provider/list', cek_admin, async function (req, res) {
+  try {
+    var [data] = await sql_enak.raw(
+      `SELECT p.permohonan_id, p.provider_usulan, p.provider_diusulkanAt, p.nama_pemohon,
+              u.fullname AS nama_vendor, u.username AS username_vendor
+         FROM permohonan p
+         LEFT JOIN user u ON u.id_user = p.id_user
+        WHERE p.deletedAt IS NULL AND p.status_provider = 'menunggu'
+        ORDER BY p.provider_diusulkanAt ASC`
+    );
+    res.json({ status: 200, message: 'sukses', data: data });
+  } catch (err) { gagal(res, err); }
+});
+
+router.get('/provider/master', cek_admin, async function (req, res) {
+  try {
+    var [data] = await sql_enak.raw(`SELECT provider_id, provider FROM provider WHERE deletedAt IS NULL ORDER BY provider ASC`);
+    res.json({ status: 200, message: 'sukses', data: data });
+  } catch (err) { gagal(res, err); }
+});
+
+// Data pemohon + dokumen persyaratan untuk diperiksa di modal verifikasi
+router.get('/provider/detail/:id', cek_admin, async function (req, res) {
+  try {
+    var p = await helper.getPermohonan(req.params.id);
+    if (!p) return gagal(res, 'Permohonan tidak ditemukan', 404);
+    res.json({ status: 200, message: 'sukses', data: {
+      pemohon: { nama: p.nama_pemohon, jabatan: p.jabatan_pemohon, telp: p.telp_pemohon, email: p.email_pemohon },
+      dokumen: await helper.getDokumen(p.permohonan_id),
+      jenis_dokumen: helper.JENIS_DOKUMEN,
+      dokumen_wajib: helper.DOKUMEN_WAJIB
+    } });
+  } catch (err) { gagal(res, err); }
+});
+
+async function ambilUsulanProvider(req, res) {
+  var p = await helper.getPermohonan(req.params.id);
+  if (!p) { gagal(res, 'Permohonan tidak ditemukan', 404); return null; }
+  if (p.status_provider !== 'menunggu') { gagal(res, 'Provider permohonan ini tidak sedang menunggu verifikasi', 400); return null; }
+  return p;
+}
+
+// body: { provider_id }
+router.post('/provider/verifikasi/:id', cek_admin, async function (req, res) {
+  try {
+    var p = await ambilUsulanProvider(req, res);
+    if (!p) return;
+    var [prov] = await sql_enak.raw(`SELECT provider_id FROM provider WHERE provider_id = ? AND deletedAt IS NULL`, [req.body.provider_id || 0]);
+    if (!prov.length) return gagal(res, 'Pilih provider terlebih dahulu', 400);
+    await sql_enak.raw(
+      `UPDATE permohonan SET provider_id = ?, status_provider = 'terverifikasi', keterangan_provider = NULL,
+              provider_diverifikasiAt = NOW(), provider_diverifikasi_oleh = ?, lastUpdateAt = NOW()
+        WHERE permohonan_id = ?`,
+      [prov[0].provider_id, getUser(req).id_user, p.permohonan_id]
+    );
+    res.json({ status: 200, message: 'sukses', data: null });
+  } catch (err) { gagal(res, err); }
+});
+
+// body: { keterangan } — pemohon bisa memperbaiki provider / dokumen lalu verifikasi lagi
+router.post('/provider/tolak/:id', cek_admin, async function (req, res) {
+  try {
+    var p = await ambilUsulanProvider(req, res);
+    if (!p) return;
+    var keterangan = String(req.body.keterangan || '').trim().slice(0, 500);
+    if (!keterangan) return gagal(res, 'Keterangan penolakan wajib diisi', 400);
+    await sql_enak.raw(
+      `UPDATE permohonan SET status_provider = 'ditolak', keterangan_provider = ?,
+              provider_diverifikasiAt = NOW(), provider_diverifikasi_oleh = ?, lastUpdateAt = NOW()
+        WHERE permohonan_id = ?`,
+      [keterangan, getUser(req).id_user, p.permohonan_id]
+    );
+    res.json({ status: 200, message: 'sukses', data: null });
+  } catch (err) { gagal(res, err); }
+});
 
 // ---------------- Permohonan izin (verifikasi) ----------------
 router.get('/permohonan', cek_admin, function (req, res) {

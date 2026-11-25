@@ -184,6 +184,7 @@ async function ambilMilik(req, res, wajibBisaUbah) {
   var p = await helper.getPermohonan(req.params.id_permohonan, idPemilik(req));
   if (!p) { gagal(res, 'Permohonan tidak ditemukan', 404); return null; }
   if (wajibBisaUbah && !helper.bisaUbah(p, isAdmin(req))) { gagal(res, 'Permohonan sudah diajukan / diproses dan tidak bisa diubah', 400); return null; }
+  if (wajibBisaUbah && !isAdmin(req) && !helper.providerTerverifikasi(p)) { gagal(res, 'Provider belum diverifikasi admin', 400); return null; }
   return p;
 }
 
@@ -206,9 +207,13 @@ async function localsPengisian(req, p) {
     var [v] = await sql_enak.raw(`SELECT fullname, username FROM user WHERE id_user = ?`, [p.id_user]);
     atas_nama = v[0] ? (v[0].fullname || v[0].username) : '-';
   }
+  var [prov] = await sql_enak.raw(`SELECT provider FROM provider WHERE provider_id = ?`, [p.provider_id || 0]);
   return {
     user: getUser(req),
     permohonan: p,
+    nama_provider: prov[0] ? prov[0].provider : null,
+    provider_ok: helper.providerTerverifikasi(p),
+    bisa_isi_awal: helper.bisaIsiAwal(p),
     bisa_ubah: helper.bisaUbah(p),
     atas_nama: atas_nama,
     kode_wilayah: helper.KODE_WILAYAH,
@@ -258,9 +263,6 @@ function viewDigitasi(jenis) {
       [req.params.id_ruas, p.permohonan_id]
     );
     if (!ruas.length) return res.redirect('/perizinan' + JU + '/ruas_jalan/' + p.permohonan_id);
-    // Kabel baru bisa didigitasi setelah ruas punya tiang
-    var jumlah = await helper.hitungDigitasi(ruas[0].permohonan_ruas_id);
-    if (jenis === 'kabel' && !jumlah.tiang && !jumlah.kabel) return res.redirect('/perizinan' + JU + '/ruas_jalan/' + p.permohonan_id);
     // Jalan Lain hanya punya titik dummy: peta tidak di-zoom ke sana
     if (ruas[0].nm_ruas === helper.NAMA_RUAS_LAIN) ruas[0].ruas_id = null;
     var locals = await localsPengisian(req, p);
@@ -332,7 +334,9 @@ router.get(JU + '/persyaratan/file/:jenis/:id_permohonan', cek_vendor, async fun
 });
 
 // ---------------- API: master ----------------
+// Daftar provider hanya untuk admin; pemohon mengetik nama provider lalu dipilihkan admin
 router.get(JU + '/api/provider', cek_pemohon, async function (req, res) {
+  if (!isAdmin(req)) return gagal(res, 'Tidak diizinkan', 403);
   try {
     var [data] = await sql_enak.raw(`SELECT provider_id, provider FROM provider WHERE deletedAt IS NULL ORDER BY provider ASC`);
     res.json({ status: 200, message: 'sukses', data: data });
@@ -379,8 +383,15 @@ router.post(JU + '/api/simpan/:id_permohonan', cek_pemohon, async function (req,
     var ruas = Array.isArray(body.ruas) ? body.ruas : [];
     var idRuasLain = await helper.getIdRuasLain();
 
-    await sql_enak.raw(`UPDATE permohonan SET provider_id = ?, lastUpdateAt = NOW() WHERE permohonan_id = ?`,
-      [body.provider_id || null, p.permohonan_id]);
+    // Hanya admin yang memilih provider; pemohon lewat api/verifikasi_provider
+    var provider_id = body.provider_id ? Number(body.provider_id) : null;
+    if (isAdmin(req) && provider_id !== (p.provider_id || null)) {
+      await sql_enak.raw(
+        `UPDATE permohonan SET provider_id = ?, status_provider = ?, keterangan_provider = NULL,
+                provider_diverifikasiAt = NOW(), provider_diverifikasi_oleh = ?, lastUpdateAt = NOW()
+          WHERE permohonan_id = ?`,
+        [provider_id, provider_id ? 'terverifikasi' : 'belum', getUser(req).id_user, p.permohonan_id]);
+    }
 
     for (var i = 0; i < ruas.length; i++) {
       var r = ruas[i];
@@ -424,13 +435,43 @@ router.post(JU + '/api/simpan/:id_permohonan', cek_pemohon, async function (req,
   } catch (err) { gagal(res, err); }
 });
 
+// Pemohon mengirim nama provider (teks bebas) + dokumen persyaratan untuk diverifikasi admin di backoffice
+// body: { provider_usulan }
+router.post(JU + '/api/verifikasi_provider/:id_permohonan', cek_pemohon, async function (req, res) {
+  try {
+    var p = await ambilMilik(req, res, false);
+    if (!p) return;
+    if (!helper.bisaIsiAwal(p)) return gagal(res, 'Provider & persyaratan sedang / sudah diverifikasi', 400);
+    var usulan = String((req.body || {}).provider_usulan || '').trim().slice(0, 255);
+    var kurang = [];
+    if (!usulan) kurang.push('Nama provider belum diisi');
+    if (!p.nama_pemohon) kurang.push('Nama pemohon belum diisi');
+    var ada = (await helper.getDokumen(p.permohonan_id)).map(function (d) { return d.jenis_dokumen; });
+    helper.DOKUMEN_WAJIB.forEach(function (j) {
+      if (ada.indexOf(j) === -1) kurang.push('Dokumen belum diupload: ' + helper.JENIS_DOKUMEN[j]);
+    });
+    if (kurang.length) return res.status(400).json({ status: 400, message: kurang.join('\n'), data: kurang });
+    await sql_enak.raw(
+      `UPDATE permohonan SET provider_usulan = ?, status_provider = 'menunggu', keterangan_provider = NULL,
+              provider_diusulkanAt = NOW(), lastUpdateAt = NOW()
+        WHERE permohonan_id = ?`,
+      [usulan, p.permohonan_id]
+    );
+    res.json({ status: 200, message: 'sukses', data: null });
+  } catch (err) { gagal(res, err); }
+});
+
 // Data pemohon + upload dokumen persyaratan (modal "Upload")
 router.post(JU + '/api/syarat/:id_permohonan', cek_pemohon, function (req, res) {
   helper.upload_dokumen(req, res, async function (errUpload) {
     if (errUpload) return gagal(res, errUpload, 400);
     try {
-      var p = await ambilMilik(req, res, true);
+      var p = await ambilMilik(req, res, false);
       if (!p) return;
+      // Persyaratan ikut diverifikasi bersama provider: terkunci selama menunggu / setelah terverifikasi
+      if (!(isAdmin(req) ? helper.bisaUbah(p, true) : helper.bisaIsiAwal(p))) {
+        return gagal(res, 'Persyaratan sedang / sudah diverifikasi dan tidak bisa diubah', 400);
+      }
       var b = req.body || {};
       await sql_enak.raw(
         `UPDATE permohonan SET nama_pemohon = ?, jabatan_pemohon = ?, telp_pemohon = ?, email_pemohon = ?, lastUpdateAt = NOW()
@@ -471,7 +512,7 @@ router.post(JU + '/api/ajukan/:id_permohonan', cek_pemohon, async function (req,
     if (!p) return;
     if (!helper.bisaUbah(p)) return gagal(res, 'Hanya permohonan draft / revisi yang bisa diajukan', 400);
     var kurang = [];
-    if (!p.provider_id) kurang.push('Provider belum dipilih');
+    if (!helper.providerTerverifikasi(p)) kurang.push('Provider belum diverifikasi admin');
     if (!p.nama_pemohon) kurang.push('Nama pemohon belum diisi');
     var ruas = await helper.getRuas(p.permohonan_id);
     if (!ruas.length) kurang.push('Belum ada ruas jalan');
@@ -542,14 +583,6 @@ router.post(JU + '/api/digitasi/:jenis/:id_permohonan/:id_ruas', cek_pemohon, as
 
     for (var i = 0; i < fitur.length; i++) {
       if (!cfg.geom.test(String(fitur[i].wkt || ''))) return gagal(res, 'Geometri ' + req.params.jenis + ' ke-' + (i + 1) + ' tidak valid', 400);
-    }
-    // Urutan digitasi: tiang dulu, baru kabel. fitur = seluruh isi peta setelah disimpan.
-    var jumlah = await helper.hitungDigitasi(id_r);
-    if (req.params.jenis === 'kabel' && fitur.length && !jumlah.tiang) {
-      return gagal(res, 'Digitasi tiang pada ruas ini terlebih dahulu sebelum menambah kabel', 400);
-    }
-    if (req.params.jenis === 'tiang' && !fitur.length && jumlah.kabel) {
-      return gagal(res, 'Ruas ini masih punya kabel. Hapus kabelnya dulu sebelum menghapus semua tiang', 400);
     }
     if (hapus.length) {
       await sql_enak.raw(

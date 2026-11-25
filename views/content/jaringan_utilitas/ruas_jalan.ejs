@@ -566,25 +566,49 @@
                                 <div class="row mt-3">
                                     <div class="col-12 col-lg-12 col-xl-12">
                                         <div class="alert alert-success" role="alert">
+                                            <!-- Tahap awal: provider + dokumen persyaratan diverifikasi admin bersamaan -->
+                                            <% if (provider_ok) { %>
+                                            <div class="mb-3"><span class="badge badge-success"><i class="fas fa-check-circle"></i>&nbsp; Provider & persyaratan terverifikasi</span></div>
+                                            <% } else if (permohonan.status_provider === 'menunggu') { %>
+                                            <div class="alert alert-warning py-2" role="alert">
+                                                <i class="fas fa-hourglass-half"></i>&nbsp; <strong>Menunggu verifikasi admin.</strong>
+                                                Pengisian ruas jalan terbuka setelah provider dan persyaratan terverifikasi.
+                                            </div>
+                                            <% } else if (permohonan.status_provider === 'ditolak') { %>
+                                            <div class="alert alert-danger py-2" role="alert">
+                                                <strong>Verifikasi ditolak:</strong> <%= permohonan.keterangan_provider || '-' %><br/>
+                                                <small>Perbaiki provider / dokumen persyaratan lalu klik Verifikasi lagi.</small>
+                                            </div>
+                                            <% } %>
+
                                             <div class="form-group">
-                                                <label for="provider_id">Provider</label>
-                                                <select name="provider_id" id="provider_id" class="form-control autocomplete" <%= bisa_ubah ? '' : 'disabled' %>>
-                                                    <option value="">-- Pilih Provider --</option>
-                                                </select>
+                                                <label for="provider_usulan">Provider</label>
+                                                <% if (provider_ok) { %>
+                                                <input type="text" class="form-control" value="<%= nama_provider %>" readonly>
+                                                <% } else { %>
+                                                <input type="text" id="provider_usulan" class="form-control" maxlength="255" placeholder="Ketik nama provider" value="<%= permohonan.provider_usulan || '' %>" <%= bisa_isi_awal ? '' : 'readonly' %>>
+                                                <% } %>
                                             </div>
 
                                             <hr>
 
-                                            <div class="form-group">
+                                            <div class="form-group<%= bisa_isi_awal ? '' : ' mb-0' %>">
                                                 <label for="">Persyaratan Teknis</label><br/>
                                                 <button type="button" class="btn btn-success btn-sm" data-toggle="modal" data-target="#modalSyarat">
-                                                <i class="fas <%= bisa_ubah ? 'fa-plus' : 'fa-eye' %>"></i>&nbsp;&nbsp;<%= bisa_ubah ? 'Upload' : 'Lihat' %>
+                                                <i class="fas <%= bisa_isi_awal ? 'fa-plus' : 'fa-eye' %>"></i>&nbsp;&nbsp;<%= bisa_isi_awal ? 'Upload' : 'Lihat' %>
                                                 </button>
                                                 <span id="info_dokumen" class="ml-2"></span>
                                             </div>
+
+                                            <% if (bisa_isi_awal) { %>
+                                            <hr>
+                                            <button type="button" class="btn btn-gradient" id="btn_verifikasi_provider" onclick="verifikasiProvider()"><i class="fas fa-check"></i>&nbsp; Verifikasi</button>
+                                            <small class="text-muted ml-2"><i>Provider dan dokumen persyaratan akan diverifikasi oleh admin.</i></small>
+                                            <% } %>
                                         </div>
                                     </div>
                                 </div>
+                                <% if (provider_ok) { %>
                                 <div class="row mt-3">
                                     <div class="col-12">
                                         <div class="table-responsive">
@@ -639,13 +663,14 @@
                                         </div>
                                     </div>
                                 </div>
+                                <% } %>
 
                                 <div class="row mt-3">
                                     <div class="col-12">
                                         <hr>
                                         <div class="w-100-flex" style="justify-content: center;flex-wrap: wrap;gap: 10px;">
                                             <a href="<%= url_kembali %>" class="btn btn-secondary" style="padding: 0.85rem 40px;border-radius: 12px;"><i class="fas fa-arrow-left"></i>&nbsp;&nbsp;Kembali</a>
-                                            <% if (bisa_ubah) { %>
+                                            <% if (bisa_ubah && provider_ok) { %>
                                             <button type="button" class="btn btn-gradient" style="padding-left: 90px;padding-right: 90px;" onclick="simpan(true)"><i class="fas fa-save"></i>&nbsp;&nbsp;Simpan</button>
                                             <button type="button" class="btn btn-gradient-yellow" style="padding-left: 40px;padding-right: 40px;" onclick="ajukan()"><i class="fas fa-paper-plane"></i>&nbsp;&nbsp;Ajukan Permohonan</button>
                                             <% } %>
@@ -671,7 +696,7 @@
                 </button>
             </div>
             <div class="modal-body">
-                <fieldset <%= bisa_ubah ? '' : 'disabled' %>>
+                <fieldset <%= bisa_isi_awal ? '' : 'disabled' %>>
                 <div class="row">
                     <div class="col-12">
                                 <div class="row mt-3">
@@ -834,7 +859,7 @@
             <div class="modal-footer">
                 <small class="text-muted mr-auto"><i>Format PDF / JPG / PNG, maks. 10 MB per file</i></small>
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
-                <% if (bisa_ubah) { %>
+                <% if (bisa_isi_awal) { %>
                 <button type="submit" class="btn btn-primary">Simpan</button>
                 <% } %>
             </div>
@@ -855,7 +880,9 @@
         var rooturl = '';
 
         var ID_PERMOHONAN = <%= permohonan.permohonan_id %>;
-        var BISA_UBAH = <%= bisa_ubah ? 'true' : 'false' %>;
+        // Persyaratan, ruas jalan, simpan & ajukan baru tampil setelah provider diverifikasi admin
+        var PROVIDER_OK = <%= provider_ok ? 'true' : 'false' %>;
+        var BISA_UBAH = <%= bisa_ubah ? 'true' : 'false' %> && PROVIDER_OK;
         var API = rooturl + '/perizinan/jaringan_utilitas/api/';
         var URL_KEMBALI = '<%= url_kembali %>';
         var JUMLAH_DOKUMEN_WAJIB = 8; // semua kecuali surat kuasa
@@ -984,7 +1011,30 @@
             hitungTotal();
         });
 
-        $('#provider_id').on('change', function () { adaPerubahan = true; });
+        async function verifikasiProvider() {
+            var nama = $.trim($('#provider_usulan').val());
+            if (!nama) return swal('Belum diisi', 'Ketik nama provider terlebih dahulu', 'warning');
+            var yakin = await swal({
+                title: 'Verifikasi',
+                text: 'Provider "' + nama + '" dan dokumen persyaratan akan dikirim ke admin untuk diverifikasi. Selama diverifikasi data tidak bisa diubah. Lanjutkan?',
+                icon: 'info', buttons: ['Batal', 'Kirim']
+            });
+            if (!yakin) return;
+            $('#btn_verifikasi_provider').prop('disabled', true);
+            $.ajax({
+                url: API + 'verifikasi_provider/' + ID_PERMOHONAN,
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ provider_usulan: nama })
+            }).done(function () {
+                swal('Berhasil', 'Provider dan persyaratan dikirim ke admin untuk diverifikasi', 'success').then(function () {
+                    window.location.reload();
+                });
+            }).fail(function (xhr) {
+                $('#btn_verifikasi_provider').prop('disabled', false);
+                swal('Belum lengkap', pesanGagal(xhr, 'Gagal mengirim verifikasi'), 'warning');
+            });
+        }
 
         $('#tbody_ruas').on('click', '.btn-hapus', async function () {
             var $tr = $(this).closest('tr');
@@ -1013,9 +1063,6 @@
             }
             var row = rows ? rows[index] : $tr.data('row');
             if (!row || !row.permohonan_ruas_id) return;
-            if (jenis === 'kabel' && !(row.digitasi_tiang > 0) && !(row.digitasi_kabel > 0)) {
-                return swal('Tiang belum ada', 'Digitasi tiang pada ruas ini terlebih dahulu, baru kemudian kabel.', 'warning');
-            }
             window.location.href = rooturl + '/perizinan/jaringan_utilitas/ruas_jalan/' + jenis + '/' + ID_PERMOHONAN + '/' + row.permohonan_ruas_id;
         });
 
@@ -1036,7 +1083,7 @@
                     url: API + 'simpan/' + ID_PERMOHONAN,
                     type: 'POST',
                     contentType: 'application/json',
-                    data: JSON.stringify({ provider_id: $('#provider_id').val() || null, ruas: ruas })
+                    data: JSON.stringify({ ruas: ruas })
                 });
                 isiTabel(res.data);
                 adaPerubahan = false;
@@ -1103,16 +1150,18 @@
 
         // ---------------- muat data awal ----------------
         $(document).ready(async function () {
+            // Sebelum terverifikasi hanya status dokumen persyaratan yang perlu dimuat
+            if (!PROVIDER_OK) {
+                $.get(API + 'detail/' + ID_PERMOHONAN)
+                    .done(function (detail) { tampilDokumen(detail.data.dokumen); })
+                    .fail(function (xhr) { swal('Gagal', pesanGagal(xhr, 'Gagal memuat data'), 'error'); });
+                return;
+            }
             try {
-                var [prov, master, detail] = await Promise.all([
-                    $.get(API + 'provider'),
+                var [master, detail] = await Promise.all([
                     $.get(API + 'master_ruas'),
                     $.get(API + 'detail/' + ID_PERMOHONAN)
                 ]);
-                prov.data.forEach(function (p) {
-                    $('#provider_id').append($('<option>').val(p.provider_id).text(p.provider));
-                });
-                $('#provider_id').val(detail.data.permohonan.provider_id || '').select2({ theme: 'bootstrap4' });
 
                 master.data.forEach(function (m) {
                     masterRuas[m.id] = m;
