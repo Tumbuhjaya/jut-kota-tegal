@@ -4,10 +4,10 @@
     <section class="section">
       <div class="w-100" style="padding: 0 30px;">
         <div class="section-header">
-          <h1>Detail Permohonan Izin</h1>
+          <h1>Detail Permohonan Izin<%= jenis_izin.kode === 'reklame' ? ' (Reklame)' : '' %></h1>
           <div class="section-header-breadcrumb">
             <div class="breadcrumb-item active"><a href="/backoffice">Dashboard</a></div>
-            <div class="breadcrumb-item"><a href="/manajemen_perizinan">Permohonan Izin</a></div>
+            <div class="breadcrumb-item"><a href="<%= base %>">Permohonan Izin</a></div>
             <div class="breadcrumb-item">Detail</div>
           </div>
         </div>
@@ -30,7 +30,9 @@
                     <tr><td style="width: 170px;">Status</td><td>:</td><td id="d_status"></td></tr>
                     <tr><td>Tanggal Diajukan</td><td>:</td><td id="d_diajukan"></td></tr>
                     <tr><td>Vendor</td><td>:</td><td id="d_vendor"></td></tr>
+                    <% if (jenis_izin.pakai_provider) { %>
                     <tr><td>Provider</td><td>:</td><td id="d_provider"></td></tr>
+                    <% } %>
                     <tr><td>Nama Pemohon</td><td>:</td><td id="d_nama"></td></tr>
                     <tr><td>Jabatan</td><td>:</td><td id="d_jabatan"></td></tr>
                     <tr><td>No. Telepon (WA)</td><td>:</td><td id="d_telp"></td></tr>
@@ -56,7 +58,7 @@
         <div class="row">
           <div class="col-12">
             <div class="card">
-              <div class="card-header"><h4>Ruas Jalan & Retribusi</h4></div>
+              <div class="card-header"><h4><%= jenis_izin.pakai_retribusi ? 'Ruas Jalan &amp; Retribusi' : 'Ruas Jalan &amp; Titik Reklame' %></h4></div>
               <div class="card-body">
                 <div class="table-responsive">
                   <table class="table table-bordered table-sm" id="tabel_ruas">
@@ -69,7 +71,7 @@
                         <% komponen.forEach(function (k) { %>
                         <th colspan="3" class="text-center"><%= k.label %></th>
                         <% }) %>
-                        <th rowspan="2" class="text-center">Total Retribusi</th>
+                        <th rowspan="2" class="text-center"><%= jenis_izin.pakai_retribusi ? 'Total Retribusi' : 'Jumlah Titik' %></th>
                         <th rowspan="2" class="text-center">Peta</th>
                       </tr>
                       <tr>
@@ -133,6 +135,7 @@
 <script type="text/javascript">
   var rooturl = ''
   var ID_PERMOHONAN = <%= permohonan_id %>;
+  var PAKAI_RETRIBUSI = <%= jenis_izin.pakai_retribusi ? 'true' : 'false' %>;
   var KOMPONEN = <%- JSON.stringify(komponen) %>; // komponen retribusi per ruas (helpper/permohonan.js)
   var STATUS = {
     diajukan:  { label: 'Menunggu Verifikasi', badge: 'info' },
@@ -160,6 +163,13 @@
   var layerPerRuas = {}; // permohonan_ruas_id -> [layer]
 
   function petaDigitasi(digitasi) {
+    (digitasi.titik || []).forEach(function (f) {
+      var c = f.geojson.coordinates;
+      var m = L.circleMarker([c[1], c[0]], { radius: 7, color: '#fff', weight: 2, fillColor: '#f7ca18', fillOpacity: 1 })
+        .bindPopup('<b>Titik Reklame</b><br/>Ruas: ' + esc(f.nm_ruas || 'Di luar ruas') + '<br/>Jumlah: ' + f.jumlah + '<br/>Ket: ' + esc(f.keterangan))
+        .addTo(digitasiLayer);
+      (layerPerRuas[f.permohonan_ruas_id] = layerPerRuas[f.permohonan_ruas_id] || []).push(m);
+    });
     digitasi.tiang.forEach(function (f) {
       var c = f.geojson.coordinates;
       var m = L.circleMarker([c[1], c[0]], { radius: 6, color: '#fff', weight: 2, fillColor: '#6777ef', fillOpacity: 1 })
@@ -219,12 +229,12 @@
     $('#d_telp').html(esc(p.telp_pemohon));
     $('#d_email').html(esc(p.email_pemohon));
     $('#d_sk').html(esc(p.no_sk ? p.no_sk + (p.tanggal_sk ? ' (' + moment(p.tanggal_sk).format('DD/MM/YYYY') + ')' : '') : '') +
-      (p.file_sk ? ' <a href="' + rooturl + '/manajemen_perizinan/izin/file/' + ID_PERMOHONAN + '" target="_blank" class="badge badge-secondary">SK TTD</a>' : ''));
+      (p.file_sk ? ' <a href="' + rooturl + '<%= base %>/izin/file/' + ID_PERMOHONAN + '" target="_blank" class="badge badge-secondary">SK TTD</a>' : ''));
     var sewa = data.perjanjian_sewa;
     $('#d_sewa').html(sewa
       ? esc(sewa.no_perjanjian + (sewa.tanggal_perjanjian ? ' (' + moment(sewa.tanggal_perjanjian).format('DD/MM/YYYY') + ')' : '')) +
-        ' <a href="' + rooturl + '/manajemen_perizinan/perjanjian_sewa/cetak/' + ID_PERMOHONAN + '" target="_blank" class="badge badge-success">Draft</a>' +
-        (sewa.file_ttd ? ' <a href="' + rooturl + '/manajemen_perizinan/perjanjian_sewa/file/' + ID_PERMOHONAN + '" target="_blank" class="badge badge-secondary">TTD</a>' : '')
+        ' <a href="' + rooturl + '<%= base %>/perjanjian_sewa/cetak/' + ID_PERMOHONAN + '" target="_blank" class="badge badge-success">Draft</a>' +
+        (sewa.file_ttd ? ' <a href="' + rooturl + '<%= base %>/perjanjian_sewa/file/' + ID_PERMOHONAN + '" target="_blank" class="badge badge-secondary">TTD</a>' : '')
       : '-');
     $('#d_keterangan').html(esc(p.keterangan));
 
@@ -232,7 +242,7 @@
     if (!data.dokumen.length) $('#d_dokumen').append('<li class="list-group-item"><i>Belum ada dokumen</i></li>');
     data.dokumen.forEach(function (d) {
       $('#d_dokumen').append('<li class="list-group-item d-flex justify-content-between align-items-center">' + esc(d.label) +
-        '<a class="btn btn-sm btn-primary" target="_blank" href="' + rooturl + '/manajemen_perizinan/dokumen/' + d.permohonan_dokumen_id + '"><i class="fas fa-download"></i></a></li>');
+        '<a class="btn btn-sm btn-primary" target="_blank" href="' + rooturl + '<%= base %>/dokumen/' + d.permohonan_dokumen_id + '"><i class="fas fa-download"></i></a></li>');
     });
 
     // Data fisik ruas tersimpan: titik awal-akhir, kelurahan/kecamatan, lebar perkerasan
@@ -264,7 +274,7 @@
         '<td class="text-center">' + esc(r.no) + '</td>' +
         '<td class="text-center">' + (r.panjang != null ? angka(r.panjang) : '-') + '</td>' +
         selKomponen +
-        '<td class="text-right">' + rupiah(r.retribusi_total) + '</td>' +
+        (PAKAI_RETRIBUSI ? '<td class="text-right">' + rupiah(r.retribusi_total) + '</td>' : '<td class="text-center">' + angka(r.jumlah_titik) + '</td>') +
         '<td class="text-center"><button type="button" class="btn btn-sm btn-info" onclick="zoomRuas(' + r.permohonan_ruas_id + ')"><i class="fas fa-search-location"></i></button></td>' +
         '</tr>');
     });
@@ -272,17 +282,19 @@
       KOMPONEN.map(function (k) {
         return '<th class="text-center">' + angka(t[k.kode].jumlah) + '</th><th></th><th class="text-right">' + rupiah(t[k.kode].retribusi) + '</th>';
       }).join('') +
-      '<th class="text-right">' + rupiah(t.total) + '</th><th></th></tr>');
+      (PAKAI_RETRIBUSI ? '<th class="text-right">' + rupiah(t.total) + '</th>'
+        : '<th class="text-center">' + angka(data.ruas.reduce(function (a, r) { return a + Number(r.jumlah_titik || 0); }, 0)) + '</th>') +
+      '<th></th></tr>');
 
-    $('#btn_cetak').attr('href', rooturl + '/manajemen_perizinan/cetak_sk/' + ID_PERMOHONAN).toggle(p.status === 'disetujui');
-    $('#btn_edit').attr('href', rooturl + '/manajemen_perizinan/edit/' + ID_PERMOHONAN).toggle(['disetujui', 'ditolak'].indexOf(p.status) === -1);
+    $('#btn_cetak').attr('href', rooturl + '<%= base %>/cetak_sk/' + ID_PERMOHONAN).toggle(p.status === 'disetujui');
+    $('#btn_edit').attr('href', rooturl + '<%= base %>/edit/' + ID_PERMOHONAN).toggle(['disetujui', 'ditolak'].indexOf(p.status) === -1);
     // Setiap tahap diproses di halaman masing-masing; penerbitan izin (perjanjian sewa & SK) di halaman list
     var HALAMAN_TAHAP = {
-      verifikasi: '/manajemen_perizinan/permohonan/verifikasi/' + ID_PERMOHONAN,
-      peninjauan_lapangan: '/manajemen_perizinan/peninjauan_lapangan/detail/' + ID_PERMOHONAN,
-      persetujuan_prinsip: '/manajemen_perizinan/persetujuan_prinsip/detail/' + ID_PERMOHONAN,
-      verifikasi_persyaratan: '/manajemen_perizinan/persetujuan_prinsip/detail/' + ID_PERMOHONAN,
-      penerbitan_izin: '/manajemen_perizinan'
+      verifikasi: '<%= base %>/permohonan/verifikasi/' + ID_PERMOHONAN,
+      peninjauan_lapangan: '<%= base %>/peninjauan_lapangan/detail/' + ID_PERMOHONAN,
+      persetujuan_prinsip: '<%= base %>/persetujuan_prinsip/detail/' + ID_PERMOHONAN,
+      verifikasi_persyaratan: '<%= base %>/persetujuan_prinsip/detail/' + ID_PERMOHONAN,
+      penerbitan_izin: '<%= base %>'
     };
     var halamanTahap = p.status === 'diajukan' && HALAMAN_TAHAP[p.tahap];
     $('#wrap_tahap').toggle(!!halamanTahap);
@@ -294,7 +306,7 @@
   }
 
   function muat() {
-    return $.get(rooturl + '/manajemen_perizinan/data/' + ID_PERMOHONAN).done(function (res) {
+    return $.get(rooturl + '<%= base %>/data/' + ID_PERMOHONAN).done(function (res) {
       tampil(res.data);
       ruasLayer.clearLayers(); digitasiLayer.clearLayers(); layerPerRuas = {};
       petaDigitasi(res.data.digitasi);

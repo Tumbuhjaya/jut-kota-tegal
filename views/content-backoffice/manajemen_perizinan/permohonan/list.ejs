@@ -4,7 +4,7 @@
     <section class="section">
       <div class="w-100" style="padding: 0 30px;">
         <div class="section-header">
-          <h1>Data Permohonan Izin</h1>
+          <h1>Data Permohonan Izin<%= jenis_izin.kode === 'reklame' ? ' (Reklame)' : '' %></h1>
           <div class="section-header-breadcrumb">
             <div class="breadcrumb-item active"><a href="#">Dashboard</a></div>
             <div class="breadcrumb-item">Data</div>
@@ -27,17 +27,23 @@
                         <th class="text-center" rowspan="2">No.</th>
                         <th class="text-center" rowspan="2">Tanggal<br/>Permohonan</th>
                         <th class="text-center" rowspan="2">Pemohon</th>
+                        <% if (jenis_izin.kode === 'jaringan_utilitas') { %>
                         <th class="text-center" rowspan="2">Provider</th>
-                        <th class="text-center" colspan="4">Total</th>
+                        <% } %>
+                        <th class="text-center" colspan="<%= jenis_izin.kode === 'jaringan_utilitas' ? 4 : 2 %>">Total</th>
                         <th class="text-center" rowspan="2">Status</th>
                         <th class="text-center" rowspan="2">Option</th>
                       </tr>
 
                       <tr>
                         <th class="text-center">Ruas<br/>Jalan</th>
+                        <% if (jenis_izin.kode === 'jaringan_utilitas') { %>
                         <th class="text-center">Tiang</th>
                         <th class="text-center">Panjang<br/>Kabel (m)</th>
                         <th class="text-center" style="min-width: 130px;">Retribusi (Rp)</th>
+                        <% } else { %>
+                        <th class="text-center">Titik<br/>Reklame</th>
+                        <% } %>
                       </tr>
                     </thead>
                     <tbody></tbody>
@@ -94,30 +100,36 @@
       },
       "processing": true,
       "ordering": false,
-      "ajax": { url: `${rooturl}/manajemen_perizinan/permohonan/list`, type: 'POST' },
+      "ajax": { url: `${rooturl}<%= base %>/permohonan/list`, type: 'POST' },
       "columns": [
         { "data": null, "defaultContent": '', "className": 'text-center' },
         { "data": 'diajukanAt', "render": function (d) { return d ? moment(d).format('DD/MM/YYYY HH:mm') : '-'; } },
         { "data": null, "render": function (r) { return esc(r.nama_pemohon)} },
+        <% if (jenis_izin.kode === 'jaringan_utilitas') { %>
         { "data": 'provider', "render": esc },
+        <% } %>
         { "data": 'jml_ruas', "className": 'text-center' },
+        <% if (jenis_izin.kode === 'jaringan_utilitas') { %>
         { "data": 'jml_tiang', "className": 'text-center' },
         { "data": 'jml_kabel', "className": 'text-center', "render": function (d) { return Math.round(Number(d)).toLocaleString('id-ID'); } },
         { "data": 'retribusi', "className": 'text-right', "render": rupiah },
+        <% } else { %>
+        { "data": 'jml_titik', "className": 'text-center' },
+        <% } %>
         { "data": 'status', "render": function (d) {
             var s = STATUS[d] || { label: d, badge: 'light' };
             return '<div class="w-100-flex" style="justify-content: center;align-items: center;gap: 5px;"><span class="badge badge-' + s.badge + ' mb-0">' + s.label + '</span></div>';
         } },
         { "data": null, "render": function (r) {
             return '<div class="w-100-flex" style="justify-content: center;gap: 5px;">' +
-              '<a href="' + rooturl + '/manajemen_perizinan/permohonan/verifikasi/' + r.permohonan_id + '" class="btn btn-warning" title="Verifikasi Permohonan"><i class="fas fa-tasks"></i></a>' +
+              '<a href="' + rooturl + '<%= base %>/permohonan/verifikasi/' + r.permohonan_id + '" class="btn btn-warning" title="Verifikasi Permohonan"><i class="fas fa-tasks"></i></a>' +
               '<button type="button" class="btn btn-danger" title="Hapus" onclick="hapus(' + r.permohonan_id + ')"><i class="fas fa-trash"></i></button>' +
               '</div>';
         } }
       ],
       "columnDefs": [
         { "width": "30px", "targets": 0},
-        { "width": "100px", "targets": 9}
+        { "width": "100px", "targets": <%= jenis_izin.kode === 'jaringan_utilitas' ? 9 : 6 %> }
       ],
     });
 
@@ -138,7 +150,7 @@
       });
 
       if ( willDelete) {
-        $.post(rooturl + "/manajemen_perizinan/permohonan/hapus/" + id)
+        $.post(rooturl + "<%= base %>/permohonan/hapus/" + id)
           .done(function () {
             swal({title:text_delete.title,text:text_delete.text, icon: text_delete.icon, type:text_delete.type})
             data_table.ajax.reload();

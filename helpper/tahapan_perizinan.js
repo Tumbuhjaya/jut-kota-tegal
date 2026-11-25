@@ -1,4 +1,4 @@
-// Tahapan backoffice permohonan izin jaringan utilitas:
+// Tahapan backoffice permohonan izin jaringan utilitas & reklame (permohonan.jenis_izin):
 // verifikasi -> peninjauan lapangan (berita acara) -> persetujuan prinsip -> verifikasi persyaratan
 // -> penerbitan izin (perjanjian sewa -> SK, lihat helpper/permohonan.js -> upload izin TTD)
 var path = require('path');
@@ -91,14 +91,14 @@ function sqlListTahap() {
       LEFT JOIN permohonan_persetujuan_prinsip pp ON pp.permohonan_id = x.permohonan_id`;
 }
 
-// tahap: satu tahap / beberapa tahap; status: daftar status permohonan yang ditampilkan
-async function listTahap(tahap, status) {
+// tahap: satu tahap / beberapa tahap; status: daftar status permohonan yang ditampilkan; jenis: jenis_izin
+async function listTahap(tahap, status, jenis) {
   tahap = [].concat(tahap);
   function isian(a) { return a.map(function () { return '?'; }).join(','); }
   var [rows] = await sql_enak.raw(
-    sqlListTahap() + ` WHERE x.tahap IN (${isian(tahap)}) AND x.status IN (${isian(status)})
+    sqlListTahap() + ` WHERE x.tahap IN (${isian(tahap)}) AND x.status IN (${isian(status)}) AND x.jenis_izin = ?
       ORDER BY FIELD(x.status, 'diajukan') DESC, x.diajukanAt ASC`,
-    tahap.concat(status)
+    tahap.concat(status, [helper.jenisIzin(jenis).kode])
   );
   return rows;
 }
@@ -334,9 +334,11 @@ function urlAplikasi(req) {
   return (process.env.BASE_URL || (req.protocol + '://' + req.get('host'))).replace(/\/+$/, '');
 }
 
-// Link halaman pemohon untuk mengirim persyaratan persetujuan prinsip
-function urlPersyaratan(req, permohonan_id) {
-  return urlAplikasi(req) + '/perizinan/jaringan_utilitas/persyaratan/' + permohonan_id;
+// Link halaman pemohon untuk mengirim persyaratan persetujuan prinsip (req null = hanya dari BASE_URL)
+function urlPersyaratan(req, permohonan) {
+  var dasar = req ? urlAplikasi(req) : (process.env.BASE_URL || '').replace(/\/+$/, '');
+  if (!dasar) return null;
+  return dasar + helper.jenisIzin(permohonan).url_pemohon + '/persyaratan/' + permohonan.permohonan_id;
 }
 
 // isi: potongan HTML (teks isian pengguna harus sudah di-escape); berkas: [{ filename, path }]
@@ -354,7 +356,7 @@ async function kirimNotifikasi(permohonan, judul, isi, berkas) {
       isi +
       '<p>Nomor permohonan: <b>' + permohonan.permohonan_id + '</b></p>' +
       '<p>Terima kasih.<br/>' + escHtml(helper.KONFIG_SK.instansi) + '<br/>' + escHtml(helper.KONFIG_SK.pemerintah) + '</p>';
-    email.email(tujuan, judul + ' - Permohonan Izin Jaringan Utilitas', html, (berkas || []).filter(Boolean));
+    email.email(tujuan, judul + ' - Permohonan Izin ' + helper.jenisIzin(permohonan).label, html, (berkas || []).filter(Boolean));
   } catch (err) {
     console.log(err);
   }

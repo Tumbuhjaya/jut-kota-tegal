@@ -36,9 +36,7 @@ async function kirimPengingat() {
     if (!klaim.affectedRows) continue;
 
     var sisa = HARI_AKHIR - p.hari;
-    var link = process.env.BASE_URL && TAHAP_PERSYARATAN.indexOf(p.tahap) !== -1
-      ? process.env.BASE_URL.replace(/\/+$/, '') + '/perizinan/jaringan_utilitas/persyaratan/' + p.permohonan_id
-      : null;
+    var link = TAHAP_PERSYARATAN.indexOf(p.tahap) !== -1 ? tahapan.urlPersyaratan(null, p) : null;
     await tahapan.kirimNotifikasi(p, 'Pengingat Penyelesaian Permohonan',
       '<p>Persetujuan prinsip atas permohonan Anda dengan nomor <b>' + tahapan.escHtml(p.no_pp || '-') + '</b> ' +
       'telah terbit <b>' + p.hari + ' hari</b> yang lalu, namun proses permohonan izin Anda <b>belum selesai</b>.</p>' +

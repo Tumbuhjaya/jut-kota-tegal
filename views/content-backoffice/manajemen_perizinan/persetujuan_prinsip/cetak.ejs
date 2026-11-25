@@ -1,4 +1,4 @@
-<%
+<% var REKLAME = typeof jenis !== 'undefined' && jenis && jenis.kode === 'reklame'; var OBJEK = REKLAME ? 'Reklame' : 'Bangunan dan Jaringan Utilitas'; %><%
   var BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
   var KOSONG = '.....';
   function tanggal(t) {
@@ -101,7 +101,7 @@
       <tr><td class="lbl">Nomor</td><td class="sep">:</td><td class="val"><%= isi(pp.no_pp) %></td></tr>
       <tr><td class="lbl">Sifat</td><td class="sep">:</td><td class="val">Segera</td></tr>
       <tr><td class="lbl">Lampiran</td><td class="sep">:</td><td class="val">1 (satu) Bundel</td></tr>
-      <tr><td class="lbl">Hal</td><td class="sep">:</td><td class="val">Persetujuan Prinsip Izin Pembangunan/Penempatan Bangunan dan Jaringan Utilitas</td></tr>
+      <tr><td class="lbl">Hal</td><td class="sep">:</td><td class="val">Persetujuan Prinsip Izin Pembangunan/Penempatan <%= OBJEK %></td></tr>
     </table>
 
     <div class="tujuan">
@@ -109,7 +109,7 @@
       <div>
         <div>Sdr. <%= isi(p.nama_pemohon) %></div>
         <div><%= isi(p.jabatan_pemohon) %></div>
-        <div><%= isi(ps.nama_perusahaan) %></div>
+        <div><%= isi(ps.nama_perusahaan || (REKLAME && p.vendor ? (p.vendor.fullname || p.vendor.username) : '')) %></div>
         <% (alamat.length ? alamat : [KOSONG]).forEach(function (a) { %>
         <div><%= a %></div>
         <% }) %>
@@ -119,10 +119,10 @@
     </div>
 
     <p class="indent pembuka">Sehubungan dengan permohonan saudara dengan surat Nomor : <%= isi(ba.no_surat_permohonan || p.no_surat_permohonan) %>
-      tanggal : <%= tanggal(ba.tanggal_surat_permohonan) %> Perihal Permohonan Izin Pembangunan/Penempatan Bangunan dan
-      Jaringan Utilitas, setelah dilakukan evaluasi persyaratan administrasi dan persyaratan teknis serta hasil
+      tanggal : <%= tanggal(ba.tanggal_surat_permohonan) %> Perihal Permohonan Izin Pembangunan/Penempatan <%= OBJEK %>
+      , setelah dilakukan evaluasi persyaratan administrasi dan persyaratan teknis serta hasil
       peninjauan lapangan, pada prinsipnya permohonan saudara dapat disetujui. Guna pemberian izin
-      Pembangunan/Penempatan Bangunan dan Jaringan Utilitas dimaksud, disampaikan kepada saudara untuk segera
+      Pembangunan/Penempatan <%= OBJEK %> dimaksud, disampaikan kepada saudara untuk segera
       melengkapi persyaratan sebagai berikut:</p>
 
     <% /* persyaratan = HTML dari CKEditor yang diisi administrator (numbering 1,2,3; sub-poin a,b,c) */ %>

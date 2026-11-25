@@ -1,4 +1,4 @@
-<%
+<% var REKLAME = typeof jenis !== 'undefined' && jenis && jenis.kode === 'reklame'; var OBJEK = REKLAME ? 'Reklame' : 'Bangunan dan Jaringan Utilitas'; %><%
   var BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
   var HARI = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', "Jum'at", 'Sabtu'];
   var SATUAN = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh', 'sebelas'];
@@ -128,9 +128,9 @@
       bulan <%= tgl ? BULAN[tgl.getMonth()] : '..........' %>
       tahun <%= tgl ? terbilang(tgl.getFullYear()) : '..........' %>
       (<%= tgl ? dmy(tgl) : '..........' %>) telah dilaksanakan peninjauan lapangan atas permohonan izin
-      Pembangunan/Penempatan Bangunan dan Jaringan Utilitas berdasarkan surat Nomor :
+      Pembangunan/Penempatan <%= OBJEK %> berdasarkan surat Nomor :
       <%= no_surat || '..........' %> tanggal : <%= tanggal(b.tanggal_surat_permohonan) %>
-      Perihal Permohonan Izin Pembangunan/Penempatan Bangunan dan Jaringan Utilitas dengan hasil sebagai berikut:</p>
+      Perihal Permohonan Izin Pembangunan/Penempatan <%= OBJEK %> dengan hasil sebagai berikut:</p>
 
     <% /* hasil = HTML dari CKEditor yang diisi administrator */ %>
     <div class="hasil"><%- b.hasil || '<p>-</p>' %></div>
@@ -153,7 +153,7 @@
       <tr class="isi">
         <td class="no">1.</td>
         <td class="nama"><%= p.nama_pemohon || '.........................................' %></td>
-        <td class="instansi"><%= p.provider || '' %></td>
+        <td class="instansi"><%= p.provider || (REKLAME && p.vendor ? (p.vendor.fullname || p.vendor.username) : '') %></td>
         <td class="ttd">1. <span></span></td>
       </tr>
 
@@ -172,7 +172,7 @@
     <div class="lampiran-judul">
       <div>LAMPIRAN</div>
       <div>DOKUMENTASI KEGIATAN PENINJAUAN LAPANGAN</div>
-      <div>Permohonan Izin Pembangunan/Penempatan Bangunan dan Jaringan Utilitas</div>
+      <div>Permohonan Izin Pembangunan/Penempatan <%= OBJEK %></div>
       <div>Nomor : <%= b.no_ba || '-' %></div>
     </div>
 
@@ -182,7 +182,7 @@
         <% [slot[r], slot[r + 1]].forEach(function (f) { %>
         <td>
           <% if (f) { %>
-          <img src="/manajemen_perizinan/peninjauan_lapangan/foto/<%= p.permohonan_id %>/<%= f.urutan %>?v=<%= f.permohonan_peninjauan_foto_id %>" alt="Foto <%= f.urutan %>">
+          <img src="<%= base %>/peninjauan_lapangan/foto/<%= p.permohonan_id %>/<%= f.urutan %>?v=<%= f.permohonan_peninjauan_foto_id %>" alt="Foto <%= f.urutan %>">
           <% } %>
         </td>
         <% }) %>

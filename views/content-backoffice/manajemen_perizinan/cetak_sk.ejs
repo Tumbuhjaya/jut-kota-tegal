@@ -1,4 +1,4 @@
-<%
+<% var REKLAME = typeof jenis !== 'undefined' && jenis && jenis.kode === 'reklame'; var OBJEK = REKLAME ? 'Reklame' : 'Bangunan dan Jaringan Utilitas'; %><%
   // Data dari tahapan.getDataCetak(): permohonan, ruas, total, konfig, persetujuan, perjanjian_sewa
   // Data yang tidak tersedia di backend ditampilkan sebagai "......."
   var KOSONG = '.......';
@@ -19,7 +19,9 @@
   var pp = typeof persetujuan !== 'undefined' && persetujuan ? persetujuan : {};
   var ps = typeof perjanjian_sewa !== 'undefined' && perjanjian_sewa ? perjanjian_sewa : {};
   var perusahaan = p.perusahaan || {};
-  var namaPerusahaan = perusahaan.nama_perusahaan || p.provider || KOSONG;
+  // Reklame tanpa provider: pemegang izin = vendor pemohon
+  var namaPerusahaan = perusahaan.nama_perusahaan || p.provider || (REKLAME && p.vendor ? (p.vendor.fullname || p.vendor.username) : '') || KOSONG;
+  var totalTitik = ruas.reduce(function (s, r) { return s + Number(r.jumlah_titik || 0); }, 0);
   var jabatanPemohon = p.jabatan_pemohon || KOSONG;
 
   // No. ruas "33.76.758" -> 3 kolom seperti format surat; selain itu digabung 1 sel
@@ -128,7 +130,7 @@
         <tr><td>Nomor</td><td>:</td><td class="hal"><%= isi(p.no_sk) %></td></tr>
         <tr><td>Sifat</td><td>:</td><td class="hal">Segera</td></tr>
         <tr><td>Lampiran</td><td>:</td><td class="hal">1 (satu) bandel</td></tr>
-        <tr><td>Hal</td><td>:</td><td class="hal">Izin Pemanfaatan Ruang Milik Jalan Kota Untuk Pembangunan / Penempatan Bangunan dan Jaringan Utilitas</td></tr>
+        <tr><td>Hal</td><td>:</td><td class="hal">Izin Pemanfaatan Ruang Milik Jalan Kota Untuk Pembangunan / Penempatan <%= OBJEK %></td></tr>
       </table>
       <div style="white-space: nowrap;"><%= k.tempat || 'Tegal' %>, <%= tanggal(p.tanggal_sk) %></div>
     </div>
@@ -141,7 +143,7 @@
     </div>
 
     <p class="paragraf">Berdasarkan Surat Kepala Dinas Pekerjaan Umum dan Penataan Ruang Kota Tegal Nomor : <%= isi(pp.no_pp) %>
-      tanggal <%= tanggal(pp.tanggal_pp) %> perihal Persetujuan Prinsip Izin Pembangunan/Penempatan Bangunan dan Jaringan Utilitas
+      tanggal <%= tanggal(pp.tanggal_pp) %> perihal Persetujuan Prinsip Izin Pembangunan/Penempatan <%= OBJEK %>
       dan Perjanjian Kerjasama Pemanfaatan Ruang Milik Jalan Kota antara Kepala Dinas Pekerjaan Umum dan Penataan Ruang Kota Tegal
       dengan <%= jabatanPemohon %> <%= namaPerusahaan %> Nomor : <%= isi(ps.no_perjanjian) %> tanggal <%= tanggal(ps.tanggal_perjanjian) %>,
       Serta sehubungan dengan telah dilakukannya :</p>
@@ -151,7 +153,7 @@
       <li>Penyerahan Asuransi kerugian pihak ketiga (Polis Asuransi Public Liability) dari <%= KOSONG %> Nomor Polis : <%= KOSONG %> Tanggal <%= KOSONG %> dengan nilai pertanggungan Rp. <%= KOSONG %> (<%= KOSONG %>) Per Ruas Jalan yang berlaku mulai tanggal <%= KOSONG %> sampai dengan <%= KOSONG %>.</li>
     </ol>
 
-    <p class="menjorok" style="margin-top: 16px;">Dengan ini diberikan Izin Sementara Pemanfaatan Ruang Milik Jalan Kota Untuk Pembangunan/Penempatan Bangunan dan Jaringan Utilitas dengan ketentuan sebagai berikut :</p>
+    <p class="menjorok" style="margin-top: 16px;">Dengan ini diberikan Izin Sementara Pemanfaatan Ruang Milik Jalan Kota Untuk Pembangunan/Penempatan <%= OBJEK %> dengan ketentuan sebagai berikut :</p>
 
     <ol class="angka ketentuan">
       <li>Lokasi yang diizinkan untuk dimanfaatkan dan jenis pemanfaatannya :
@@ -164,10 +166,15 @@
                   <th style="width: 34px;">No</th>
                   <th>Nama Ruas Jalan</th>
                   <th colspan="3">No. Ruas Jalan</th>
+                  <% if (REKLAME) { %>
+                  <th style="width: 70px;">Panjang Jalan (meter)</th>
+                  <th style="width: 70px;">Jumlah Titik Reklame</th>
+                  <% } else { %>
                   <th style="width: 60px;">Jumlah Tiang</th>
                   <th style="width: 70px;">Panjang Jalan (meter)</th>
                   <th style="width: 70px;">Panjang Kabel (meter)</th>
                   <th style="width: 100px;">Keterangan</th>
+                  <% } %>
                 </tr>
               </thead>
               <tbody>
@@ -176,10 +183,15 @@
                   <td class="c"><%= i + 1 %></td>
                   <td><%= r.label_ruas %></td>
                   <%- selNoRuas(r.no) %>
+                  <% if (REKLAME) { %>
+                  <td class="c"><%= panjangMeter(r) %></td>
+                  <td class="c"><%= angka(r.jumlah_titik) %></td>
+                  <% } else { %>
                   <td class="c"><%= angka(jumlahTiang(r)) %></td>
                   <td class="c"><%= panjangMeter(r) %></td>
                   <td class="c"><%= angka(r.panjang_kabel) %></td>
                   <td><%= keteranganRuas(r) %></td>
+                  <% } %>
                 </tr>
                 <% }) %>
               </tbody>
@@ -187,18 +199,23 @@
                 <tr>
                   <th colspan="2">TOTAL</th>
                   <th></th><th></th><th></th>
+                  <% if (REKLAME) { %>
+                  <th></th>
+                  <th><%= angka(totalTitik) %></th>
+                  <% } else { %>
                   <th><%= angka(totalTiang) %></th>
                   <th></th>
                   <th><%= angka(totalKabel) %></th>
                   <th></th>
+                  <% } %>
                 </tr>
               </tfoot>
             </table>
           </li>
-          <li>Pemanfaatan Untuk Pembangunan/Penempatan Bangunan dan Jaringan Utilitas <%= KOSONG %></li>
+          <li>Pemanfaatan Untuk Pembangunan/Penempatan <%= OBJEK %> <%= KOSONG %></li>
         </ul>
       </li>
-      <li>Pemegang Izin, wajib melaksanakan pekerjaan sesuai persyaratan teknis dan wajib menjaga, memelihara bangunan dimaksud serta bertanggungjawab terhadap segala kerusakan jalan yang disebabkan oleh Pembangunan/Penempatan Bangunan dan Jaringan Utilitas dimaksud selama jangka waktu Pemanfaatan dan memenuhi besaran biaya retribusi yang ditetapkan oleh Dinas Pekerjaan Umum dan Penataan Ruang Kota Tegal.</li>
+      <li>Pemegang Izin, wajib melaksanakan pekerjaan sesuai persyaratan teknis dan wajib menjaga, memelihara bangunan dimaksud serta bertanggungjawab terhadap segala kerusakan jalan yang disebabkan oleh Pembangunan/Penempatan <%= OBJEK %> dimaksud selama jangka waktu Pemanfaatan dan memenuhi besaran biaya retribusi yang ditetapkan oleh Dinas Pekerjaan Umum dan Penataan Ruang Kota Tegal.</li>
       <li>Bersedia membongkar, memindahkan, menanggung biaya, dan mengembalikan kondisi jalan sesuai standar Surat Edaran Direktorat Jenderal Bina Marga Nomor : 07/SE/Db/2025 tentang Spesifikasi Umum Bina Marga 2025 untuk Pekerjaan Konstruksi Jalan dan Jembatan, dalam hal :
         <ol class="huruf">
           <li>Berakhirnya jangka waktu perizinan dan tidak diperpanjang kembali.</li>
@@ -207,7 +224,7 @@
       </li>
       <li>Jangka waktu izin untuk pemanfaatan ini berlaku sejak di tandatangani sampai dengan <%= KOSONG %>.</li>
       <li>Dalam hal terkait pelaksanaan pekerjaan dan pemeliharaan Bangunan dimaksud, wajib berkoordinasi dengan pihak Dinas Pekerjaan Umum dan Penataan Ruang Kota Tegal.</li>
-      <li>Sebagai penanggung jawab dalam pelaksanaan dan pemeliharaan Bangunan dan Jaringan Utilitas adalah sebagai berikut :
+      <li>Sebagai penanggung jawab dalam pelaksanaan dan pemeliharaan <%= OBJEK %> adalah sebagai berikut :
         <table class="pj">
           <tr><td>Nama</td><td>: <%= isi(p.nama_pemohon) %></td></tr>
           <tr><td>Jabatan</td><td>: <%= jabatanPemohon %></td></tr>

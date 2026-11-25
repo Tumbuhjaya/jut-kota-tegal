@@ -3,12 +3,12 @@
     <section class="section">
       <div class="w-100" style="padding: 0 30px;">
         <div class="section-header" style="border-radius: 0.25rem;">
-          <h1>Digitasi <%= jenis === 'tiang' ? 'Tiang' : 'Kabel' %></h1>
+          <h1>Digitasi <%= jenis === 'kabel' ? 'Kabel' : (jenis === 'titik' ? 'Titik Reklame' : 'Tiang') %><%= jenis_izin.kode === 'reklame' ? ' (Reklame)' : '' %></h1>
           <div class="section-header-breadcrumb">
             <div class="breadcrumb-item active"><a href="/backoffice">Dashboard</a></div>
-            <div class="breadcrumb-item active"><a href="/manajemen_perizinan">Permohonan Izin</a></div>
-            <div class="breadcrumb-item active"><a href="/manajemen_perizinan/edit/<%= permohonan.permohonan_id %>">Ruas Jalan</a></div>
-            <div class="breadcrumb-item">Digitasi <%= jenis === 'tiang' ? 'Tiang' : 'Kabel' %></div>
+            <div class="breadcrumb-item active"><a href="<%= base %>">Permohonan Izin</a></div>
+            <div class="breadcrumb-item active"><a href="<%= base %>/edit/<%= permohonan.permohonan_id %>">Ruas Jalan</a></div>
+            <div class="breadcrumb-item">Digitasi <%= jenis === 'kabel' ? 'Kabel' : (jenis === 'titik' ? 'Titik Reklame' : 'Tiang') %></div>
           </div>
         </div>
       </div>
@@ -22,7 +22,7 @@
                             Ruas: <strong><%= ruas.ruas_id ? ruas.nm_ruas : 'Di luar ruas (Jalan Lain)' %></strong>
                             <br/><i class="fas fa-user-shield"></i>&nbsp; Diisi admin atas nama vendor <strong><%= atas_nama %></strong>
                             <% if (bisa_ubah) { %>
-                            <br/><small><i>Gunakan tombol <%= jenis === 'tiang' ? 'marker' : 'garis' %> di kiri atas peta untuk menambah <%= jenis %>, tombol edit untuk menggeser, lalu klik Simpan.</i></small>
+                            <br/><small><i>Gunakan tombol <%= jenis !== 'kabel' ? 'marker' : 'garis' %> di kiri atas peta untuk menambah <%= jenis %>, tombol edit untuk menggeser, lalu klik Simpan.</i></small>
                             <% } %>
                         </div>
                         <div class="row">
@@ -37,9 +37,9 @@
                                         <thead>
                                             <tr>
                                                 <th class="text-center" style="width: 50px;">No.</th>
-                                                <% if (jenis === 'tiang') { %>
+                                                <% if (jenis !== 'kabel') { %>
                                                 <th class="text-center">Koordinat</th>
-                                                <th class="text-center" style="width: 120px;">Jumlah Tiang</th>
+                                                <th class="text-center" style="width: 120px;">Jumlah <%= jenis === 'titik' ? 'Titik' : 'Tiang' %></th>
                                                 <% } else { %>
                                                 <th class="text-center" style="width: 140px;">Panjang (m)</th>
                                                 <th class="text-center" style="width: 120px;">Jumlah Kabel</th>
@@ -64,7 +64,7 @@
                             <div class="col-12">
                                 <hr>
                                 <div class="w-100-flex" style="justify-content: center;flex-wrap: wrap;gap: 10px;">
-                                    <a href="/manajemen_perizinan/edit/<%= permohonan.permohonan_id %>" class="btn btn-secondary"><i class="fas fa-arrow-left"></i>&nbsp;&nbsp;Kembali</a>
+                                    <a href="<%= base %>/edit/<%= permohonan.permohonan_id %>" class="btn btn-secondary"><i class="fas fa-arrow-left"></i>&nbsp;&nbsp;Kembali</a>
                                     <% if (bisa_ubah) { %>
                                     <button type="button" class="btn btn-primary" style="padding-left: 90px;padding-right: 90px;" onclick="simpanDigitasi()"><i class="fas fa-save"></i>&nbsp;&nbsp;Simpan</button>
                                     <% } %>
@@ -99,7 +99,7 @@
         var RUAS_MASTER_ID = <%= ruas.ruas_id || 'null' %>;
         var JENIS = '<%= jenis %>';
         var BISA_UBAH = <%= bisa_ubah ? 'true' : 'false' %>;
-        var API_DIGITASI = rooturl + '/perizinan/jaringan_utilitas/api/digitasi/' + JENIS + '/' + ID_PERMOHONAN + '/' + ID_RUAS;
+        var API_DIGITASI = rooturl + '<%= jenis_izin.url_pemohon %>/api/digitasi/' + JENIS + '/' + ID_PERMOHONAN + '/' + ID_RUAS;
 
         $(document).ready(function () {
             // Init Select2
@@ -687,7 +687,7 @@
                                 polygon:false,
                                   circle: false, // Turns off this drawing tool 
                                   rectangle: false, 
-                                  marker: <%= jenis === 'tiang' %> 
+                                  marker: <%= jenis !== 'kabel' %> 
                               }, 
                               edit: { 
                                   featureGroup: drawnItems, //REQUIRED!! 
@@ -1138,6 +1138,12 @@ async function loadGeoJsonSk_jalan(data) {
             // Popup
             var props = this.feature.properties;
 
+            // Reklame tanpa retribusi: popup ruas cukup nama & batas ruas, tanpa klasifikasi retribusi / data tiang-kabel
+            if (JENIS === 'titik') {
+                this.bindPopup('<div style="font-size:12px;"><b>Nama Ruas :</b> ' + (props.nm_ruas || '-') + '<br><b>Ruas Awal :</b> ' + (props.tk_ruas_aw || '-') +
+                    '<br><b>Ruas Akhir :</b> ' + (props.tk_ruas_ak || '-') + '</div>').openPopup();
+                return;
+            }
             var content = '<div style="font-size:12px;max-height:300px; overflow-y:auto;">';
                content += '<b>Nama Ruas :</b> ' + (props.nm_ruas || '-') + '<br>'+'<b>Ruas Awal :</b> ' + (props.tk_ruas_aw || '-') + '<br>'+'<b>Ruas Awal :</b> ' + (props.tk_ruas_ak || '-') + '<br>'+'<hr>'+'<table class="table table-borderless table-striped table-sm"><thead><tr><th colspan="3" style="text-align:center;font-size:16px;">Klasifikasi Retribusi</th><tr></thead><tbody><tr><td style="width:190px">Pemasangan Tiang Listrik, Telekomunikasi Diameter <30 CM (Unit/Tahun)</td><td syle="width:5px;text-align:center">:</td><td style="text-align:right">Rp ' + (props.t_k30cm || '-') + '</td></tr><tr><td>Pemasangan Tiang Listrik, Telekomunikasi Diameter >30 CM (Unit/Tahun)</td><td syle="text-align:center">:</td><td style="text-align:right">Rp ' + (props.t_l30cm || '-') + '</td></tr></tr><tr><td>Pendirian Tower / Menara Telekomunikasi (Unit/Tahun)</td><td syle="text-align:center">:</td><td style="text-align:right">Rp ' + (props.tower_tele || '-') + '</td></tr><tr><td>Pemasangan Pipa/Kabel/Jaringan Utilitas Bawah Tanah <15CM (Meter/Tahun)</td><td syle="text-align:center">:</td><td style="text-align:right">Rp ' + (props.jr_btk15cm || '-') + '</td></tr><tr><td>Pemasangan Pipa/Kabel/Jaringan Utilitas Bawah Tanah >15CM (Meter/Tahun)</td><td syle="text-align:center">:</td><td style="text-align:right">Rp ' + (props.jr_btl15cm || '-') + '</td></tr><tr><td>Pemasangan Pipa/Kabel/Jaringan Utilitas Atas Tanah <15CM (Meter/Tahun)</td><td syle="text-align:center">:</td><td style="text-align:right">Rp ' + (props.jr_atk15cm || '-') + '</td></tr><tr><td>Pemasangan Pipa/Kabel/Jaringan Utilitas Atas Tanah >15CM (Meter/Tahun)</td><td syle="text-align:center">:</td><td style="text-align:right">Rp ' + (props.jr_atl15cm || '-') + '</td></tr><tr><td>Pemasangan Kabel Bawah Tanah Melalui Ducting Utilitas <15CM (Meter/Tahun)</td><td syle="text-align:center">:</td><td style="text-align:right">Rp ' + (props.kbbt_k15cm || '-') + '</td></tr><tr><td>Pemasangan Kabel Bawah Tanah Melalui Ducting Utilitas >15CM (Meter/Tahun)</td><td syle="text-align:center">:</td><td style="text-align:right">Rp ' + (props.kbbt_l15cm || '-') + '</td></tr><tr><td>Akses Jalan Kepentingan Pribadi (M2/Tahun)</td><td syle="text-align:center">:</td><td style="text-align:right">Rp ' + (props.jl_pribadi || '-') + '</td></tr><tr><td>Akses Jalan Usaha Kecil (M2/Tahun)</td><td syle="text-align:center">:</td><td style="text-align:right">Rp ' + (props.usaha_kcl || '-') + '</td></tr><tr><td>Akses Jalan Usaha Menengah (M2/Tahun)</td><td syle="text-align:center">:</td><td style="text-align:right">Rp ' + (props.usaha_mngh || '-') + '</td></tr><tr><td>Akses Jalan Usaha Besar (M2/Tahun)</td><td syle="text-align:center">:</td><td style="text-align:right">Rp ' + (props.usaha_bsr || '-') + '</td></tr><tr><td>Peralatan / Barang Lainnya (M2/Tahun)</td><td syle="text-align:center">:</td><td style="text-align:right">Rp ' + (props.brng_lain || '-') + '</td></tr></tbody></table>';
                // Coba ambil data retribusi jika ada
@@ -1764,7 +1770,7 @@ function loadGeoJsoninovasi(data) {
 
         function buatLayer(f) {
             var c = f.geojson.coordinates;
-            var layer = JENIS === 'tiang'
+            var layer = JENIS !== 'kabel'
                 ? L.marker([c[1], c[0]], { icon: ikonTiang })
                 : L.polyline(c.map(function (p) { return [p[1], p[0]]; }), { color: '#e74c3c', weight: 4 });
             layer.fitur = { id: f.id, jumlah: f.jumlah, keterangan: f.keterangan || '', panjang: Math.round(Number(f.panjang || 0)) };
@@ -1780,7 +1786,7 @@ function loadGeoJsoninovasi(data) {
         }
 
         function digitasiBaru(layer) {
-            if (JENIS === 'tiang') layer.setIcon(ikonTiang);
+            if (JENIS !== 'kabel') layer.setIcon(ikonTiang);
             layer.fitur = { id: null, jumlah: 1, keterangan: '', panjang: hitungPanjang(layer) };
             drawnItems.addLayer(layer);
             adaPerubahan = true;
@@ -1800,8 +1806,8 @@ function loadGeoJsoninovasi(data) {
             var total = 0;
             drawnItems.getLayers().forEach(function (layer, i) {
                 var f = layer.fitur;
-                total += JENIS === 'tiang' ? Number(f.jumlah) : f.panjang * Number(f.jumlah);
-                var info = JENIS === 'tiang'
+                total += JENIS !== 'kabel' ? Number(f.jumlah) : f.panjang * Number(f.jumlah);
+                var info = JENIS !== 'kabel'
                     ? layer.getLatLng().lat.toFixed(6) + ', ' + layer.getLatLng().lng.toFixed(6)
                     : f.panjang.toLocaleString('id-ID');
                 var $tr = $('<tr>' +
@@ -1822,7 +1828,7 @@ function loadGeoJsoninovasi(data) {
             if (!drawnItems.getLayers().length) {
                 $tb.append('<tr><td colspan="5" class="text-center"><i>Belum ada data ' + JENIS + '</i></td></tr>');
             }
-            $('#total_digitasi').text(JENIS === 'tiang' ? total + ' unit' : total.toLocaleString('id-ID') + ' m');
+            $('#total_digitasi').text(JENIS !== 'kabel' ? total + (JENIS === 'titik' ? ' titik' : ' unit') : total.toLocaleString('id-ID') + ' m');
         }
 
         $('#tabel_digitasi').on('change', '.in-jumlah, .in-ket', function () {

@@ -512,7 +512,7 @@
                                         <ul class="list-inline mb-0">
                                             <li class="list-inline-item"><a href="/perizinan/shortcut" style="color: #0c1e35;font-weight: 300;">Beranda</a></li>
                                             <li class="list-inline-item"><i class="fas fa-chevron-right" style="color: #0c1e35;"></i></li>
-                                            <li class="list-inline-item"><a href="/perizinan/jaringan_utilitas" style="color: #0c1e35;font-weight: 300;">Data Permohonan Izin</a></li>
+                                            <li class="list-inline-item"><a href="<%= base %>" style="color: #0c1e35;font-weight: 300;">Data Permohonan Izin</a></li>
                                             <li class="list-inline-item"><i class="fas fa-chevron-right" style="color: #0c1e35;"></i></li>
                                             <li class="list-inline-item"><span style="color: #0c1e35;">Persyaratan Persetujuan Prinsip</span></li>
                                         </ul>
@@ -527,12 +527,12 @@
                                     <div class="col-12 col-lg-6">
                                         <table class="table table-sm table-borderless mb-3">
                                             <tr><td style="width: 200px;">No. Permohonan</td><td>: <%= permohonan.permohonan_id %></td></tr>
-                                            <tr><td>Provider</td><td>: <%= provider %></td></tr>
+                                            <% if (jenis_izin.pakai_provider) { %><tr><td>Provider</td><td>: <%= provider %></td></tr><% } %>
                                             <tr><td>No. Persetujuan Prinsip</td><td>: <%= pp.no_pp || '-' %></td></tr>
                                             <tr><td>Tgl. Persetujuan Prinsip</td><td>: <%= tgl(pp.tanggal_pp) %></td></tr>
                                         </table>
                                         <% if (pp.file_ttd) { %>
-                                            <a href="/perizinan/jaringan_utilitas/persyaratan/file/pp/<%= permohonan.permohonan_id %>" class="btn btn-success fw-600 mb-3"><i class="fas fa-file-signature"></i>&nbsp;&nbsp;Download Persetujuan Prinsip</a>
+                                            <a href="<%= base %>/persyaratan/file/pp/<%= permohonan.permohonan_id %>" class="btn btn-success fw-600 mb-3"><i class="fas fa-file-signature"></i>&nbsp;&nbsp;Download Persetujuan Prinsip</a>
                                         <% } %>
                                     </div>
                                     <div class="col-12 col-lg-6">
@@ -564,7 +564,7 @@
                                     <% if (pp.file_persyaratan) { %>
                                         <p class="mb-2">
                                             Persyaratan terakhir dikirim:
-                                            <a href="/perizinan/jaringan_utilitas/persyaratan/file/zip/<%= permohonan.permohonan_id %>"><i class="fas fa-file-archive"></i> <%= pp.nama_asli_persyaratan %></a>
+                                            <a href="<%= base %>/persyaratan/file/zip/<%= permohonan.permohonan_id %>"><i class="fas fa-file-archive"></i> <%= pp.nama_asli_persyaratan %></a>
                                             <% if (pp.uploadPersyaratanAt) { %>
                                                 <span class="badge badge-info">Menunggu verifikasi (<%= tgl(pp.uploadPersyaratanAt, true) %>)</span>
                                             <% } %>
@@ -593,7 +593,7 @@
                                 <% } %>
 
                                 <hr>
-                                <a href="/perizinan/jaringan_utilitas" class="btn btn-secondary fw-600"><i class="fas fa-arrow-left"></i>&nbsp;&nbsp;Kembali</a>
+                                <a href="<%= base %>" class="btn btn-secondary fw-600"><i class="fas fa-arrow-left"></i>&nbsp;&nbsp;Kembali</a>
                             </div>
                         </div>
                     </div>
@@ -627,7 +627,7 @@
             $('#btn-kirim').prop('disabled', true);
             $.ajax({
                 type: 'POST',
-                url: '/perizinan/jaringan_utilitas/api/persyaratan/<%= permohonan.permohonan_id %>',
+                url: '<%= base %>/api/persyaratan/<%= permohonan.permohonan_id %>',
                 data: formData,
                 processData: false,
                 contentType: false

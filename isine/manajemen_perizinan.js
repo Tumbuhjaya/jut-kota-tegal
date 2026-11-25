@@ -1,5 +1,4 @@
 var express = require('express');
-var router = express.Router();
 var passport = require('passport')
   , bodyParser = require('body-parser')
   , cookieParser = require('cookie-parser');
@@ -7,12 +6,6 @@ var sql_enak = require('../database/mysql_enak.js').connection;
 var helper = require('../helpper/permohonan.js');
 var tahapan = require('../helpper/tahapan_perizinan.js');
 var pengingat = require('../helpper/pengingat_pp.js');
-
-router.use(bodyParser.json());
-router.use(bodyParser.urlencoded({ extended: true }));
-router.use(cookieParser());
-router.use(passport.initialize());
-router.use(passport.session());
 
 function getUser(req) {
   return (req.user && req.user[0]) ? req.user[0] : null;
@@ -36,6 +29,31 @@ var AKSI = { setujui: 'disetujui', tolak: 'ditolak', revisi: 'revisi' };
 // Ditolak = final, tidak bisa diproses ulang (pemohon mengajukan permohonan baru)
 var BISA_DIPROSES = ['diajukan', 'disetujui'];
 
+// Router backoffice satu jenis izin: jaringan utilitas di /manajemen_perizinan, reklame di /manajemen_reklame.
+// Alur & tabel sama; setiap permohonan diambil dengan filter jenis_izin agar kedua menu tidak saling membuka data.
+function buatRouter(kode_jenis) {
+var router = express.Router();
+var JENIS = helper.jenisIzin(kode_jenis);
+var BASE = JENIS.url_backoffice;
+// Komponen retribusi per ruas; reklame tanpa retribusi
+var KOMPONEN = JENIS.pakai_retribusi ? helper.KOMPONEN_RETRIBUSI : [];
+
+router.use(bodyParser.json());
+router.use(bodyParser.urlencoded({ extended: true }));
+router.use(cookieParser());
+router.use(passport.initialize());
+router.use(passport.session());
+// Dipakai semua view: base = awalan URL menu, jenis_izin = konfigurasi jenis (label, provider, retribusi, digitasi)
+router.use(function (req, res, next) {
+  res.locals.base = BASE;
+  res.locals.jenis_izin = JENIS;
+  next();
+});
+
+function ambil(id) {
+  return helper.getPermohonan(id, null, JENIS.kode);
+}
+
 // ---------------- VIEW ----------------
 router.get('/', cek_admin, function (req, res) {
   res.render('content-backoffice/manajemen_perizinan/list', { user: getUser(req) });
@@ -49,12 +67,12 @@ router.get('/insert', cek_admin, async function (req, res) {
       `SELECT id_user, fullname, telp, email FROM user WHERE id_user = ? AND is_admin = 3 AND deleted = 0`,
       [req.query.id_user || 0]
     );
-    if (!v.length) return res.redirect('/manajemen_perizinan');
-    var id = await helper.buatDraft(v[0], getUser(req).id_user);
-    res.redirect('/manajemen_perizinan/edit/' + id);
+    if (!v.length) return res.redirect(BASE);
+    var id = await helper.buatDraft(v[0], getUser(req).id_user, JENIS.kode);
+    res.redirect(BASE + '/edit/' + id);
   } catch (err) {
     console.log(err);
-    res.redirect('/manajemen_perizinan');
+    res.redirect(BASE);
   }
 });
 
@@ -65,14 +83,14 @@ async function localsPengisian(p) {
     bisa_ubah: helper.bisaUbah(p, true),
     bisa_ajukan: helper.bisaUbah(p),
     kode_wilayah: helper.KODE_WILAYAH,
-    komponen: helper.KOMPONEN_RETRIBUSI,
+    komponen: KOMPONEN,
     atas_nama: v[0] ? (v[0].fullname || v[0].username) : '-'
   };
 }
 
 router.get('/edit/:id', cek_admin, async function (req, res) {
-  var p = await helper.getPermohonan(req.params.id);
-  if (!p) return res.redirect('/manajemen_perizinan');
+  var p = await ambil(req.params.id);
+  if (!p) return res.redirect(BASE);
   var locals = await localsPengisian(p);
   locals.user = getUser(req);
   res.render('content-backoffice/manajemen_perizinan/edit', locals);
@@ -80,15 +98,15 @@ router.get('/edit/:id', cek_admin, async function (req, res) {
 
 function viewDigitasi(jenis) {
   return async function (req, res) {
-    var p = await helper.getPermohonan(req.params.id);
-    if (!p) return res.redirect('/manajemen_perizinan');
+    var p = await ambil(req.params.id);
+    if (!p) return res.redirect(BASE);
     var [ruas] = await sql_enak.raw(
       `SELECT r.permohonan_ruas_id, r.ruas_id, mr.nm_ruas FROM permohonan_ruas r
          LEFT JOIN master_retribusi mr ON mr.id = r.ruas_id
         WHERE r.permohonan_ruas_id = ? AND r.permohonan_id = ? AND r.deletedAt IS NULL`,
       [req.params.id_ruas, p.permohonan_id]
     );
-    if (!ruas.length) return res.redirect('/manajemen_perizinan/edit/' + p.permohonan_id);
+    if (!ruas.length) return res.redirect(BASE + '/edit/' + p.permohonan_id);
     // Jalan Lain hanya punya titik dummy: peta tidak di-zoom ke sana
     if (ruas[0].nm_ruas === helper.NAMA_RUAS_LAIN) ruas[0].ruas_id = null;
     var locals = await localsPengisian(p);
@@ -98,13 +116,15 @@ function viewDigitasi(jenis) {
     res.render('content-backoffice/manajemen_perizinan/digitasi', locals);
   };
 }
-router.get('/tiang/:id/:id_ruas', cek_admin, viewDigitasi('tiang'));
-router.get('/kabel/:id/:id_ruas', cek_admin, viewDigitasi('kabel'));
+// Utilitas: tiang & kabel; reklame: titik
+JENIS.digitasi.forEach(function (jenis) {
+  router.get('/' + jenis + '/:id/:id_ruas', cek_admin, viewDigitasi(jenis));
+});
 
 // Unduh rincian ruas & retribusi satu permohonan sebagai file Excel (.xlsx)
 router.get('/export_excel/:id', cek_admin, async function (req, res) {
   try {
-    var p = await helper.getPermohonan(req.params.id);
+    var p = await ambil(req.params.id);
     if (!p) return res.status(404).send('Permohonan tidak ditemukan');
     var wb = await helper.buatExcel(await helper.getDataSk(p));
     var nama = 'Permohonan_Izin_' + p.permohonan_id + '_' + new Date().toISOString().slice(0, 10) + '.xlsx';
@@ -115,7 +135,8 @@ router.get('/export_excel/:id', cek_admin, async function (req, res) {
   } catch (err) { gagal(res, err); }
 });
 
-// Sinkron tiang permohonan ke tabel tiang: peta + list, admin memilih tiang yang diduplikat
+// Sinkron tiang permohonan ke tabel tiang: peta + list, admin memilih tiang yang diduplikat (khusus jaringan utilitas)
+if (JENIS.kode === 'jaringan_utilitas') {
 router.get('/sinkron_tiang', cek_admin, function (req, res) {
   res.render('content-backoffice/manajemen_perizinan/sinkron_tiang', { user: getUser(req) });
 });
@@ -143,19 +164,20 @@ router.post('/sinkron_tiang', cek_admin, async function (req, res) {
     res.json({ status: 200, message: 'sukses', data: { masuk: await helper.sinkronTiang(ids) } });
   } catch (err) { gagal(res, err); }
 });
+}
 
 router.get('/detail/:id', cek_admin, async function (req, res) {
-  var p = await helper.getPermohonan(req.params.id);
-  if (!p || p.status === 'draft') return res.redirect('/manajemen_perizinan');
-  res.render('content-backoffice/manajemen_perizinan/detail', { user: getUser(req), permohonan_id: p.permohonan_id, komponen: helper.KOMPONEN_RETRIBUSI });
+  var p = await ambil(req.params.id);
+  if (!p || p.status === 'draft') return res.redirect(BASE);
+  res.render('content-backoffice/manajemen_perizinan/detail', { user: getUser(req), permohonan_id: p.permohonan_id, komponen: KOMPONEN });
 });
 
 // ---------------- API ----------------
 // Draft hanya tampil jika difilter status 'draft' (draft vendor yang belum diajukan + isian admin)
 router.post('/list', cek_admin, async function (req, res) {
   try {
-    var sql = helper.SQL_REKAP;
-    var val = [];
+    var sql = helper.SQL_REKAP + ` AND p.jenis_izin = ?`;
+    var val = [JENIS.kode];
     if (req.body.status) { sql += ` AND p.status = ?`; val.push(req.body.status); }
     else sql += ` AND p.status <> 'draft'`;
     // Status langkah penerbitan izin per baris: draft perjanjian sewa -> perjanjian TTD -> draft SK -> SK TTD
@@ -200,7 +222,7 @@ router.get('/vendor', cek_admin, async function (req, res) {
 });
 
 router.get('/cetak_sk/:id', cek_admin, async function (req, res) {
-  var p = await helper.getPermohonan(req.params.id);
+  var p = await ambil(req.params.id);
   // Disetujui, atau draft SK (No. SK) sudah disimpan di tahap penerbitan izin
   var draft = p && p.status === 'diajukan' && p.tahap === 'penerbitan_izin' && p.no_sk;
   if (!p || !(p.status === 'disetujui' || draft)) return res.status(404).send('SK belum tersedia');
@@ -210,7 +232,7 @@ router.get('/cetak_sk/:id', cek_admin, async function (req, res) {
 
 router.get('/data/:id', cek_admin, async function (req, res) {
   try {
-    var p = await helper.getPermohonan(req.params.id);
+    var p = await ambil(req.params.id);
     if (!p || p.status === 'draft') return gagal(res, 'Permohonan tidak ditemukan', 404);
     var detail = await helper.getDetail(p);
     detail.digitasi = await helper.getDigitasi(p.permohonan_id);
@@ -240,7 +262,7 @@ router.get('/dokumen/:id_dokumen', cek_admin, async function (req, res) {
 // body: { aksi: setujui | tolak | revisi, no_sk, tanggal_sk, keterangan }
 // Draft SK boleh disimpan di tahap penerbitan izin setelah perjanjian sewa TTD diupload, atau untuk SK yang sudah disetujui
 async function simpanDraftSk(req, res, b) {
-  var p = await helper.getPermohonan(req.params.id);
+  var p = await ambil(req.params.id);
   var penerbitan = p && p.status === 'diajukan' && p.tahap === 'penerbitan_izin';
   if (!p || !(penerbitan || p.status === 'disetujui')) return gagal(res, 'Draft SK tidak bisa disimpan untuk permohonan ini', 400);
   if (penerbitan) {
@@ -255,9 +277,10 @@ async function simpanDraftSk(req, res, b) {
   res.json({ status: 200, message: 'sukses', data: null });
 }
 
-// Menyetujui permohonan (SK terbit): digitasi masuk ke tabel tiang & kabel, status -> disetujui
+// Menyetujui permohonan (SK terbit): digitasi utilitas masuk ke tabel tiang & kabel, status -> disetujui.
+// Reklame belum punya tabel data utama, titiknya tetap di permohonan_titik.
 async function setujuiPermohonan(p, no_sk, tanggal_sk, keterangan, id_user) {
-  var masuk = await helper.salinKeDataUtama(p.permohonan_id);
+  var masuk = JENIS.kode === 'jaringan_utilitas' ? await helper.salinKeDataUtama(p.permohonan_id) : null;
   await sql_enak.raw(
     `UPDATE permohonan
         SET status = 'disetujui', keterangan = ?, no_sk = ?, tanggal_sk = ?,
@@ -282,7 +305,7 @@ router.post('/proses/:id', cek_admin, async function (req, res) {
     if (b.aksi === 'simpan') return await simpanDraftSk(req, res, b);
     var status = AKSI[b.aksi];
     if (!status) return gagal(res, 'Aksi tidak dikenal', 400);
-    var p = await helper.getPermohonan(req.params.id);
+    var p = await ambil(req.params.id);
     if (!p || BISA_DIPROSES.indexOf(p.status) === -1) return gagal(res, 'Permohonan tidak bisa diproses', 400);
     // SK baru bisa terbit setelah verifikasi s.d. verifikasi persyaratan selesai dan perjanjian sewa TTD diupload
     if (status === 'disetujui' && p.status === 'diajukan') {
@@ -324,7 +347,7 @@ router.post('/proses/:id', cek_admin, async function (req, res) {
 
 // Permohonan yang sedang berada di `tahap` (status diajukan); null + respon error jika bukan
 async function ambilTahap(req, res, tahap) {
-  var p = await helper.getPermohonan(req.params.id);
+  var p = await ambil(req.params.id);
   if (!p) { gagal(res, 'Permohonan tidak ditemukan', 404); return null; }
   if (p.status !== 'diajukan' || p.tahap !== tahap) {
     gagal(res, 'Permohonan tidak sedang di tahap ' + tahapan.TAHAP[tahap], 400);
@@ -337,7 +360,7 @@ async function ambilTahap(req, res, tahap) {
 function notifikasiDikembalikan(p, status, keterangan) {
   var tolak = status === 'ditolak';
   tahapan.kirimNotifikasi(p, tolak ? 'Permohonan Ditolak' : 'Permohonan Perlu Revisi',
-    '<p>Permohonan izin pemanfaatan ruang milik jalan untuk jaringan utilitas yang Anda ajukan ' +
+    '<p>Permohonan izin pemanfaatan ruang milik jalan untuk ' + JENIS.objek + ' yang Anda ajukan ' +
     (tolak ? '<b>ditolak</b>.' : '<b>dikembalikan untuk direvisi</b>. Silakan perbaiki lalu ajukan kembali.') + '</p>' +
     '<p>Keterangan:<br/>' + tahapan.escHtml(keterangan).replace(/\n/g, '<br/>') + '</p>');
 }
@@ -345,11 +368,13 @@ function notifikasiDikembalikan(p, status, keterangan) {
 function kirimList(tahap, status) {
   return async function (req, res) {
     try {
-      res.json({ status: 200, message: 'sukses', data: await tahapan.listTahap(tahap, status) });
+      res.json({ status: 200, message: 'sukses', data: await tahapan.listTahap(tahap, status, JENIS.kode) });
     } catch (err) { gagal(res, err); }
   };
 }
 
+// Hanya untuk jenis dengan verifikasi awal (jaringan utilitas); reklame tidak punya tahap ini
+if (JENIS.verifikasi_awal) {
 // ---------------- Verifikasi provider & persyaratan ----------------
 // Pemohon mengetik nama provider (provider_usulan) + upload dokumen persyaratan;
 // admin memeriksa dokumen, memilihkan provider dari master, atau menolak keduanya sekaligus
@@ -364,8 +389,9 @@ router.post('/provider/list', cek_admin, async function (req, res) {
               u.fullname AS nama_vendor, u.username AS username_vendor
          FROM permohonan p
          LEFT JOIN user u ON u.id_user = p.id_user
-        WHERE p.deletedAt IS NULL AND p.status_provider = 'menunggu'
-        ORDER BY p.provider_diusulkanAt ASC`
+        WHERE p.deletedAt IS NULL AND p.status_provider = 'menunggu' AND p.jenis_izin = ?
+        ORDER BY p.provider_diusulkanAt ASC`,
+      [JENIS.kode]
     );
     res.json({ status: 200, message: 'sukses', data: data });
   } catch (err) { gagal(res, err); }
@@ -381,36 +407,40 @@ router.get('/provider/master', cek_admin, async function (req, res) {
 // Data pemohon + dokumen persyaratan untuk diperiksa di modal verifikasi
 router.get('/provider/detail/:id', cek_admin, async function (req, res) {
   try {
-    var p = await helper.getPermohonan(req.params.id);
+    var p = await ambil(req.params.id);
     if (!p) return gagal(res, 'Permohonan tidak ditemukan', 404);
     res.json({ status: 200, message: 'sukses', data: {
       pemohon: { nama: p.nama_pemohon, jabatan: p.jabatan_pemohon, telp: p.telp_pemohon, email: p.email_pemohon },
-      dokumen: await helper.getDokumen(p.permohonan_id),
-      jenis_dokumen: helper.JENIS_DOKUMEN,
-      dokumen_wajib: helper.DOKUMEN_WAJIB
+      dokumen: await helper.getDokumen(p.permohonan_id, p.jenis_izin),
+      jenis_dokumen: helper.jenisDokumen(JENIS.kode),
+      dokumen_wajib: helper.dokumenWajib(JENIS.kode)
     } });
   } catch (err) { gagal(res, err); }
 });
 
 async function ambilUsulanProvider(req, res) {
-  var p = await helper.getPermohonan(req.params.id);
+  var p = await ambil(req.params.id);
   if (!p) { gagal(res, 'Permohonan tidak ditemukan', 404); return null; }
   if (p.status_provider !== 'menunggu') { gagal(res, 'Provider permohonan ini tidak sedang menunggu verifikasi', 400); return null; }
   return p;
 }
 
-// body: { provider_id }
+// body: { provider_id } — reklame tanpa provider: hanya dokumen yang diverifikasi
 router.post('/provider/verifikasi/:id', cek_admin, async function (req, res) {
   try {
     var p = await ambilUsulanProvider(req, res);
     if (!p) return;
-    var [prov] = await sql_enak.raw(`SELECT provider_id FROM provider WHERE provider_id = ? AND deletedAt IS NULL`, [req.body.provider_id || 0]);
-    if (!prov.length) return gagal(res, 'Pilih provider terlebih dahulu', 400);
+    var provider_id = null;
+    if (JENIS.pakai_provider) {
+      var [prov] = await sql_enak.raw(`SELECT provider_id FROM provider WHERE provider_id = ? AND deletedAt IS NULL`, [req.body.provider_id || 0]);
+      if (!prov.length) return gagal(res, 'Pilih provider terlebih dahulu', 400);
+      provider_id = prov[0].provider_id;
+    }
     await sql_enak.raw(
       `UPDATE permohonan SET provider_id = ?, status_provider = 'terverifikasi', keterangan_provider = NULL,
               provider_diverifikasiAt = NOW(), provider_diverifikasi_oleh = ?, lastUpdateAt = NOW()
         WHERE permohonan_id = ?`,
-      [prov[0].provider_id, getUser(req).id_user, p.permohonan_id]
+      [provider_id, getUser(req).id_user, p.permohonan_id]
     );
     res.json({ status: 200, message: 'sukses', data: null });
   } catch (err) { gagal(res, err); }
@@ -432,6 +462,7 @@ router.post('/provider/tolak/:id', cek_admin, async function (req, res) {
     res.json({ status: 200, message: 'sukses', data: null });
   } catch (err) { gagal(res, err); }
 });
+}
 
 // ---------------- Permohonan izin (verifikasi) ----------------
 router.get('/permohonan', cek_admin, function (req, res) {
@@ -442,14 +473,14 @@ router.get('/permohonan', cek_admin, function (req, res) {
 router.post('/permohonan/list', cek_admin, kirimList('verifikasi', ['diajukan', 'revisi']));
 
 router.get('/permohonan/verifikasi/:id', cek_admin, async function (req, res) {
-  var p = await helper.getPermohonan(req.params.id);
-  if (!p || p.status === 'draft') return res.redirect('/manajemen_perizinan/permohonan');
+  var p = await ambil(req.params.id);
+  if (!p || p.status === 'draft') return res.redirect(BASE + '/permohonan');
   res.render('content-backoffice/manajemen_perizinan/permohonan/verifikasi', {
     user: getUser(req),
     permohonan_id: p.permohonan_id,
-    komponen: helper.KOMPONEN_RETRIBUSI,
+    komponen: KOMPONEN,
     kode_wilayah: helper.KODE_WILAYAH,
-    jenis_dokumen: helper.JENIS_DOKUMEN
+    jenis_dokumen: helper.jenisDokumen(JENIS.kode)
   });
 });
 
@@ -513,7 +544,7 @@ router.post('/permohonan/verifikasi/:id', cek_admin, async function (req, res) {
     await sql_enak.raw(`DELETE FROM permohonan_tim_teknis WHERE permohonan_id = ?`, [p.permohonan_id]);
     await sql_enak('permohonan_tim_teknis').insert(tim.map(function (id) { return { permohonan_id: p.permohonan_id, id_user: id }; }));
     tahapan.kirimNotifikasi(p, 'Permohonan Lolos Verifikasi',
-      '<p>Permohonan izin pemanfaatan ruang milik jalan untuk jaringan utilitas yang Anda ajukan ' +
+      '<p>Permohonan izin pemanfaatan ruang milik jalan untuk ' + JENIS.objek + ' yang Anda ajukan ' +
       'dengan surat Nomor <b>' + tahapan.escHtml(no_surat) + '</b> telah <b>disetujui</b> pada tahap verifikasi.</p>' +
       '<p>Permohonan dilanjutkan ke tahap Peninjauan Lapangan oleh tim teknis.</p>');
     res.json({ status: 200, message: 'sukses', data: null });
@@ -523,7 +554,7 @@ router.post('/permohonan/verifikasi/:id', cek_admin, async function (req, res) {
 // Hapus (soft delete) permohonan yang masih di tahap verifikasi
 router.post('/permohonan/hapus/:id', cek_admin, async function (req, res) {
   try {
-    var p = await helper.getPermohonan(req.params.id);
+    var p = await ambil(req.params.id);
     if (!p || p.tahap !== 'verifikasi' || ['diajukan', 'revisi'].indexOf(p.status) === -1) {
       return gagal(res, 'Hanya permohonan di tahap verifikasi yang bisa dihapus', 400);
     }
@@ -541,20 +572,20 @@ router.post('/peninjauan_lapangan/list', cek_admin, kirimList('peninjauan_lapang
 
 // Detail perizinan (peta, tabel ruas, pemohon, dokumen persyaratan) tanpa form verifikasi; data diambil via GET /data/:id
 router.get('/peninjauan_lapangan/detail/:id', cek_admin, async function (req, res) {
-  var p = await helper.getPermohonan(req.params.id);
-  if (!p || p.status === 'draft') return res.redirect('/manajemen_perizinan/peninjauan_lapangan');
+  var p = await ambil(req.params.id);
+  if (!p || p.status === 'draft') return res.redirect(BASE + '/peninjauan_lapangan');
   res.render('content-backoffice/manajemen_perizinan/peninjauan_lapangan/detail', {
     user: getUser(req),
     permohonan_id: p.permohonan_id,
-    komponen: helper.KOMPONEN_RETRIBUSI,
+    komponen: KOMPONEN,
     kode_wilayah: helper.KODE_WILAYAH,
-    jenis_dokumen: helper.JENIS_DOKUMEN
+    jenis_dokumen: helper.jenisDokumen(JENIS.kode)
   });
 });
 
 router.get('/peninjauan_lapangan/data/:id', cek_admin, async function (req, res) {
   try {
-    var p = await helper.getPermohonan(req.params.id);
+    var p = await ambil(req.params.id);
     if (!p) return gagal(res, 'Permohonan tidak ditemukan', 404);
     res.json({ status: 200, message: 'sukses', data: { permohonan: p, peninjauan: await tahapan.getPeninjauan(p.permohonan_id) } });
   } catch (err) { gagal(res, err); }
@@ -596,7 +627,7 @@ router.get('/peninjauan_lapangan/foto/:id/:urutan', cek_admin, async function (r
 });
 
 router.get('/peninjauan_lapangan/cetak/:id', cek_admin, async function (req, res) {
-  var p = await helper.getPermohonan(req.params.id);
+  var p = await ambil(req.params.id);
   if (!p) return res.status(404).send('Permohonan tidak ditemukan');
   var data = await tahapan.getDataCetak(p);
   if (!data.peninjauan) return res.status(404).send('Draft berita acara belum dibuat');
@@ -644,20 +675,20 @@ router.post('/persetujuan_prinsip/list', cek_admin, kirimList(['persetujuan_prin
 
 // Detail perizinan (peta, tabel ruas, pemohon, dokumen persyaratan) tanpa form verifikasi; data diambil via GET /data/:id
 router.get('/persetujuan_prinsip/detail/:id', cek_admin, async function (req, res) {
-  var p = await helper.getPermohonan(req.params.id);
-  if (!p || p.status === 'draft') return res.redirect('/manajemen_perizinan/persetujuan_prinsip');
+  var p = await ambil(req.params.id);
+  if (!p || p.status === 'draft') return res.redirect(BASE + '/persetujuan_prinsip');
   res.render('content-backoffice/manajemen_perizinan/persetujuan_prinsip/detail', {
     user: getUser(req),
     permohonan_id: p.permohonan_id,
-    komponen: helper.KOMPONEN_RETRIBUSI,
+    komponen: KOMPONEN,
     kode_wilayah: helper.KODE_WILAYAH,
-    jenis_dokumen: helper.JENIS_DOKUMEN
+    jenis_dokumen: helper.jenisDokumen(JENIS.kode)
   });
 });
 
 router.get('/persetujuan_prinsip/data/:id', cek_admin, async function (req, res) {
   try {
-    var p = await helper.getPermohonan(req.params.id);
+    var p = await ambil(req.params.id);
     if (!p) return gagal(res, 'Permohonan tidak ditemukan', 404);
     res.json({ status: 200, message: 'sukses', data: { permohonan: p, persetujuan: await tahapan.getPersetujuan(p.permohonan_id) } });
   } catch (err) { gagal(res, err); }
@@ -676,7 +707,7 @@ router.post('/persetujuan_prinsip/simpan/:id', cek_admin, async function (req, r
 });
 
 router.get('/persetujuan_prinsip/cetak/:id', cek_admin, async function (req, res) {
-  var p = await helper.getPermohonan(req.params.id);
+  var p = await ambil(req.params.id);
   if (!p) return res.status(404).send('Permohonan tidak ditemukan');
   var data = await tahapan.getDataCetak(p);
   if (!data.persetujuan) return res.status(404).send('Draft persetujuan prinsip belum dibuat');
@@ -697,7 +728,7 @@ router.post('/persetujuan_prinsip/upload/:id', cek_admin, tahapan.upload_ttd, as
       return gagal(res, 'Buat draft persetujuan prinsip terlebih dahulu', 400);
     }
     await tahapan.simpanTtd('pp', p.permohonan_id, file);
-    var link = tahapan.urlPersyaratan(req, p.permohonan_id);
+    var link = tahapan.urlPersyaratan(req, p);
     tahapan.kirimNotifikasi(p, 'Persetujuan Prinsip',
       '<p>Persetujuan prinsip atas permohonan Anda telah terbit, dengan nomor <b>' + tahapan.escHtml(pp.no_pp) + '</b> (terlampir).</p>' +
       '<p>Persetujuan prinsip ini <b>&ldquo;BUKAN IZIN&rdquo;</b> dan pemohon dilarang melakukan kegiatan apapun sebelum ' +
@@ -722,7 +753,7 @@ router.post('/persetujuan_prinsip/verifikasi_persyaratan/:id', cek_admin, async 
     if (!pp || !pp.uploadPersyaratanAt) return gagal(res, 'Pemohon belum mengirim kelengkapan persyaratan', 400);
     await tahapan.simpanVerifikasiPersyaratan(p.permohonan_id, lanjut, b.keterangan, getUser(req).id_user);
     if (!lanjut) {
-      var link = tahapan.urlPersyaratan(req, p.permohonan_id);
+      var link = tahapan.urlPersyaratan(req, p);
       tahapan.kirimNotifikasi(p, 'Persyaratan Persetujuan Prinsip Belum Terpenuhi',
         '<p>Hasil verifikasi menunjukkan persyaratan persetujuan prinsip permohonan Anda <b>belum terpenuhi</b>.</p>' +
         '<p>Keterangan:<br/>' + tahapan.escHtml(b.keterangan).replace(/\n/g, '<br/>') + '</p>' +
@@ -764,7 +795,7 @@ router.post('/perjanjian_sewa/simpan/:id', cek_admin, async function (req, res) 
 });
 
 router.get('/perjanjian_sewa/cetak/:id', cek_admin, async function (req, res) {
-  var p = await helper.getPermohonan(req.params.id);
+  var p = await ambil(req.params.id);
   if (!p) return res.status(404).send('Permohonan tidak ditemukan');
   var data = await tahapan.getDataCetak(p);
   if (!data.perjanjian_sewa) return res.status(404).send('Draft perjanjian sewa belum dibuat');
@@ -801,7 +832,7 @@ router.post('/izin/upload/:id', cek_admin, tahapan.upload_ttd, async function (r
   var file = req.files && req.files.file && req.files.file[0];
   try {
     if (!file) return gagal(res, 'File izin wajib dipilih', 400);
-    var p = await helper.getPermohonan(req.params.id);
+    var p = await ambil(req.params.id);
     var draft = !!(p && p.status !== 'disetujui' && await draftSkSiap(p));
     if (!p || !(p.status === 'disetujui' || draft)) {
       tahapan.hapusFile(file.filename);
@@ -811,7 +842,7 @@ router.post('/izin/upload/:id', cek_admin, tahapan.upload_ttd, async function (r
     if (draft) await setujuiPermohonan(p, p.no_sk, p.tanggal_sk, p.keterangan, getUser(req).id_user);
     await tahapan.simpanTtd('sk', p.permohonan_id, file);
     tahapan.kirimNotifikasi(p, 'Izin Pemanfaatan Ruang Milik Jalan Telah Terbit',
-      '<p>Izin pemanfaatan ruang milik jalan untuk jaringan utilitas atas permohonan Anda <b>telah terbit</b> ' +
+      '<p>Izin pemanfaatan ruang milik jalan untuk ' + JENIS.objek + ' atas permohonan Anda <b>telah terbit</b> ' +
       'dengan Nomor <b>' + tahapan.escHtml(p.no_sk) + '</b>. Dokumen izin terlampir.</p>',
       [tahapan.lampiran(file.filename, file.originalname)]);
     res.json({ status: 200, message: 'sukses', data: null });
@@ -820,9 +851,14 @@ router.post('/izin/upload/:id', cek_admin, tahapan.upload_ttd, async function (r
 
 router.get('/izin/file/:id', cek_admin, async function (req, res) {
   try {
-    var p = await helper.getPermohonan(req.params.id);
+    var p = await ambil(req.params.id);
     if (!p) return res.status(404).send('Permohonan tidak ditemukan');
     tahapan.kirimFile(res, p.file_sk, p.nama_asli_sk);
   } catch (err) { gagal(res, err); }
 });
-module.exports = router;
+
+return router;
+}
+
+module.exports = buatRouter('jaringan_utilitas');
+module.exports.reklame = buatRouter('reklame');

@@ -4,7 +4,7 @@
     <section class="section">
       <div class="w-100" style="padding: 0 30px;">
         <div class="section-header">
-          <h1>Data Peninjauan Lapangan</h1>
+          <h1>Data Peninjauan Lapangan<%= jenis_izin.kode === 'reklame' ? ' (Reklame)' : '' %></h1>
           <div class="section-header-breadcrumb">
             <div class="breadcrumb-item active"><a href="/backoffice">Dashboard</a></div>
             <div class="breadcrumb-item">Data</div>
@@ -26,8 +26,10 @@
                         <th class="text-center" rowspan="2">No.</th>
                         <th class="text-center" rowspan="2">Tanggal<br/>Permohonan</th>
                         <th class="text-center" rowspan="2">Pemohon</th>
+                        <% if (jenis_izin.kode === 'jaringan_utilitas') { %>
                         <th class="text-center" rowspan="2">Provider</th>
-                        <th class="text-center" colspan="4">Total</th>
+                        <% } %>
+                        <th class="text-center" colspan="<%= jenis_izin.kode === 'jaringan_utilitas' ? 4 : 2 %>">Total</th>
                         <th class="text-center" rowspan="2" style="min-width: 100px;">Tim Teknis</th>
                         <th class="text-center" rowspan="2">Hasil Peninjauan</th>
                         <th class="text-center" rowspan="2" style="min-width: 100px;">Option</th>
@@ -35,9 +37,13 @@
 
                       <tr>
                         <th class="text-center">Ruas<br/>Jalan</th>
+                        <% if (jenis_izin.kode === 'jaringan_utilitas') { %>
                         <th class="text-center">Tiang</th>
                         <th class="text-center">Panjang<br/>Kabel (m)</th>
                         <th class="text-center" style="min-width: 130px;">Retribusi (Rp)</th>
+                        <% } else { %>
+                        <th class="text-center">Titik<br/>Reklame</th>
+                        <% } %>
                       </tr>
                     </thead>
                     <tbody></tbody>
@@ -184,7 +190,7 @@
 
 <script type="text/javascript">
     var rooturl = ''
-    var URL_TAHAP = rooturl + '/manajemen_perizinan/peninjauan_lapangan';
+    var URL_TAHAP = rooturl + '<%= base %>/peninjauan_lapangan';
     var id_aktif = null;
 
     CKEDITOR.replace('editor1', {
@@ -232,11 +238,17 @@
         { "data": null, "defaultContent": '', "className": 'text-center' },
          { "data": 'diajukanAt', "render": function (d) { return d ? moment(d).format('DD/MM/YYYY HH:mm') : '-'; } },
         { "data": null, "render": function (r) { return esc(r.nama_pemohon) } },
+        <% if (jenis_izin.kode === 'jaringan_utilitas') { %>
         { "data": 'provider', "render": esc },
+        <% } %>
         { "data": 'jml_ruas', "className": 'text-center' },
+        <% if (jenis_izin.kode === 'jaringan_utilitas') { %>
         { "data": 'jml_tiang', "className": 'text-center' },
         { "data": 'jml_kabel', "className": 'text-center', "render": function (d) { return Math.round(Number(d)).toLocaleString('id-ID'); } },
         { "data": 'retribusi', "className": 'text-right', "render": rupiah },
+        <% } else { %>
+        { "data": 'jml_titik', "className": 'text-center' },
+        <% } %>
         { "data": 'tim_teknis', "render": function (d) { return d ? esc(d).replace(/\n/g, '<br/>') : '<i class="text-muted">belum ditentukan</i>'; } },
         { "data": 'kelayakan', "className": 'text-center', "render": function (d) {
             if (d === 'layak') return '<span class="badge badge-success">Layak</span>';
@@ -248,7 +260,7 @@
             var layak = r.kelayakan === 'layak';
             var alasan = !ada ? 'Buat draft BA terlebih dahulu' : 'Hasil peninjauan tidak layak, lakukan peninjauan ulang';
             return '<div class="w-100-flex" style="justify-content: center;gap: 5px;">' +
-              '<a href="' + rooturl + '/manajemen_perizinan/peninjauan_lapangan/detail/' + r.permohonan_id + '" class="btn btn-light" title="Detail Perizinan"><i class="fas fa-eye"></i></a>' +
+              '<a href="' + rooturl + '<%= base %>/peninjauan_lapangan/detail/' + r.permohonan_id + '" class="btn btn-light" title="Detail Perizinan"><i class="fas fa-eye"></i></a>' +
               '<button type="button" class="btn btn-warning" title="' + (ada ? 'Ubah' : 'Buat') + ' Draft BA" onclick="bukaDraft(' + r.permohonan_id + ')"><i class="fas fa-pen-square"></i></button>' +
               (ada
                 ? '<a href="' + URL_TAHAP + '/cetak/' + r.permohonan_id + '" target="_blank" class="btn btn-success" title="Cetak Draft BA"><i class="fas fa-print"></i></a>'

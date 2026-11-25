@@ -1,4 +1,4 @@
-// Query & aturan bersama permohonan izin jaringan utilitas,
+// Query & aturan bersama permohonan izin jaringan utilitas & reklame,
 // dipakai oleh halaman vendor (isine/perizinan.js) dan backoffice (isine/manajemen_perizinan.js).
 var path = require('path');
 var fs = require('fs');
@@ -9,6 +9,26 @@ var sql_enak = require('../database/mysql_enak.js').connection;
 // Disimpan di luar folder public agar KTP/akta tidak bisa diakses tanpa login
 var DIR_DOKUMEN = path.join(__dirname, '..', 'uploads', 'permohonan');
 fs.mkdirSync(DIR_DOKUMEN, { recursive: true });
+
+// Jenis izin (permohonan.jenis_izin). Alur & tabel sama; reklame tanpa provider & retribusi, digitasinya hanya titik.
+var JENIS_IZIN = {
+  jaringan_utilitas: {
+    kode: 'jaringan_utilitas', label: 'Jaringan Utilitas', objek: 'jaringan utilitas',
+    url_pemohon: '/perizinan/jaringan_utilitas', url_backoffice: '/manajemen_perizinan',
+    digitasi: ['tiang', 'kabel'], pakai_provider: true, pakai_retribusi: true,
+    verifikasi_awal: true   // provider + dokumen diverifikasi admin sebelum isi ruas
+  },
+  reklame: {
+    kode: 'reklame', label: 'Reklame', objek: 'reklame',
+    url_pemohon: '/perizinan/reklame', url_backoffice: '/manajemen_reklame',
+    digitasi: ['titik'], pakai_provider: false, pakai_retribusi: false,
+    verifikasi_awal: false  // tanpa provider, pemohon langsung isi & ajukan; dokumen diperiksa saat verifikasi permohonan
+  }
+};
+function jenisIzin(permohonan_atau_kode) {
+  var kode = permohonan_atau_kode && typeof permohonan_atau_kode === 'object' ? permohonan_atau_kode.jenis_izin : permohonan_atau_kode;
+  return JENIS_IZIN[kode] || JENIS_IZIN.jaringan_utilitas;
+}
 
 var JENIS_DOKUMEN = {
   ktp: 'Foto copy Kartu Tanda Penduduk (KTP) Pemohon',
@@ -21,8 +41,22 @@ var JENIS_DOKUMEN = {
   jadwal_pelaksanaan: 'Jadwal Pelaksanaan Kegiatan',
   rencana_anggaran: 'Rencana Anggaran Biaya'
 };
+// Reklame memakai jenis dokumen yang sama dengan label sesuai objek iklan, tanpa pernyataan retribusi
+var JENIS_DOKUMEN_REKLAME = Object.assign({}, JENIS_DOKUMEN, {
+  surat_kuasa: 'Surat Kuasa Pengurusan permohonan izin pembangunan/penempatan Iklan',
+  gambar_lokasi: 'Gambar Lokasi Pembangunan/Penempatan Iklan',
+  jadwal_pelaksanaan: 'Jadwal Waktu Pelaksanaan',
+  rencana_anggaran: 'Rencana Anggaran Biaya (RAB)'
+});
+delete JENIS_DOKUMEN_REKLAME.pernyataan_retribusi;
+function jenisDokumen(jenis) {
+  return jenisIzin(jenis).kode === 'reklame' ? JENIS_DOKUMEN_REKLAME : JENIS_DOKUMEN;
+}
 // surat kuasa hanya diperlukan jika surat tidak ditandatangani penanggung jawab
 var DOKUMEN_WAJIB = Object.keys(JENIS_DOKUMEN).filter(function (k) { return k !== 'surat_kuasa'; });
+function dokumenWajib(jenis) {
+  return Object.keys(jenisDokumen(jenis)).filter(function (k) { return k !== 'surat_kuasa'; });
+}
 
 var EKSTENSI_DOKUMEN = ['.pdf', '.jpg', '.jpeg', '.png'];
 
@@ -85,26 +119,32 @@ function bisaUbah(permohonan, admin) {
   return permohonan.status === 'draft' || permohonan.status === 'revisi';
 }
 
-// Tahap awal: provider (diketik pemohon) + dokumen persyaratan diverifikasi admin bersamaan.
+// Tahap awal (jaringan utilitas): provider (diketik pemohon) + dokumen persyaratan diverifikasi admin bersamaan.
 // Ruas jalan, simpan & ajukan baru terbuka setelah terverifikasi (status_provider mencakup provider & persyaratan).
+// Jenis tanpa verifikasi awal (reklame) selalu dianggap lolos.
 function providerTerverifikasi(permohonan) {
-  return !!permohonan && permohonan.status_provider === 'terverifikasi' && !!permohonan.provider_id;
+  if (!permohonan) return false;
+  if (!jenisIzin(permohonan).verifikasi_awal) return true;
+  return permohonan.status_provider === 'terverifikasi' && !!permohonan.provider_id;
 }
 
-// Pemohon hanya boleh mengubah provider & dokumen persyaratan sebelum dikirim verifikasi / setelah ditolak
+// Pemohon hanya boleh mengubah provider & dokumen persyaratan sebelum dikirim verifikasi / setelah ditolak;
+// tanpa verifikasi awal, dokumen bisa diubah selama permohonan masih draft / revisi
 function bisaIsiAwal(permohonan) {
+  if (!jenisIzin(permohonan).verifikasi_awal) return bisaUbah(permohonan);
   return bisaUbah(permohonan) && ['menunggu', 'terverifikasi'].indexOf(permohonan.status_provider) === -1;
 }
 
 // Rekap ruas per permohonan (dipakai list vendor & list backoffice)
 var SQL_REKAP = `
-  SELECT p.permohonan_id, p.id_user, p.provider_id, p.status, p.tahap, p.keterangan, p.no_sk, p.tanggal_sk,
+  SELECT p.permohonan_id, p.jenis_izin, p.id_user, p.provider_id, p.status, p.tahap, p.keterangan, p.no_sk, p.tanggal_sk,
          p.nama_pemohon, p.insertedAt, p.diajukanAt, p.diprosesAt, p.dibuat_oleh,
          pr.provider, u.fullname AS nama_vendor, u.username AS username_vendor,
          (p.dibuat_oleh IS NOT NULL AND p.dibuat_oleh <> p.id_user) AS diisi_admin,
          IFNULL(t.jml_ruas, 0) AS jml_ruas,
          IFNULL(t.jml_tiang, 0) AS jml_tiang,
          IFNULL(t.jml_kabel, 0) AS jml_kabel,
+         IFNULL(t.jml_titik, 0) AS jml_titik,
          IFNULL(t.retribusi, 0) AS retribusi
     FROM permohonan p
     LEFT JOIN provider pr ON pr.provider_id = p.provider_id
@@ -114,6 +154,7 @@ var SQL_REKAP = `
              COUNT(*) AS jml_ruas,
              SUM(jumlah_tiang) AS jml_tiang,
              SUM(panjang_kabel) AS jml_kabel,
+             SUM(jumlah_titik) AS jml_titik,
              SUM(${sqlRetribusi()}) AS retribusi
         FROM permohonan_ruas
        WHERE deletedAt IS NULL
@@ -122,26 +163,28 @@ var SQL_REKAP = `
    WHERE p.deletedAt IS NULL`;
 
 // Draft baru atas nama vendor `pemohon`; dibuat_oleh = vendor sendiri atau admin yang mengisi
-async function buatDraft(pemohon, dibuat_oleh) {
+async function buatDraft(pemohon, dibuat_oleh, jenis) {
   var [hasil] = await sql_enak.raw(
-    `INSERT INTO permohonan (id_user, dibuat_oleh, nama_pemohon, telp_pemohon, email_pemohon, status, insertedAt, lastUpdateAt)
-     VALUES (?, ?, ?, ?, ?, 'draft', NOW(), NOW())`,
-    [pemohon.id_user, dibuat_oleh, pemohon.fullname || null, pemohon.telp || null, pemohon.email || null]
+    `INSERT INTO permohonan (jenis_izin, id_user, dibuat_oleh, nama_pemohon, telp_pemohon, email_pemohon, status, insertedAt, lastUpdateAt)
+     VALUES (?, ?, ?, ?, ?, ?, 'draft', NOW(), NOW())`,
+    [jenisIzin(jenis).kode, pemohon.id_user, dibuat_oleh, pemohon.fullname || null, pemohon.telp || null, pemohon.email || null]
   );
   return hasil.insertId;
 }
 
-async function getPermohonan(permohonan_id, id_user) {
+// jenis (opsional): hanya permohonan dengan jenis_izin tersebut, agar menu utilitas & reklame tidak saling membuka data
+async function getPermohonan(permohonan_id, id_user, jenis) {
   var sql = `SELECT * FROM permohonan WHERE permohonan_id = ? AND deletedAt IS NULL`;
   var val = [permohonan_id];
   if (id_user) { sql += ` AND id_user = ?`; val.push(id_user); }
+  if (jenis) { sql += ` AND jenis_izin = ?`; val.push(jenisIzin(jenis).kode); }
   var [rows] = await sql_enak.raw(sql + ` LIMIT 1`, val);
   return rows[0] || null;
 }
 
 async function getRuas(permohonan_id) {
   var [rows] = await sql_enak.raw(
-    `SELECT r.permohonan_ruas_id, r.ruas_id, r.jumlah_tiang, r.panjang_kabel, r.tarif_tiang, r.tarif_kabel,
+    `SELECT r.permohonan_ruas_id, r.ruas_id, r.jumlah_tiang, r.panjang_kabel, r.jumlah_titik, r.tarif_tiang, r.tarif_kabel,
             ${KOMPONEN_RETRIBUSI.map(function (k) { return 'r.' + k.jumlah + ', ' + sqlRetribusiKomponen(k, 'r') + ' AS retribusi_' + k.kode; }).join(', ')},
             r.jml_t_k30cm * r.tarif_tiang AS retribusi_tiang,
             r.panjang_kabel * r.tarif_kabel AS retribusi_kabel,
@@ -150,7 +193,8 @@ async function getRuas(permohonan_id) {
             kc.kecamatan, kl.desa AS kelurahan,
             (r.ruas_id IS NULL OR mr.nm_ruas = '${NAMA_RUAS_LAIN}') AS luar_ruas,
             (SELECT COUNT(*) FROM permohonan_tiang pt WHERE pt.permohonan_ruas_id = r.permohonan_ruas_id AND pt.deletedAt IS NULL) AS digitasi_tiang,
-            (SELECT COUNT(*) FROM permohonan_kabel pk WHERE pk.permohonan_ruas_id = r.permohonan_ruas_id AND pk.deletedAt IS NULL) AS digitasi_kabel
+            (SELECT COUNT(*) FROM permohonan_kabel pk WHERE pk.permohonan_ruas_id = r.permohonan_ruas_id AND pk.deletedAt IS NULL) AS digitasi_kabel,
+            (SELECT COUNT(*) FROM permohonan_titik px WHERE px.permohonan_ruas_id = r.permohonan_ruas_id AND px.deletedAt IS NULL) AS digitasi_titik
        FROM permohonan_ruas r
        LEFT JOIN master_retribusi mr ON mr.id = r.ruas_id
        LEFT JOIN kecamatan kc ON kc.kec_id = IFNULL(r.id_kec, mr.id_kec)
@@ -167,14 +211,16 @@ async function getRuas(permohonan_id) {
   return rows;
 }
 
-async function getDokumen(permohonan_id) {
+// jenis: jenis_izin permohonan, menentukan label dokumen
+async function getDokumen(permohonan_id, jenis) {
+  var label = jenisDokumen(jenis);
   var [rows] = await sql_enak.raw(
     `SELECT permohonan_dokumen_id, jenis_dokumen, nama_asli, lastUpdateAt
        FROM permohonan_dokumen WHERE permohonan_id = ?`,
     [permohonan_id]
   );
   return rows.map(function (d) {
-    d.label = JENIS_DOKUMEN[d.jenis_dokumen] || d.jenis_dokumen;
+    d.label = label[d.jenis_dokumen] || d.jenis_dokumen;
     return d;
   });
 }
@@ -204,12 +250,12 @@ async function getDetail(permohonan) {
       vendor: vendor[0] || null,
       bisa_ubah: bisaUbah(permohonan)
     }),
-    dokumen: await getDokumen(permohonan.permohonan_id),
+    dokumen: await getDokumen(permohonan.permohonan_id, permohonan.jenis_izin),
     ruas: await getRuas(permohonan.permohonan_id)
   };
 }
 
-// Hasil digitasi tiang & kabel satu permohonan (opsional: satu ruas saja) sebagai GeoJSON
+// Hasil digitasi tiang, kabel & titik reklame satu permohonan (opsional: satu ruas saja) sebagai GeoJSON
 async function getDigitasi(permohonan_id, permohonan_ruas_id) {
   var filter = permohonan_ruas_id ? ` AND x.permohonan_ruas_id = ?` : ``;
   var val = permohonan_ruas_id ? [permohonan_id, permohonan_ruas_id] : [permohonan_id];
@@ -231,10 +277,19 @@ async function getDigitasi(permohonan_id, permohonan_ruas_id) {
       WHERE x.permohonan_id = ? AND x.deletedAt IS NULL` + filter + ` ORDER BY x.permohonan_kabel_id`,
     val
   );
-  [tiang, kabel].forEach(function (list) {
+  var [titik] = await sql_enak.raw(
+    `SELECT x.permohonan_titik_id AS id, x.permohonan_ruas_id, x.jumlah, x.keterangan,
+            ST_AsGeoJSON(x.SHAPE) AS geojson, mr.nm_ruas
+       FROM permohonan_titik x
+       JOIN permohonan_ruas r ON r.permohonan_ruas_id = x.permohonan_ruas_id AND r.deletedAt IS NULL
+       LEFT JOIN master_retribusi mr ON mr.id = r.ruas_id
+      WHERE x.permohonan_id = ? AND x.deletedAt IS NULL` + filter + ` ORDER BY x.permohonan_titik_id`,
+    val
+  );
+  [tiang, kabel, titik].forEach(function (list) {
     list.forEach(function (f) { if (typeof f.geojson === 'string') f.geojson = JSON.parse(f.geojson); });
   });
-  return { tiang: tiang, kabel: kabel };
+  return { tiang: tiang, kabel: kabel, titik: titik };
 }
 
 // Jumlah fitur digitasi satu ruas (kabel baru boleh didigitasi setelah ada tiang)
@@ -270,6 +325,8 @@ async function sinkronTotalRuas(permohonan_ruas_id) {
                                WHERE permohonan_ruas_id = r.permohonan_ruas_id AND deletedAt IS NULL),
             r.panjang_kabel = (SELECT IFNULL(SUM(ROUND(panjang) * jumlah), 0) FROM permohonan_kabel
                                 WHERE permohonan_ruas_id = r.permohonan_ruas_id AND deletedAt IS NULL),
+            r.jumlah_titik = (SELECT IFNULL(SUM(jumlah), 0) FROM permohonan_titik
+                               WHERE permohonan_ruas_id = r.permohonan_ruas_id AND deletedAt IS NULL),
             r.lastUpdateAt = NOW()
       WHERE r.permohonan_ruas_id = ?`,
     [permohonan_ruas_id]
@@ -423,9 +480,10 @@ function terbilang(n) {
 // Data untuk halaman cetak SK (hanya permohonan yang sudah disetujui)
 async function getDataSk(permohonan) {
   var detail = await getDetail(permohonan);
-  var total = { tiang: 0, kabel: 0, retribusi_tiang: 0, retribusi_kabel: 0, retribusi: 0, komponen: {} };
+  var total = { tiang: 0, kabel: 0, titik: 0, retribusi_tiang: 0, retribusi_kabel: 0, retribusi: 0, komponen: {} };
   KOMPONEN_RETRIBUSI.forEach(function (k) { total.komponen[k.kode] = { jumlah: 0, retribusi: 0 }; });
   detail.ruas.forEach(function (r) {
+    total.titik += Number(r.jumlah_titik || 0);
     KOMPONEN_RETRIBUSI.forEach(function (k) {
       total.komponen[k.kode].jumlah += Number(r[k.jumlah] || 0);
       total.komponen[k.kode].retribusi += Number(r['retribusi_' + k.kode] || 0);
@@ -439,6 +497,7 @@ async function getDataSk(permohonan) {
   var kata = terbilang(total.retribusi).replace(/\s+/g, ' ').trim() || 'nol';
   total.terbilang = kata.charAt(0).toUpperCase() + kata.slice(1) + ' rupiah';
   detail.total = total;
+  detail.jenis = jenisIzin(permohonan);
   detail.konfig = Object.assign({}, KONFIG_SK);
   // Penandatangan dipilih saat permohonan lolos verifikasi (master_penandatangan); tanpa itu memakai KONFIG_SK
   var [ttd] = await sql_enak.raw(`SELECT nama, nip, jabatan, pangkat FROM master_penandatangan WHERE penandatangan_id = ?`, [permohonan.penandatangan_id || 0]);
@@ -477,9 +536,60 @@ function tglIndo(d) {
   return dua(d.getDate()) + '/' + dua(d.getMonth() + 1) + '/' + d.getFullYear();
 }
 
+// Reklame: rincian ruas & jumlah titik (tanpa retribusi). data = hasil getDataSk()
+function buatExcelReklame(data) {
+  var p = data.permohonan;
+  var wb = new ExcelJS.Workbook();
+  var ws = wb.addWorksheet('Permohonan ' + p.permohonan_id);
+  ws.columns = [6, 40, 10, 12, 12, 16, 16].map(function (w) { return { width: w }; });
+  ws.mergeCells('A1:G1');
+  ws.getCell('A1').value = 'Rincian Permohonan Izin Reklame';
+  ws.getCell('A1').font = { bold: true, size: 14 };
+  [
+    ['Vendor', (p.vendor && (p.vendor.fullname || p.vendor.username)) || '-'],
+    ['Pemohon', (p.nama_pemohon || '-') + (p.jabatan_pemohon ? ' (' + p.jabatan_pemohon + ')' : '')],
+    ['Telp / Email', (p.telp_pemohon || '-') + ' / ' + (p.email_pemohon || '-')],
+    ['Status', p.status === 'diajukan' && TAHAP_LABEL[p.tahap] ? 'Diproses - ' + TAHAP_LABEL[p.tahap] : (STATUS_LABEL[p.status] || p.status)],
+    ['Tgl. Diajukan', tglIndo(p.diajukanAt)],
+    ['No. / Tgl. SK', (p.no_sk || '-') + (p.tanggal_sk ? ' / ' + tglIndo(p.tanggal_sk) : '')]
+  ].forEach(function (info, i) {
+    var r = i + 2;
+    ws.getCell('A' + r).value = info[0];
+    ws.mergeCells('A' + r + ':B' + r);
+    ws.getCell('C' + r).value = ': ' + info[1];
+    ws.mergeCells('C' + r + ':G' + r);
+  });
+  var H = 9;
+  ws.getRow(H).values = ['No.', 'Ruas Jalan', 'Prov', 'Kab/Kota', 'No. Ruas', 'Panjang SK (Km)', 'Jumlah Titik'];
+  var r = H + 1;
+  data.ruas.forEach(function (x, i) {
+    var luar = Number(x.luar_ruas);
+    ws.getRow(r++).values = [i + 1, x.label_ruas,
+      luar || !x.no ? '-' : KODE_WILAYAH.prov, luar || !x.no ? '-' : KODE_WILAYAH.kab, luar ? '-' : (x.no || '-'),
+      luar || x.panjang == null ? null : Number(x.panjang), Number(x.jumlah_titik || 0)];
+  });
+  ws.mergeCells('A' + r + ':F' + r);
+  ws.getCell('A' + r).value = 'Total';
+  ws.getCell('A' + r).alignment = { horizontal: 'right' };
+  ws.getCell('G' + r).value = data.total.titik;
+  [H, r].forEach(function (n) {
+    ws.getRow(n).eachCell({ includeEmpty: true }, function (c) {
+      c.font = { bold: true };
+      c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: n === H ? 'FFD9E1F2' : 'FFFFF2CC' } };
+    });
+  });
+  for (var b = H; b <= r; b++) {
+    for (var c = 1; c <= 7; c++) {
+      ws.getRow(b).getCell(c).border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+    }
+  }
+  return wb;
+}
+
 // Workbook rincian ruas & retribusi satu permohonan; kolom mengikuti tabel ruas di form pengisian.
 // data = hasil getDataSk()
 async function buatExcel(data) {
+  if (data.jenis && data.jenis.kode === 'reklame') return buatExcelReklame(data);
   var p = data.permohonan;
   var K = KOMPONEN_RETRIBUSI;
   var nKolom = 6 + K.length * 3 + 1;           // No..Panjang, 3 kolom per komponen, total
@@ -615,8 +725,12 @@ function kirimDokumen(res, dokumen) {
 }
 
 module.exports = {
+  JENIS_IZIN: JENIS_IZIN,
+  jenisIzin: jenisIzin,
+  jenisDokumen: jenisDokumen,
   JENIS_DOKUMEN: JENIS_DOKUMEN,
   DOKUMEN_WAJIB: DOKUMEN_WAJIB,
+  dokumenWajib: dokumenWajib,
   upload_dokumen: upload_dokumen,
   KODE_WILAYAH: KODE_WILAYAH,
   NAMA_RUAS_LAIN: NAMA_RUAS_LAIN,

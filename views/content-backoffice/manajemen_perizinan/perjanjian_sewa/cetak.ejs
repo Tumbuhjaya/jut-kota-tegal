@@ -1,4 +1,4 @@
-<%
+<% var REKLAME = typeof jenis !== 'undefined' && jenis && jenis.kode === 'reklame'; var OBJEK = REKLAME ? 'Reklame' : 'Bangunan dan Jaringan Utilitas'; %><%
   // Data dari tahapan.getDataCetak(): permohonan, ruas, total, konfig, persetujuan, perjanjian_sewa
   var BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
   var HARI = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
@@ -42,8 +42,9 @@
     ? 'Pada hari ini ' + HARI[tgl.getDay()] + ' tanggal ' + kapital(terbilang(tgl.getDate())) + ' bulan ' + BULAN[tgl.getMonth()] +
       ' tahun ' + rapi(terbilang(tgl.getFullYear())) + ' (' + dua(tgl.getDate()) + '-' + dua(tgl.getMonth() + 1) + '-' + tgl.getFullYear() + ')'
     : 'Pada hari ini ' + titik + ' tanggal ' + titik + ' bulan ' + titik + ' tahun ' + titik;
-  var totalRp = 'Rp ' + angka(total.retribusi) + ',-';
-  var totalKata = kapital(judulKata(total.terbilang || ''));
+  // Reklame tanpa retribusi terhitung: nilai sewa diisi manual setelah dicetak
+  var totalRp = REKLAME ? 'Rp ' + isian : 'Rp ' + angka(total.retribusi) + ',-';
+  var totalKata = REKLAME ? isian : kapital(judulKata(total.terbilang || ''));
 
   // No. ruas "33.76.758" -> 3 kolom seperti format perjanjian; selain itu digabung 1 sel
   function selNoRuas(no) {
@@ -184,7 +185,7 @@
       <div>TENTANG</div>
       <div>PEMANFAATAN RUANG MILIK JALAN KOTA</div>
       <div>DI KOTA TEGAL</div>
-      <div>UNTUK PEMBANGUNAN/PENEMPATAN BANGUNAN DAN JARINGAN UTILITAS</div>
+      <div>UNTUK PEMBANGUNAN/PENEMPATAN <%= OBJEK.toUpperCase() %></div>
     </div>
 
     <p><%= kalimatTanggal %>, kami yang bertandatangan di bawah ini :</p>
@@ -233,28 +234,28 @@
     <p>Dalam Perjanjian ini yang dimaksud dengan :</p>
     <ol class="angka">
       <li>Pihak Kesatu adalah instansi yang memiliki dan/atau menguasai objek perjanjian.</li>
-      <li>Pihak Kedua adalah pihak yang memanfaatkan objek perjanjian untuk Pembangunan/Penempatan Bangunan dan Jaringan Utilitas.</li>
+      <li>Pihak Kedua adalah pihak yang memanfaatkan objek perjanjian untuk Pembangunan/Penempatan <%= OBJEK %>.</li>
       <li>Tanah adalah Barang Milik Daerah yang dimiliki, dikuasai dan dicatat sebagai aset Dinas Pekerjaan Umum dan Penataan Ruang yang berada dalam penatausahaan Pihak Kesatu serta menjadi objek Perjanjian.</li>
       <li>Wakil Pihak Kesatu adalah unsur dari Dinas Pekerjaan Umum dan Penataan Ruang Kota Tegal.</li>
       <li>Hari adalah hari kalender sesuai dengan kalender Gregorius, termasuk hari Sabtu dan Minggu serta hari libur nasional yang berawal dan berakhir pada tengah malam pukul 00.00 WIB.</li>
-      <li>Jaminan Pelaksanaan adalah penanggungan resiko atau kerugian terhadap Pihak Kesatu berupa Bank Garansi untuk menjamin pelaksanaan kewajiban Pihak Kedua selama masa Pelaksanaan pekerjaan Pembangunan/Penempatan Bangunan dan Jaringan Utilitas.</li>
-      <li>Jaminan Pemeliharaan adalah penanggungan resiko atau kerugian terhadap Pihak Kesatu untuk menjamin pelaksanaan kewajiban Pihak Kedua selama masa berlakunya Perjanjian atas hasil pekerjaan Pembangunan/Penempatan Bangunan dan Jaringan Utilitas.</li>
-      <li>Asuransi Kerugian Pihak Ketiga adalah penanggungan resiko atau kerugian terhadap selain Para Pihak berupa Polis Asuransi selama masa berlakunya Perjanjian atas hasil pekerjaan Pembangunan/Penempatan Bangunan dan Jaringan Utilitas.</li>
+      <li>Jaminan Pelaksanaan adalah penanggungan resiko atau kerugian terhadap Pihak Kesatu berupa Bank Garansi untuk menjamin pelaksanaan kewajiban Pihak Kedua selama masa Pelaksanaan pekerjaan Pembangunan/Penempatan <%= OBJEK %>.</li>
+      <li>Jaminan Pemeliharaan adalah penanggungan resiko atau kerugian terhadap Pihak Kesatu untuk menjamin pelaksanaan kewajiban Pihak Kedua selama masa berlakunya Perjanjian atas hasil pekerjaan Pembangunan/Penempatan <%= OBJEK %>.</li>
+      <li>Asuransi Kerugian Pihak Ketiga adalah penanggungan resiko atau kerugian terhadap selain Para Pihak berupa Polis Asuransi selama masa berlakunya Perjanjian atas hasil pekerjaan Pembangunan/Penempatan <%= OBJEK %>.</li>
     </ol>
 
     <div class="bagian">Bagian Kedua<br>Maksud dan Tujuan</div>
     <div class="pasal">Pasal 2</div>
     <ol class="ayat">
       <li>Perjanjian ini dimaksudkan sebagai dasar hukum bagi Para Pihak pada kegiatan Pemanfaatan barang milik Daerah berupa Ruang Milik Jalan Kota dalam penatausahaan Pihak Kesatu.</li>
-      <li>Perjanjian ini bertujuan untuk mengatur tugas dan tanggung jawab Para Pihak dalam kegiatan Pemanfaatan barang milik daerah berupa Ruang Milik Jalan Kota untuk Pembangunan/Penempatan Bangunan dan Jaringan Utilitas Pihak Kedua.</li>
+      <li>Perjanjian ini bertujuan untuk mengatur tugas dan tanggung jawab Para Pihak dalam kegiatan Pemanfaatan barang milik daerah berupa Ruang Milik Jalan Kota untuk Pembangunan/Penempatan <%= OBJEK %> Pihak Kedua.</li>
     </ol>
 
     <div class="bagian">Bagian Ketiga<br>Ruang Lingkup</div>
     <div class="pasal">Pasal 3</div>
     <p>Ruang lingkup Perjanjian ini adalah :</p>
     <ol class="angka">
-      <li>Pemanfaatan barang milik daerah berupa Ruang Milik Jalan Kota dalam penatausahaan Pihak Kesatu untuk Pembangunan/Penempatan Bangunan dan Jaringan Utilitas Pihak Kedua.</li>
-      <li>Pelaksanaan dan pengawasan pekerjaan, pemeliharaan, serta pembongkaran Bangunan dan Jaringan Utilitas, pembiayaan, biaya retribusi, jaminan dan asuransi.</li>
+      <li>Pemanfaatan barang milik daerah berupa Ruang Milik Jalan Kota dalam penatausahaan Pihak Kesatu untuk Pembangunan/Penempatan <%= OBJEK %> Pihak Kedua.</li>
+      <li>Pelaksanaan dan pengawasan pekerjaan, pemeliharaan, serta pembongkaran <%= OBJEK %>, pembiayaan, biaya retribusi, jaminan dan asuransi.</li>
     </ol>
 
     <!-- ================= BAB II ================= -->
@@ -302,29 +303,29 @@
 
     <div class="pasal">Pasal 12</div>
     <ol class="ayat">
-      <li>Dalam hal Perjanjian ini telah berakhir atau diakhiri oleh Para Pihak, maka Pihak Kedua wajib membongkar Bangunan dan Jaringan Utilitas miliknya serta mengembalikan kondisi Tanah ruang milik jalan kota seperti semula.</li>
+      <li>Dalam hal Perjanjian ini telah berakhir atau diakhiri oleh Para Pihak, maka Pihak Kedua wajib membongkar <%= OBJEK %> miliknya serta mengembalikan kondisi Tanah ruang milik jalan kota seperti semula.</li>
       <li>Dalam hal Pihak Kedua tidak melakukan pembongkaran sebagaimana dimaksud pada ayat (1), Pihak Kesatu dapat melakukan pembongkaran dan pengembalian kondisi tanah seperti semula.</li>
-      <li>Dalam hal pembongkaran dilakukan oleh Pihak Kesatu sebagaimana dimaksud pada ayat (2), Pihak Kesatu dapat menyimpan atau mengembalikan Bangunan dan Jaringan Utilitas kepada Pihak Kedua.</li>
+      <li>Dalam hal pembongkaran dilakukan oleh Pihak Kesatu sebagaimana dimaksud pada ayat (2), Pihak Kesatu dapat menyimpan atau mengembalikan <%= OBJEK %> kepada Pihak Kedua.</li>
     </ol>
 
     <div class="bagian">Bagian Ketiga<br>Hak dan Kewajiban Para Pihak</div>
     <div class="pasal">Pasal 13</div>
     <p>Dalam Perjanjian ini, Pihak Kesatu memiliki Hak dan Kewajiban sebagai berikut :</p>
     <ol class="angka">
-      <li>Memperbolehkan Pihak Kedua untuk memanfaatkan ruang milik jalan kota sebagaimana dimaksud pada Pasal 4 untuk Pembangunan/Penempatan Bangunan dan Jaringan Utilitas.</li>
-      <li>Melakukan pengawasan terhadap pelaksanaan pekerjaan, pemeliharaan, pembongkaran dan/atau pemindahan Bangunan dan Jaringan Utilitas serta pengembalian kondisi Tanah seperti semula.</li>
-      <li>Memberikan persetujuan atau arahan kepada Pihak Kedua terhadap pelaksanaan pekerjaan, pemeliharaan, pembongkaran dan/atau pemindahan Bangunan dan Jaringan Utilitas serta pengembalian kondisi Tanah seperti semula.</li>
+      <li>Memperbolehkan Pihak Kedua untuk memanfaatkan ruang milik jalan kota sebagaimana dimaksud pada Pasal 4 untuk Pembangunan/Penempatan <%= OBJEK %>.</li>
+      <li>Melakukan pengawasan terhadap pelaksanaan pekerjaan, pemeliharaan, pembongkaran dan/atau pemindahan <%= OBJEK %> serta pengembalian kondisi Tanah seperti semula.</li>
+      <li>Memberikan persetujuan atau arahan kepada Pihak Kedua terhadap pelaksanaan pekerjaan, pemeliharaan, pembongkaran dan/atau pemindahan <%= OBJEK %> serta pengembalian kondisi Tanah seperti semula.</li>
       <li>Menyampaikan perhitungan atau penetapan biaya retribusi atas tanah objek perjanjian serta melakukan penagihan kepada Pihak Kedua.</li>
     </ol>
 
     <div class="pasal">Pasal 14</div>
     <p>Dalam Perjanjian ini, Pihak Kedua memiliki Hak dan Kewajiban sebagai berikut :</p>
     <ol class="angka">
-      <li>Memanfaatkan ruang milik jalan kota sebagaimana dimaksud dalam Pasal 6 untuk Pembangunan/Penempatan Bangunan dan Jaringan Utilitas selama jangka waktu Perjanjian ini.</li>
+      <li>Memanfaatkan ruang milik jalan kota sebagaimana dimaksud dalam Pasal 6 untuk Pembangunan/Penempatan <%= OBJEK %> selama jangka waktu Perjanjian ini.</li>
       <li>Membayar biaya retribusi sebagaimana dimaksud dalam Pasal 21, di muka, secara penuh dan sekaligus ke kas daerah.</li>
       <li>Mengembalikan tanah dalam kondisi baik kepada Pihak Kesatu selambat-lambatnya 30 (tiga puluh) hari setelah berakhirnya atau diakhirinya Perjanjian ini.</li>
       <li>Dengan biaya sendiri membongkar, memindahkan, mengembalikan tanah dan memperbaiki fungsi ruang milik jalan kota sebagaimana dimaksud dalam Pasal 4 dalam kondisi baik setelah Perjanjian ini berakhir atau diakhiri oleh Para Pihak.</li>
-      <li>Menjaga kondisi dan/atau memperbaiki kerusakan yang mungkin timbul akibat Pembangunan/Penempatan Bangunan dan Jaringan Utilitas terhadap ruang milik jalan kota sebagaimana dimaksud dalam Pasal 4 selama jangka waktu Perjanjian ini.</li>
+      <li>Menjaga kondisi dan/atau memperbaiki kerusakan yang mungkin timbul akibat Pembangunan/Penempatan <%= OBJEK %> terhadap ruang milik jalan kota sebagaimana dimaksud dalam Pasal 4 selama jangka waktu Perjanjian ini.</li>
       <li>Tidak mengalihkan Pemanfaatan ruang milik jalan kota sebagaimana dimaksud dalam Pasal 4 kepada pihak lain baik untuk sebagian maupun seluruhnya.</li>
     </ol>
 
@@ -380,22 +381,22 @@
 
     <div class="bagian">Bagian Kedua<br>Biaya Pelaksanaan, Pemeliharaan, Pembongkaran, Pemindahan<br>dan Pengembalian Kondisi</div>
     <div class="pasal">Pasal 24</div>
-    <p>Pihak Kedua menanggung biaya pelaksanaan pekerjaan, pemeliharaan dan perbaikan atas Pembangunan/Penempatan Bangunan dan Jaringan Utilitas sebagaimana dimaksud dalam Pasal 8 dan Pasal 10.</p>
+    <p>Pihak Kedua menanggung biaya pelaksanaan pekerjaan, pemeliharaan dan perbaikan atas Pembangunan/Penempatan <%= OBJEK %> sebagaimana dimaksud dalam Pasal 8 dan Pasal 10.</p>
 
     <div class="pasal">Pasal 25</div>
-    <p>Pihak Kedua menanggung biaya pembongkaran, pemindahan dan/atau Pembangunan/Penempatan Bangunan dan Jaringan Utilitas dan biaya pengembalian kondisi Tanah sebagaimana dimaksud dalam Pasal 11 dan Pasal 14.</p>
+    <p>Pihak Kedua menanggung biaya pembongkaran, pemindahan dan/atau Pembangunan/Penempatan <%= OBJEK %> dan biaya pengembalian kondisi Tanah sebagaimana dimaksud dalam Pasal 11 dan Pasal 14.</p>
 
     <div class="pasal">Pasal 26</div>
     <ol class="ayat">
-      <li>Pihak Kedua menanggung biaya pembongkaran dan/atau penyimpanan Bangunan dan Jaringan Utilitas yang dilakukan oleh Pihak Kesatu sebagaimana dimaksud dalam Pasal 12.</li>
-      <li>Pihak Kesatu atau Wakil Pihak Kesatu dapat menagihkan biaya pembongkaran dan/atau penyimpanan Bangunan dan Jaringan Utilitas sebagaimana dimaksud pada ayat (1) kepada Pihak Kedua.</li>
-      <li>Pihak Kesatu dapat mencairkan Jaminan Pemeliharaan sebagaimana dimaksud dalam Pasal 28 sebagai pengganti biaya pembongkaran dan/atau penyimpanan Bangunan dan Jaringan Utilitas sebagaimana dimaksud pada ayat (2).</li>
-      <li>Selama tagihan biaya pembongkaran dan/atau penyimpanan Bangunan dan Jaringan Utilitas belum dibayarkan atau pencairan Jaminan Pemeliharaan belum terlaksana, sebagaimana dimaksud pada ayat (2) dan (3) maka menjadi piutang kas Daerah kepada Pihak Kedua.</li>
+      <li>Pihak Kedua menanggung biaya pembongkaran dan/atau penyimpanan <%= OBJEK %> yang dilakukan oleh Pihak Kesatu sebagaimana dimaksud dalam Pasal 12.</li>
+      <li>Pihak Kesatu atau Wakil Pihak Kesatu dapat menagihkan biaya pembongkaran dan/atau penyimpanan <%= OBJEK %> sebagaimana dimaksud pada ayat (1) kepada Pihak Kedua.</li>
+      <li>Pihak Kesatu dapat mencairkan Jaminan Pemeliharaan sebagaimana dimaksud dalam Pasal 28 sebagai pengganti biaya pembongkaran dan/atau penyimpanan <%= OBJEK %> sebagaimana dimaksud pada ayat (2).</li>
+      <li>Selama tagihan biaya pembongkaran dan/atau penyimpanan <%= OBJEK %> belum dibayarkan atau pencairan Jaminan Pemeliharaan belum terlaksana, sebagaimana dimaksud pada ayat (2) dan (3) maka menjadi piutang kas Daerah kepada Pihak Kedua.</li>
     </ol>
 
     <div class="bagian">Bagian Ketiga<br>Risiko Kerugian</div>
     <div class="pasal">Pasal 27</div>
-    <p>Pihak Kedua menanggung seluruh kerugian yang dialami oleh Pihak Kesatu dan/atau pengguna jalan yang diakibatkan oleh kelalaian Pihak Kedua atas Pembangunan/Penempatan Bangunan dan Jaringan Utilitas milik Pihak Kedua selama Jangka Waktu Perjanjian.</p>
+    <p>Pihak Kedua menanggung seluruh kerugian yang dialami oleh Pihak Kesatu dan/atau pengguna jalan yang diakibatkan oleh kelalaian Pihak Kedua atas Pembangunan/Penempatan <%= OBJEK %> milik Pihak Kedua selama Jangka Waktu Perjanjian.</p>
 
     <div class="pasal">Pasal 28</div>
     <ol class="ayat">
@@ -405,7 +406,7 @@
 
     <div class="pasal">Pasal 29</div>
     <ol class="ayat">
-      <li>Pihak Kesatu sebagai pihak terjamin, dapat mencairkan Jaminan Pelaksanaan sebagaimana dimaksud dalam Pasal 28, sebagai penggantian atas kerugian yang terjadi akibat Pelaksanaan Pembangunan/Penempatan Bangunan dan Jaringan Utilitas.</li>
+      <li>Pihak Kesatu sebagai pihak terjamin, dapat mencairkan Jaminan Pelaksanaan sebagaimana dimaksud dalam Pasal 28, sebagai penggantian atas kerugian yang terjadi akibat Pelaksanaan Pembangunan/Penempatan <%= OBJEK %>.</li>
       <li>Pencairan Jaminan Pelaksanaan sebagaimana dimaksud pada ayat (1), dilakukan jika Pihak Kedua gagal menanggung kerugian yang terjadi setelah diberikan peringatan secara tertulis oleh Pihak Kesatu atau Wakil Pihak Kesatu.</li>
     </ol>
 
@@ -417,7 +418,7 @@
 
     <div class="pasal">Pasal 31</div>
     <ol class="ayat">
-      <li>Pihak Kesatu sebagai pihak terjamin, dapat mencairkan Jaminan Pemeliharaan sebagaimana dimaksud dalam Pasal 30, sebagai penggantian atas kerugian yang terjadi akibat Pembangunan/Penempatan Bangunan dan Jaringan Utilitas selama jangka waktu Perjanjian.</li>
+      <li>Pihak Kesatu sebagai pihak terjamin, dapat mencairkan Jaminan Pemeliharaan sebagaimana dimaksud dalam Pasal 30, sebagai penggantian atas kerugian yang terjadi akibat Pembangunan/Penempatan <%= OBJEK %> selama jangka waktu Perjanjian.</li>
       <li>Pencairan Jaminan Pemeliharaan sebagaimana dimaksud pada ayat (1), dilakukan jika Pihak Kedua gagal menanggung kerugian yang terjadi setelah diberikan peringatan secara tertulis oleh Pihak Kesatu atau Wakil Pihak Kesatu.</li>
     </ol>
 
@@ -429,7 +430,7 @@
 
     <div class="pasal">Pasal 33</div>
     <ol class="ayat">
-      <li>Pihak Kesatu dapat mengajukan klaim Asuransi Kerugian Pihak Ketiga (Polis Asuransi <i>Public Liability</i>) sebagaimana dimaksud dalam Pasal 32, sebagai penggantian atas kerugian pihak ketiga yang terjadi akibat Pembangunan/Penempatan Bangunan dan Jaringan Utilitas selama jangka waktu perjanjian.</li>
+      <li>Pihak Kesatu dapat mengajukan klaim Asuransi Kerugian Pihak Ketiga (Polis Asuransi <i>Public Liability</i>) sebagaimana dimaksud dalam Pasal 32, sebagai penggantian atas kerugian pihak ketiga yang terjadi akibat Pembangunan/Penempatan <%= OBJEK %> selama jangka waktu perjanjian.</li>
       <li>Klaim Asuransi Kerugian Pihak Ketiga (Polis Asuransi <i>Public Liability</i>) sebagaimana dimaksud pada ayat (1), dilakukan jika Pihak Kedua gagal menanggung kerugian pihak ketiga yang terjadi setelah diberikan peringatan oleh Pihak Kesatu atau Wakil Pihak Kesatu.</li>
     </ol>
 

@@ -567,7 +567,7 @@
                                             <li class="list-inline-item"><i class="fas fa-chevron-right" style="color: #0c1e35;"></i></li>
                                             <li class="list-inline-item"><a href="<%= url_kembali %>" style="color: #0c1e35;font-weight: 300;">Data Permohonan Izin</a></li>
                                             <li class="list-inline-item"><i class="fas fa-chevron-right" style="color: #0c1e35;"></i></li>
-                                            <li class="list-inline-item"><a href="/perizinan/jaringan_utilitas/ruas_jalan/<%= permohonan.permohonan_id %>" style="color: #0c1e35;font-weight: 300;">Data Ruas Jalan</a></li>
+                                            <li class="list-inline-item"><a href="<%= base %>/ruas_jalan/<%= permohonan.permohonan_id %>" style="color: #0c1e35;font-weight: 300;">Data Ruas Jalan</a></li>
                                             <li class="list-inline-item"><i class="fas fa-chevron-right" style="color: #0c1e35;"></i></li>
 
                                             <li class="list-inline-item"><span style="color: #0c1e35;">Digitasi Data</span></li>
@@ -629,7 +629,7 @@
                                     <div class="col-12">
                                         <hr>
                                         <div class="w-100-flex" style="justify-content: center;flex-wrap: wrap;gap: 10px;">
-                                            <a href="/perizinan/jaringan_utilitas/ruas_jalan/<%= permohonan.permohonan_id %>" class="btn btn-secondary" style="padding: 0.85rem 40px;border-radius: 12px;"><i class="fas fa-arrow-left"></i>&nbsp;&nbsp;Kembali</a>
+                                            <a href="<%= base %>/ruas_jalan/<%= permohonan.permohonan_id %>" class="btn btn-secondary" style="padding: 0.85rem 40px;border-radius: 12px;"><i class="fas fa-arrow-left"></i>&nbsp;&nbsp;Kembali</a>
                                             <% if (bisa_ubah) { %>
                                             <button type="button" class="btn btn-gradient" style="padding-left: 90px;padding-right: 90px;" onclick="simpanDigitasi()"><i class="fas fa-save"></i>&nbsp;&nbsp;Simpan</button>
                                             <% } %>
@@ -662,7 +662,7 @@
         var RUAS_MASTER_ID = <%= ruas.ruas_id || 'null' %>;
         var JENIS = '<%= jenis %>';
         var BISA_UBAH = <%= bisa_ubah ? 'true' : 'false' %>;
-        var API_DIGITASI = rooturl + '/perizinan/jaringan_utilitas/api/digitasi/' + JENIS + '/' + ID_PERMOHONAN + '/' + ID_RUAS;
+        var API_DIGITASI = rooturl + '<%= base %>/api/digitasi/' + JENIS + '/' + ID_PERMOHONAN + '/' + ID_RUAS;
 
         $(document).ready(function () {
             // Init Select2

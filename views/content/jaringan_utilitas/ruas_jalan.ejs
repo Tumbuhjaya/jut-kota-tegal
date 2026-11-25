@@ -566,21 +566,25 @@
                                 <div class="row mt-3">
                                     <div class="col-12 col-lg-12 col-xl-12">
                                         <div class="alert alert-success" role="alert">
-                                            <!-- Tahap awal: provider + dokumen persyaratan diverifikasi admin bersamaan -->
-                                            <% if (provider_ok) { %>
-                                            <div class="mb-3"><span class="badge badge-success"><i class="fas fa-check-circle"></i>&nbsp; Provider & persyaratan terverifikasi</span></div>
+                                            <!-- Tahap awal (khusus jenis dengan verifikasi awal / utilitas): provider + dokumen persyaratan diverifikasi admin bersamaan.
+                                                 Reklame tanpa verifikasi awal: dokumen langsung diupload, diperiksa saat verifikasi permohonan. -->
+                                            <% var PROVIDER = jenis_izin.pakai_provider; var VERIF = jenis_izin.verifikasi_awal; var objekVerif = PROVIDER ? 'provider dan persyaratan' : 'dokumen persyaratan'; %>
+                                            <% if (!VERIF) { %>
+                                            <% } else if (provider_ok) { %>
+                                            <div class="mb-3"><span class="badge badge-success"><i class="fas fa-check-circle"></i>&nbsp; <%= PROVIDER ? 'Provider & persyaratan' : 'Dokumen persyaratan' %> terverifikasi</span></div>
                                             <% } else if (permohonan.status_provider === 'menunggu') { %>
                                             <div class="alert alert-warning py-2" role="alert">
                                                 <i class="fas fa-hourglass-half"></i>&nbsp; <strong>Menunggu verifikasi admin.</strong>
-                                                Pengisian ruas jalan terbuka setelah provider dan persyaratan terverifikasi.
+                                                Pengisian ruas jalan terbuka setelah <%= objekVerif %> terverifikasi.
                                             </div>
                                             <% } else if (permohonan.status_provider === 'ditolak') { %>
                                             <div class="alert alert-danger py-2" role="alert">
                                                 <strong>Verifikasi ditolak:</strong> <%= permohonan.keterangan_provider || '-' %><br/>
-                                                <small>Perbaiki provider / dokumen persyaratan lalu klik Verifikasi lagi.</small>
+                                                <small>Perbaiki <%= PROVIDER ? 'provider / ' : '' %>dokumen persyaratan lalu klik Verifikasi lagi.</small>
                                             </div>
                                             <% } %>
 
+                                            <% if (PROVIDER) { %>
                                             <div class="form-group">
                                                 <label for="provider_usulan">Provider</label>
                                                 <% if (provider_ok) { %>
@@ -591,6 +595,7 @@
                                             </div>
 
                                             <hr>
+                                            <% } %>
 
                                             <div class="form-group<%= bisa_isi_awal ? '' : ' mb-0' %>">
                                                 <label for="">Persyaratan Teknis</label><br/>
@@ -600,10 +605,10 @@
                                                 <span id="info_dokumen" class="ml-2"></span>
                                             </div>
 
-                                            <% if (bisa_isi_awal) { %>
+                                            <% if (VERIF && bisa_isi_awal) { %>
                                             <hr>
                                             <button type="button" class="btn btn-gradient" id="btn_verifikasi_provider" onclick="verifikasiProvider()"><i class="fas fa-check"></i>&nbsp; Verifikasi</button>
-                                            <small class="text-muted ml-2"><i>Provider dan dokumen persyaratan akan diverifikasi oleh admin.</i></small>
+                                            <small class="text-muted ml-2"><i><%= PROVIDER ? 'Provider dan dokumen' : 'Dokumen' %> persyaratan akan diverifikasi oleh admin.</i></small>
                                             <% } %>
                                         </div>
                                     </div>
@@ -623,7 +628,11 @@
                                                         <% komponen.forEach(function (k) { %>
                                                         <th colspan="3" class="text-center"><%= k.label %></th>
                                                         <% }) %>
+                                                        <% if (jenis_izin.pakai_retribusi) { %>
                                                         <th rowspan="3" class="text-center" style="min-width: 180px;">Jumlah Total Retribusi (Rp)</th>
+                                                        <% } else { %>
+                                                        <th rowspan="3" class="text-center" style="min-width: 120px;">Jumlah Titik</th>
+                                                        <% } %>
                                                     </tr>
                                                     <tr>
                                                         <% komponen.forEach(function (k) { %>
@@ -650,7 +659,11 @@
                                                         <th></th>
                                                         <th class="text-right" id="total_ret_<%= k.kode %>">Rp 0,-</th>
                                                         <% }) %>
+                                                        <% if (jenis_izin.pakai_retribusi) { %>
                                                         <th class="text-right" id="total_ret">Rp 0,-</th>
+                                                        <% } else { %>
+                                                        <th class="text-center" id="total_titik">0</th>
+                                                        <% } %>
                                                     </tr>
                                                 </tfoot>
                                             </table>
@@ -658,7 +671,11 @@
                                             <div class="w-100-flex" style="justify-content: flex-start;flex-wrap: wrap;align-items: flex-start;margin-bottom: 15px;">
                                                 <button type="button" class="btn btn-gradient-yellow btn-sm" onclick="tambahBaris()"><i class="fas fa-plus"></i> &nbsp;&nbsp;Tambah Baris Tabel</button>
                                             </div>
+                                            <% if (jenis_izin.pakai_retribusi) { %>
                                             <small class="text-muted"><i>Ruas jalan yang dikosongkan dianggap <b>di luar ruas</b>. Panjang kabel (Atas Tanah D &le; 15 cm) otomatis mengikuti hasil digitasi jika sudah didigitasi.</i></small>
+                                            <% } else { %>
+                                            <small class="text-muted"><i>Ruas jalan yang dikosongkan dianggap <b>di luar ruas</b>. Simpan baris ruas, lalu klik tombol <i class="fas fa-map-pin"></i> untuk menandai titik reklame di peta; jumlah titik mengikuti hasil digitasi.</i></small>
+                                            <% } %>
                                             <% } %>
                                         </div>
                                     </div>
@@ -775,7 +792,7 @@
                                         <hr>
 
                                         <div class="form-group">
-                                            <label for="pernyataan_kesanggupan">Surat Pernyataan kesanggupan memenuhi dan mematuhi semua persyaratan yang ditentukan dalam pembangunan/penempatan bangunan dan jaringan utilitas.</label>
+                                            <label for="pernyataan_kesanggupan">Surat Pernyataan kesanggupan memenuhi dan mematuhi semua persyaratan yang ditentukan dalam pembangunan/penempatan <%= jenis_izin.kode === 'reklame' ? 'reklame' : 'bangunan dan jaringan utilitas' %>.</label>
                                             <div class="custom-file">
                                                 <input type="file" class="custom-file-input" id="pernyataan_kesanggupan" name="pernyataan_kesanggupan" accept=".pdf,.jpg,.jpeg,.png">
                                                 <label class="custom-file-label" for="pernyataan_kesanggupan">Pilih File</label>
@@ -783,6 +800,7 @@
                                             <small class="form-text text-muted"><i>Di atas kertas bermaterai sesuai peraturan yang berlaku</i></small>
                                             <small class="form-text dok-info" data-jenis="pernyataan_kesanggupan"></small>
                                         </div>
+<% if (jenis_izin.pakai_retribusi) { %>
 
                                         <hr>
 
@@ -794,6 +812,7 @@
                                             </div>
                                             <small class="form-text dok-info" data-jenis="pernyataan_retribusi"></small>
                                         </div>
+<% } %>
                                     </div>
                                 </div>
 
@@ -809,7 +828,7 @@
                                 <div class="row mt-3">
                                     <div class="col-12">
                                         <div class="form-group">
-                                            <label for="gambar_lokasi">Gambar Lokasi Pembangunan/Penempatan Bangunan dan Jaringan Utilitas</label>
+                                            <label for="gambar_lokasi"><%= jenis_dokumen.gambar_lokasi %></label>
                                             <div class="custom-file">
                                                 <input type="file" class="custom-file-input" id="gambar_lokasi" name="gambar_lokasi" accept=".pdf,.jpg,.jpeg,.png">
                                                 <label class="custom-file-label" for="gambar_lokasi">Pilih File</label>
@@ -825,7 +844,7 @@
                                                 <input type="file" class="custom-file-input" id="rencana_teknis" name="rencana_teknis" accept=".pdf,.jpg,.jpeg,.png">
                                                 <label class="custom-file-label" for="rencana_teknis">Pilih File</label>
                                             </div>
-                                            <small class="form-text text-muted"><i>Gambar Konstruksi dan bahan Konstruksi bangunan dan jaringan utilitas</i></small>
+                                            <small class="form-text text-muted"><i>Gambar Konstruksi dan bahan Konstruksi <%= jenis_izin.kode === 'reklame' ? 'reklame' : 'bangunan dan jaringan utilitas' %></i></small>
                                             <small class="form-text dok-info" data-jenis="rencana_teknis"></small>
                                         </div>
 
@@ -882,10 +901,19 @@
         var ID_PERMOHONAN = <%= permohonan.permohonan_id %>;
         // Persyaratan, ruas jalan, simpan & ajukan baru tampil setelah provider diverifikasi admin
         var PROVIDER_OK = <%= provider_ok ? 'true' : 'false' %>;
+        // Utilitas: provider, retribusi, digitasi tiang & kabel; reklame: tanpa provider & retribusi, digitasi titik
+        var PAKAI_PROVIDER = <%= jenis_izin.pakai_provider ? 'true' : 'false' %>;
+        var PAKAI_RETRIBUSI = <%= jenis_izin.pakai_retribusi ? 'true' : 'false' %>;
+        var JENIS_DIGITASI = <%- JSON.stringify(jenis_izin.digitasi) %>;
+        var TOMBOL_DIGITASI = {
+            tiang: '<button type="button" class="btn btn-info btn-digitasi" data-jenis="tiang" title="Digitasi Tiang"><i class="fas fa-map-pin"></i></button>',
+            kabel: '<button type="button" class="btn btn-dark btn-digitasi" data-jenis="kabel" title="Digitasi Kabel"><i class="fas fa-grip-lines"></i></button>',
+            titik: '<button type="button" class="btn btn-info btn-digitasi" data-jenis="titik" title="Digitasi Titik Reklame"><i class="fas fa-map-pin"></i></button>'
+        };
         var BISA_UBAH = <%= bisa_ubah ? 'true' : 'false' %> && PROVIDER_OK;
-        var API = rooturl + '/perizinan/jaringan_utilitas/api/';
+        var API = rooturl + '<%= base %>/api/';
         var URL_KEMBALI = '<%= url_kembali %>';
-        var JUMLAH_DOKUMEN_WAJIB = 8; // semua kecuali surat kuasa
+        var JUMLAH_DOKUMEN_WAJIB = <%= jenis_izin.pakai_retribusi ? 8 : 7 %>; // semua kecuali surat kuasa (reklame tanpa pernyataan retribusi)
         var KODE_WILAYAH = <%- JSON.stringify(kode_wilayah) %>;
         var KOMPONEN = <%- JSON.stringify(komponen) %>; // komponen retribusi per ruas (helpper/permohonan.js)
 
@@ -925,8 +953,7 @@
             var $tr = $('<tr>' +
                 '<td class="no"></td>' +
                 '<td><div class="w-100-flex" style="justify-content: center;flex-wrap: wrap;align-items: center;gap: 5px;">' +
-                    '<button type="button" class="btn btn-info btn-digitasi" data-jenis="tiang" title="Digitasi Tiang"><i class="fas fa-map-pin"></i></button>' +
-                    '<button type="button" class="btn btn-dark btn-digitasi" data-jenis="kabel" title="Digitasi Kabel"><i class="fas fa-grip-lines"></i></button>' +
+                    JENIS_DIGITASI.map(function (j) { return TOMBOL_DIGITASI[j]; }).join('') +
                     (BISA_UBAH ? '<button type="button" class="btn btn-danger btn-hapus" title="Hapus"><i class="fas fa-trash"></i></button>' : '') +
                 '</div></td>' +
                 '<td><select class="form-control pilih-ruas" ' + dis + '><option value="' + idRuasLain + '">-- Di luar ruas (Jalan Lain) --</option>' + opsiRuas + '</select></td>' +
@@ -935,7 +962,8 @@
                 '<td class="text-center c-no"></td>' +
                 '<td class="text-center c-panjang"></td>' +
                 selKomponen +
-                '<td class="text-right c-ret-total"></td>' +
+                (PAKAI_RETRIBUSI ? '<td class="text-right c-ret-total"></td>'
+                    : '<td class="text-center c-titik">' + Number(row.jumlah_titik || 0) + '</td>') +
                 '</tr>');
             $tr.data('row', row);
             $tr.find('.pilih-ruas').val(row.ruas_id || idRuasLain);
@@ -998,6 +1026,10 @@
                 $('#total_ret_' + k.kode).text(rupiah(t[k.kode].retribusi));
             });
             $('#total_ret').text(rupiah(t.total));
+            // Reklame: total titik hasil digitasi
+            var titik = 0;
+            $('#tbody_ruas tr').each(function () { titik += Number(($(this).data('row') || {}).jumlah_titik || 0); });
+            $('#total_titik').text(angka(titik));
         }
 
         function isiTabel(rows) {
@@ -1015,11 +1047,12 @@
         });
 
         async function verifikasiProvider() {
-            var nama = $.trim($('#provider_usulan').val());
-            if (!nama) return swal('Belum diisi', 'Ketik nama provider terlebih dahulu', 'warning');
+            var nama = PAKAI_PROVIDER ? $.trim($('#provider_usulan').val()) : '';
+            if (PAKAI_PROVIDER && !nama) return swal('Belum diisi', 'Ketik nama provider terlebih dahulu', 'warning');
             var yakin = await swal({
                 title: 'Verifikasi',
-                text: 'Provider "' + nama + '" dan dokumen persyaratan akan dikirim ke admin untuk diverifikasi. Selama diverifikasi data tidak bisa diubah. Lanjutkan?',
+                text: (PAKAI_PROVIDER ? 'Provider "' + nama + '" dan dokumen' : 'Dokumen') +
+                    ' persyaratan akan dikirim ke admin untuk diverifikasi. Selama diverifikasi data tidak bisa diubah. Lanjutkan?',
                 icon: 'info', buttons: ['Batal', 'Kirim']
             });
             if (!yakin) return;
@@ -1030,7 +1063,7 @@
                 contentType: 'application/json',
                 data: JSON.stringify({ provider_usulan: nama })
             }).done(function () {
-                swal('Berhasil', 'Provider dan persyaratan dikirim ke admin untuk diverifikasi', 'success').then(function () {
+                swal('Berhasil', (PAKAI_PROVIDER ? 'Provider dan persyaratan' : 'Dokumen persyaratan') + ' dikirim ke admin untuk diverifikasi', 'success').then(function () {
                     window.location.reload();
                 });
             }).fail(function (xhr) {
@@ -1066,7 +1099,7 @@
             }
             var row = rows ? rows[index] : $tr.data('row');
             if (!row || !row.permohonan_ruas_id) return;
-            window.location.href = rooturl + '/perizinan/jaringan_utilitas/ruas_jalan/' + jenis + '/' + ID_PERMOHONAN + '/' + row.permohonan_ruas_id;
+            window.location.href = rooturl + '<%= base %>/ruas_jalan/' + jenis + '/' + ID_PERMOHONAN + '/' + row.permohonan_ruas_id;
         });
 
         // Mengembalikan daftar ruas tersimpan, atau null jika gagal
@@ -1122,7 +1155,7 @@
             dokumen.forEach(function (d) {
                 if (d.jenis_dokumen !== 'surat_kuasa') wajib++;
                 $('.dok-info[data-jenis=' + d.jenis_dokumen + ']').html(
-                    'File saat ini: <a href="' + rooturl + '/perizinan/jaringan_utilitas/dokumen/' + ID_PERMOHONAN + '/' +
+                    'File saat ini: <a href="' + rooturl + '<%= base %>/dokumen/' + ID_PERMOHONAN + '/' +
                     d.permohonan_dokumen_id + '" target="_blank">' + esc(d.nama_asli) + '</a>');
             });
             $('#info_dokumen').html(wajib + '/' + JUMLAH_DOKUMEN_WAJIB + ' dokumen wajib terupload');

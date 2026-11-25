@@ -508,7 +508,8 @@
                             <div class="shortcut-content">
                                 <div class="row">
                                     <div class="col-12">
-                                        <h6 style="font-size: 24px"><strong>Data Permohonan Perizinan Jaringan Utilitas</h6>
+                                        <% var UTILITAS = jenis_izin.kode === 'jaringan_utilitas'; %>
+                                        <h6 style="font-size: 24px"><strong>Data Permohonan Perizinan <%= jenis_izin.label %></h6>
                                         <ul class="list-inline mb-0">
                                             <li class="list-inline-item"><a href="/perizinan/shortcut" style="color: #0c1e35;font-weight: 300;">Beranda</a></li>
                                             <li class="list-inline-item"><i class="fas fa-chevron-right" style="color: #0c1e35;"></i></li>
@@ -517,7 +518,7 @@
                                         <hr>
                                     </div>
                                     <div class="col-12">
-                                        <a href="/perizinan/jaringan_utilitas/baru" class="btn btn-primary fw-600"><i class="fas fa-plus"></i>&nbsp;&nbsp;Tambah Data Permohonan Izin Jaringan Utilitas</a>
+                                        <a href="<%= base %>/baru" class="btn btn-primary fw-600"><i class="fas fa-plus"></i>&nbsp;&nbsp;Tambah Data Permohonan Izin <%= jenis_izin.label %></a>
                                     </div>
                                 </div>
 
@@ -529,17 +530,23 @@
                                                     <tr>
                                                         <th class="text-center" rowspan="2">No.</th>
                                                         <th class="text-center" rowspan="2">Tanggal Permohonan</th>
+                                                        <% if (UTILITAS) { %>
                                                         <th class="text-center" rowspan="2">Provider</th>
-                                                        <th class="text-center" colspan="4">Total</th>
+                                                        <% } %>
+                                                        <th class="text-center" colspan="<%= UTILITAS ? 4 : 2 %>">Total</th>
                                                         <th class="text-center" style="min-width: 100px;" rowspan="2">Status</th>
                                                          <th class="text-center" rowspan="2">Nomor SK</th>
                                                         <th class="text-center" style="min-width: 100px;" rowspan="2">Option</th>
                                                     </tr>
                                                     <tr>
                                                         <th>Ruas Jalan</th>
+                                                        <% if (UTILITAS) { %>
                                                         <th>Tiang</th>
                                                         <th style="min-width: 80px;;">Panjang<br/>Kabel (m)</th>
                                                         <th style="min-width: 140px;">Retribusi</th>
+                                                        <% } else { %>
+                                                        <th>Titik Reklame</th>
+                                                        <% } %>
                                                     </tr>
                                                 </thead>
 
@@ -634,24 +641,27 @@
             },
             "processing": true,
             "ordering": false,
-            "ajax": { url: rooturl + '/perizinan/jaringan_utilitas/api/list', type: 'POST' },
+            "ajax": { url: rooturl + '<%= base %>/api/list', type: 'POST' },
             "columns": [
                 { data: null, defaultContent: '' },
                 { data: null, render: function (r) { return tanggal(r.diajukanAt || r.insertedAt); } },
-                
+                <% if (UTILITAS) { %>
                 { data: 'provider', render: function (d) { return esc(d || '-'); } },
                 { data: 'jml_ruas', className: 'text-center' },
                 { data: 'jml_tiang', className: 'text-center' },
                 { data: 'jml_kabel', className: 'text-center', render: function (d) { return Math.round(Number(d)).toLocaleString('id-ID') + ' m'; } },
                 { data: 'retribusi', className: 'text-right', render: rupiah },
-               
+                <% } else { %>
+                { data: 'jml_ruas', className: 'text-center' },
+                { data: 'jml_titik', className: 'text-center' },
+                <% } %>
                 { data: null, render: function (r) {
                     return badgeStatus(r) +
                            (r.keterangan ? '<br/><span>' + esc(r.keterangan) + '</span>' : '');
                 } },
                 { data: 'no_sk', render: function (d) { return esc(d || '-'); } },
                 { data: null, render: function (r) {
-                    var url = rooturl + '/perizinan/jaringan_utilitas/ruas_jalan/' + r.permohonan_id;
+                    var url = rooturl + '<%= base %>/ruas_jalan/' + r.permohonan_id;
                     var html = '<div class="w-100-flex" style="justify-content: center;flex-wrap: wrap;align-items: center;gap: 5px;">';
                     if (r.bisa_ubah) {
                         html += '<a href="' + url + '" class="btn btn-warning btn-sm" title="Edit"><i class="fas fa-edit"></i></a>';
@@ -661,10 +671,10 @@
                     }
                     // Persetujuan prinsip terbit -> pemohon mengirim ZIP kelengkapan persyaratan
                     if (r.status === 'diajukan' && r.tahap === 'verifikasi_persyaratan') {
-                        html += '<a href="' + rooturl + '/perizinan/jaringan_utilitas/persyaratan/' + r.permohonan_id + '" class="btn btn-primary btn-sm" title="Lengkapi Persyaratan Persetujuan Prinsip"><i class="fas fa-file-upload"></i></a>';
+                        html += '<a href="' + rooturl + '<%= base %>/persyaratan/' + r.permohonan_id + '" class="btn btn-primary btn-sm" title="Lengkapi Persyaratan Persetujuan Prinsip"><i class="fas fa-file-upload"></i></a>';
                     }
                     if (r.status === 'disetujui') {
-                        html += '<a href="' + rooturl + '/perizinan/jaringan_utilitas/cetak_sk/' + r.permohonan_id + '" target="_blank" class="btn btn-success btn-sm" title="Cetak SK"><i class="fas fa-print"></i></a>';
+                        html += '<a href="' + rooturl + '<%= base %>/cetak_sk/' + r.permohonan_id + '" target="_blank" class="btn btn-success btn-sm" title="Cetak SK"><i class="fas fa-print"></i></a>';
                     }
                     return html + '</div>';
                 } },
@@ -689,7 +699,7 @@
                 buttons: ['Tidak', 'Ya']
             });
             if (!yakin) return;
-            $.get(rooturl + '/perizinan/jaringan_utilitas/api/hapus/' + id)
+            $.get(rooturl + '<%= base %>/api/hapus/' + id)
                 .done(function () {
                     swal('Berhasil', 'Data berhasil dihapus', 'success');
                     data_table.ajax.reload();

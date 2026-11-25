@@ -3,10 +3,10 @@
     <section class="section">
       <div class="w-100" style="padding: 0 30px;">
         <div class="section-header" style="border-radius: 0.25rem;">
-          <h1><%= permohonan.status === 'draft' ? 'Tambah' : 'Edit' %> Permohonan Izin</h1>
+          <h1><%= permohonan.status === 'draft' ? 'Tambah' : 'Edit' %> Permohonan Izin<%= jenis_izin.kode === 'reklame' ? ' (Reklame)' : '' %></h1>
           <div class="section-header-breadcrumb">
             <div class="breadcrumb-item active"><a href="/backoffice">Dashboard</a></div>
-            <div class="breadcrumb-item active"><a href="/manajemen_perizinan">Permohonan Izin</a></div>
+            <div class="breadcrumb-item active"><a href="<%= base %>">Permohonan Izin</a></div>
             <div class="breadcrumb-item">Ruas Jalan</div>
           </div>
         </div>
@@ -117,7 +117,7 @@
                                         <hr>
 
                                         <div class="form-group">
-                                            <label for="pernyataan_kesanggupan">Surat Pernyataan kesanggupan memenuhi dan mematuhi semua persyaratan yang ditentukan dalam pembangunan/penempatan bangunan dan jaringan utilitas.</label>
+                                            <label for="pernyataan_kesanggupan">Surat Pernyataan kesanggupan memenuhi dan mematuhi semua persyaratan yang ditentukan dalam pembangunan/penempatan <%= jenis_izin.kode === 'reklame' ? 'reklame' : 'bangunan dan jaringan utilitas' %>.</label>
                                             <div class="custom-file">
                                                 <input type="file" class="custom-file-input" id="pernyataan_kesanggupan" name="pernyataan_kesanggupan" accept=".pdf,.jpg,.jpeg,.png">
                                                 <label class="custom-file-label" for="pernyataan_kesanggupan">Pilih File</label>
@@ -125,6 +125,7 @@
                                             <small class="form-text text-muted"><i>Di atas kertas bermaterai sesuai peraturan yang berlaku</i></small>
                                             <small class="form-text dok-info" data-jenis="pernyataan_kesanggupan"></small>
                                         </div>
+<% if (jenis_izin.pakai_retribusi) { %>
 
                                         <hr>
 
@@ -136,6 +137,7 @@
                                             </div>
                                             <small class="form-text dok-info" data-jenis="pernyataan_retribusi"></small>
                                         </div>
+<% } %>
                                     </div>
                                 </div>
 
@@ -151,7 +153,7 @@
                                 <div class="row mt-3">
                                     <div class="col-12">
                                         <div class="form-group">
-                                            <label for="gambar_lokasi">Gambar Lokasi Pembangunan/Penempatan Bangunan dan Jaringan Utilitas</label>
+                                            <label for="gambar_lokasi">Gambar Lokasi Pembangunan/Penempatan <%= jenis_izin.kode === 'reklame' ? 'Iklan' : 'Bangunan dan Jaringan Utilitas' %></label>
                                             <div class="custom-file">
                                                 <input type="file" class="custom-file-input" id="gambar_lokasi" name="gambar_lokasi" accept=".pdf,.jpg,.jpeg,.png">
                                                 <label class="custom-file-label" for="gambar_lokasi">Pilih File</label>
@@ -167,7 +169,7 @@
                                                 <input type="file" class="custom-file-input" id="rencana_teknis" name="rencana_teknis" accept=".pdf,.jpg,.jpeg,.png">
                                                 <label class="custom-file-label" for="rencana_teknis">Pilih File</label>
                                             </div>
-                                            <small class="form-text text-muted"><i>Gambar Konstruksi dan bahan Konstruksi bangunan dan jaringan utilitas</i></small>
+                                            <small class="form-text text-muted"><i>Gambar Konstruksi dan bahan Konstruksi <%= jenis_izin.kode === 'reklame' ? 'reklame' : 'bangunan dan jaringan utilitas' %></i></small>
                                             <small class="form-text dok-info" data-jenis="rencana_teknis"></small>
                                         </div>
 
@@ -213,10 +215,19 @@
 
         var ID_PERMOHONAN = <%= permohonan.permohonan_id %>;
         var BISA_UBAH = <%= bisa_ubah ? 'true' : 'false' %>;
-        var API = rooturl + '/perizinan/jaringan_utilitas/api/';
-        var URL_KEMBALI = rooturl + '/manajemen_perizinan';
-        var JUMLAH_DOKUMEN_WAJIB = 8; // semua kecuali surat kuasa
+        var API = rooturl + '<%= jenis_izin.url_pemohon %>/api/';
+        var URL_KEMBALI = rooturl + '<%= base %>';
+        var JUMLAH_DOKUMEN_WAJIB = <%= jenis_izin.pakai_retribusi ? 8 : 7 %>; // semua kecuali surat kuasa (reklame tanpa pernyataan retribusi)
         var KODE_WILAYAH = <%- JSON.stringify(kode_wilayah) %>;
+        // Utilitas: provider, retribusi, digitasi tiang & kabel; reklame: tanpa provider & retribusi, digitasi titik
+        var PAKAI_PROVIDER = <%= jenis_izin.pakai_provider ? 'true' : 'false' %>;
+        var PAKAI_RETRIBUSI = <%= jenis_izin.pakai_retribusi ? 'true' : 'false' %>;
+        var JENIS_DIGITASI = <%- JSON.stringify(jenis_izin.digitasi) %>;
+        var TOMBOL_DIGITASI = {
+            tiang: '<button type="button" class="btn btn-info btn-digitasi" data-jenis="tiang" title="Digitasi Tiang"><i class="fas fa-map-pin"></i></button>',
+            kabel: '<button type="button" class="btn btn-dark btn-digitasi" data-jenis="kabel" title="Digitasi Kabel"><i class="fas fa-grip-lines"></i></button>',
+            titik: '<button type="button" class="btn btn-info btn-digitasi" data-jenis="titik" title="Digitasi Titik Reklame"><i class="fas fa-map-pin"></i></button>'
+        };
         var KOMPONEN = <%- JSON.stringify(komponen) %>; // komponen retribusi per ruas (helpper/permohonan.js)
 
         var masterRuas = {};      // id -> data master_retribusi
@@ -255,8 +266,7 @@
             var $tr = $('<tr>' +
                 '<td class="no"></td>' +
                 '<td><div class="w-100-flex" style="justify-content: center;flex-wrap: wrap;align-items: center;gap: 5px;">' +
-                    '<button type="button" class="btn btn-info btn-digitasi" data-jenis="tiang" title="Digitasi Tiang"><i class="fas fa-map-pin"></i></button>' +
-                    '<button type="button" class="btn btn-dark btn-digitasi" data-jenis="kabel" title="Digitasi Kabel"><i class="fas fa-grip-lines"></i></button>' +
+                    JENIS_DIGITASI.map(function (j) { return TOMBOL_DIGITASI[j]; }).join('') +
                     (BISA_UBAH ? '<button type="button" class="btn btn-danger btn-hapus" title="Hapus"><i class="fas fa-trash"></i></button>' : '') +
                 '</div></td>' +
                 '<td><select class="form-control pilih-ruas" ' + dis + '><option value="' + idRuasLain + '">-- Di luar ruas (Jalan Lain) --</option>' + opsiRuas + '</select></td>' +
@@ -265,7 +275,8 @@
                 '<td class="text-center c-no"></td>' +
                 '<td class="text-center c-panjang"></td>' +
                 selKomponen +
-                '<td class="text-right c-ret-total"></td>' +
+                (PAKAI_RETRIBUSI ? '<td class="text-right c-ret-total"></td>'
+                    : '<td class="text-center c-titik">' + Number(row.jumlah_titik || 0) + '</td>') +
                 '</tr>');
             $tr.data('row', row);
             $tr.find('.pilih-ruas').val(row.ruas_id || idRuasLain);
@@ -328,6 +339,10 @@
                 $('#total_ret_' + k.kode).text(rupiah(t[k.kode].retribusi));
             });
             $('#total_ret').text(rupiah(t.total));
+            // Reklame: total titik hasil digitasi
+            var titik = 0;
+            $('#tbody_ruas tr').each(function () { titik += Number(($(this).data('row') || {}).jumlah_titik || 0); });
+            $('#total_titik').text(angka(titik));
         }
 
         function isiTabel(rows) {
@@ -373,7 +388,7 @@
             }
             var row = rows ? rows[index] : $tr.data('row');
             if (!row || !row.permohonan_ruas_id) return;
-            window.location.href = rooturl + '/manajemen_perizinan/' + jenis + '/' + ID_PERMOHONAN + '/' + row.permohonan_ruas_id;
+            window.location.href = rooturl + '<%= base %>/' + jenis + '/' + ID_PERMOHONAN + '/' + row.permohonan_ruas_id;
         });
 
         // Mengembalikan daftar ruas tersimpan, atau null jika gagal
@@ -429,7 +444,7 @@
             dokumen.forEach(function (d) {
                 if (d.jenis_dokumen !== 'surat_kuasa') wajib++;
                 $('.dok-info[data-jenis=' + d.jenis_dokumen + ']').html(
-                    'File saat ini: <a href="' + rooturl + '/manajemen_perizinan/dokumen/' +
+                    'File saat ini: <a href="' + rooturl + '<%= base %>/dokumen/' +
                     d.permohonan_dokumen_id + '" target="_blank">' + esc(d.nama_asli) + '</a>');
             });
             $('#info_dokumen').html(wajib + '/' + JUMLAH_DOKUMEN_WAJIB + ' dokumen wajib terupload');
@@ -468,16 +483,17 @@
             
             try {
                 var [prov, master, detail] = await Promise.all([
-                    $.get(API + 'provider'),
+                    PAKAI_PROVIDER ? $.get(API + 'provider') : { data: [] },
                     $.get(API + 'master_ruas'),
                     $.get(API + 'detail/' + ID_PERMOHONAN)
                 ]);
-                console.log(prov, master, detail);
-                
-                prov.data.forEach(function (p) {
-                    $('#provider_id').append($('<option>').val(p.provider_id).text(p.provider));
-                });
-                $('#provider_id').val(detail.data.permohonan.provider_id || '').select2({ width: '100%' });
+
+                if (PAKAI_PROVIDER) {
+                    prov.data.forEach(function (p) {
+                        $('#provider_id').append($('<option>').val(p.provider_id).text(p.provider));
+                    });
+                    $('#provider_id').val(detail.data.permohonan.provider_id || '').select2({ width: '100%' });
+                }
 
                 master.data.forEach(function (m) {
                     masterRuas[m.id] = m;

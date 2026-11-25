@@ -10,7 +10,7 @@
     <section class="section">
       <div class="w-100" style="padding: 0 30px;">
         <div class="section-header" style="border-radius: 0.25rem;">
-          <h1>Sinkron Tiang Perizinan</h1>
+          <h1>Sinkron Tiang Perizinan<%= jenis_izin.kode === 'reklame' ? ' (Reklame)' : '' %></h1>
           <div class="section-header-breadcrumb">
             <div class="breadcrumb-item active"><a href="/backoffice">Dashboard</a></div>
             <div class="breadcrumb-item">Perizinan</div>
@@ -96,7 +96,7 @@
 
 <% include ../../template-backoffice/footer.ejs %>
     <script type="text/javascript">
-        var API = '/manajemen_perizinan/sinkron_tiang';
+        var API = '<%= base %>/sinkron_tiang';
         var STATUS_LABEL = { diajukan: 'Diajukan', revisi: 'Revisi', disetujui: 'Disetujui', ditolak: 'Ditolak' };
 
         function ikon(warna) {

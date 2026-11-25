@@ -14,7 +14,6 @@ var cek_login_google = require('./login').cek_login_google;
 var cek_vendor = require('./dashboard_vendor.js').cek_vendor;
 var helper = require('../helpper/permohonan.js');
 var tahapan = require('../helpper/tahapan_perizinan.js');
-var reklame = require('../helpper/reklame.js');
 var dbgeo = require("dbgeo");
 var multer = require("multer");
 var svgCaptcha = require('svg-captcha');
@@ -147,12 +146,12 @@ router.get('/shortcut', function(req, res) {
 
 
 // ============================================================
-// JARINGAN UTILITAS — permohonan izin oleh vendor (is_admin = 3)
+// PERMOHONAN IZIN — jaringan utilitas (/jaringan_utilitas) & reklame (/reklame) oleh vendor (is_admin = 3)
 // Admin (is_admin = 1) memakai halaman yang sama untuk mengisi atas nama vendor.
-// Alur: daftar permohonan -> ruas jalan (provider + syarat + baris ruas)
-//       -> digitasi tiang / kabel per ruas -> ajukan -> diproses admin
+// Alur: daftar permohonan -> ruas jalan (provider* + syarat + baris ruas)
+//       -> digitasi per ruas (utilitas: tiang / kabel, reklame: titik) -> ajukan -> diproses admin
+// *reklame tanpa provider & retribusi. Lihat helper.JENIS_IZIN.
 // ============================================================
-var JU = '/jaringan_utilitas';
 
 function getUser(req) {
   return (req.user && req.user[0]) ? req.user[0] : null;
@@ -179,12 +178,28 @@ function gagal(res, err, status) {
   res.status(status || 500).json({ status: status || 500, message: (err && err.message) || err || 'gagal', data: null });
 }
 
+// Daftarkan seluruh rute pemohon untuk satu jenis izin
+function rutePermohonan(kode_jenis) {
+var JENIS = helper.jenisIzin(kode_jenis);
+var JU = '/' + JENIS.kode;
+var BASE_BO = JENIS.url_backoffice;
+// Komponen retribusi per ruas; reklame tanpa retribusi
+var KOMPONEN = JENIS.pakai_retribusi ? helper.KOMPONEN_RETRIBUSI : [];
+var JENIS_DOKUMEN = helper.jenisDokumen(JENIS.kode);
+
+// Halaman pemohon memakai view jaringan_utilitas: base = awalan URL, jenis_izin = konfigurasi jenis
+router.use(JU, function (req, res, next) {
+  res.locals.base = '/perizinan' + JU;
+  res.locals.jenis_izin = JENIS;
+  next();
+});
+
 // Permohonan milik vendor yang login (admin: permohonan mana pun); 404 jika tidak ada
 async function ambilMilik(req, res, wajibBisaUbah) {
-  var p = await helper.getPermohonan(req.params.id_permohonan, idPemilik(req));
+  var p = await helper.getPermohonan(req.params.id_permohonan, idPemilik(req), JENIS.kode);
   if (!p) { gagal(res, 'Permohonan tidak ditemukan', 404); return null; }
   if (wajibBisaUbah && !helper.bisaUbah(p, isAdmin(req))) { gagal(res, 'Permohonan sudah diajukan / diproses dan tidak bisa diubah', 400); return null; }
-  if (wajibBisaUbah && !isAdmin(req) && !helper.providerTerverifikasi(p)) { gagal(res, 'Provider belum diverifikasi admin', 400); return null; }
+  if (wajibBisaUbah && !isAdmin(req) && !helper.providerTerverifikasi(p)) { gagal(res, JENIS.pakai_provider ? 'Provider belum diverifikasi admin' : 'Dokumen persyaratan belum diverifikasi admin', 400); return null; }
   return p;
 }
 
@@ -217,24 +232,24 @@ async function localsPengisian(req, p) {
     bisa_ubah: helper.bisaUbah(p),
     atas_nama: atas_nama,
     kode_wilayah: helper.KODE_WILAYAH,
-    komponen: helper.KOMPONEN_RETRIBUSI,
-    url_kembali:isAdmin(req) ? '/manajemen_perizinan' : '/perizinan' + JU
+    komponen: KOMPONEN,
+    url_kembali:isAdmin(req) ? BASE_BO : '/perizinan' + JU
   };
 }
 
 // ---------------- VIEW ----------------
 router.get(JU, cek_pemohon, function (req, res) {
-  if (isAdmin(req)) return res.redirect('/manajemen_perizinan');
+  if (isAdmin(req)) return res.redirect(BASE_BO);
   res.render('content/jaringan_utilitas/dashboard', { user: getUser(req) });
 });
 
 // Tombol "Tambah Data": buat draft lalu langsung ke halaman ruas jalan.
-// Admin mengisi lewat halaman backoffice (/manajemen_perizinan/insert).
+// Admin mengisi lewat halaman backoffice (BASE_BO/insert).
 router.get(JU + '/baru', cek_pemohon, async function (req, res) {
-  if (isAdmin(req)) return res.redirect('/manajemen_perizinan/insert?id_user=' + encodeURIComponent(req.query.id_user || ''));
+  if (isAdmin(req)) return res.redirect(BASE_BO + '/insert?id_user=' + encodeURIComponent(req.query.id_user || ''));
   try {
     var user = getUser(req);
-    var id = await helper.buatDraft(user, user.id_user);
+    var id = await helper.buatDraft(user, user.id_user, JENIS.kode);
     res.redirect('/perizinan' + JU + '/ruas_jalan/' + id);
   } catch (err) {
     console.log(err);
@@ -243,19 +258,19 @@ router.get(JU + '/baru', cek_pemohon, async function (req, res) {
 });
 
 router.get(JU + '/ruas_jalan/:id_permohonan', cek_pemohon, async function (req, res) {
-  if (isAdmin(req)) return res.redirect('/manajemen_perizinan/edit/' + req.params.id_permohonan);
-  var p = await helper.getPermohonan(req.params.id_permohonan, idPemilik(req));
-  if (!p) return res.redirect(isAdmin(req) ? '/manajemen_perizinan' : '/perizinan' + JU);
+  if (isAdmin(req)) return res.redirect(BASE_BO + '/edit/' + req.params.id_permohonan);
+  var p = await helper.getPermohonan(req.params.id_permohonan, idPemilik(req), JENIS.kode);
+  if (!p) return res.redirect(isAdmin(req) ? BASE_BO : '/perizinan' + JU);
   var locals = await localsPengisian(req, p);
-  locals.jenis_dokumen = helper.JENIS_DOKUMEN;
+  locals.jenis_dokumen = JENIS_DOKUMEN;
   res.render('content/jaringan_utilitas/ruas_jalan', locals);
 });
 
 function viewDigitasi(jenis) {
   return async function (req, res) {
-    if (isAdmin(req)) return res.redirect('/manajemen_perizinan/' + jenis + '/' + req.params.id_permohonan + '/' + req.params.id_ruas);
-    var p = await helper.getPermohonan(req.params.id_permohonan, idPemilik(req));
-    if (!p) return res.redirect(isAdmin(req) ? '/manajemen_perizinan' : '/perizinan' + JU);
+    if (isAdmin(req)) return res.redirect(BASE_BO + '/' + jenis + '/' + req.params.id_permohonan + '/' + req.params.id_ruas);
+    var p = await helper.getPermohonan(req.params.id_permohonan, idPemilik(req), JENIS.kode);
+    if (!p) return res.redirect(isAdmin(req) ? BASE_BO : '/perizinan' + JU);
     var [ruas] = await sql_enak.raw(
       `SELECT r.permohonan_ruas_id, r.ruas_id, mr.nm_ruas FROM permohonan_ruas r
          LEFT JOIN master_retribusi mr ON mr.id = r.ruas_id
@@ -268,15 +283,16 @@ function viewDigitasi(jenis) {
     var locals = await localsPengisian(req, p);
     locals.ruas = ruas[0];
     locals.jenis = jenis;
-    res.render('content/jaringan_utilitas/' + jenis, locals);
+    res.render('content/jaringan_utilitas/' + (jenis === 'kabel' ? 'kabel' : 'tiang'), locals);
   };
 }
-router.get(JU + '/ruas_jalan/tiang/:id_permohonan/:id_ruas', cek_pemohon, viewDigitasi('tiang'));
-router.get(JU + '/ruas_jalan/kabel/:id_permohonan/:id_ruas', cek_pemohon, viewDigitasi('kabel'));
+JENIS.digitasi.forEach(function (jenis) {
+  router.get(JU + '/ruas_jalan/' + jenis + '/:id_permohonan/:id_ruas', cek_pemohon, viewDigitasi(jenis));
+});
 
 // Cetak SK: hanya permohonan yang sudah disetujui
 router.get(JU + '/cetak_sk/:id_permohonan', cek_pemohon, async function (req, res) {
-  var p = await helper.getPermohonan(req.params.id_permohonan, idPemilik(req));
+  var p = await helper.getPermohonan(req.params.id_permohonan, idPemilik(req), JENIS.kode);
   if (!p || p.status !== 'disetujui') return res.status(404).send('SK belum tersedia');
   res.render('content-backoffice/manajemen_perizinan/cetak_sk', await helper.getDataSk(p));
 });
@@ -289,8 +305,8 @@ function bisaKirimPersyaratan(p, pp) {
 }
 
 router.get(JU + '/persyaratan/:id_permohonan', cek_pemohon, async function (req, res) {
-  if (isAdmin(req)) return res.redirect('/manajemen_perizinan/persetujuan_prinsip');
-  var p = await helper.getPermohonan(req.params.id_permohonan, idPemilik(req));
+  if (isAdmin(req)) return res.redirect(BASE_BO + '/persetujuan_prinsip');
+  var p = await helper.getPermohonan(req.params.id_permohonan, idPemilik(req), JENIS.kode);
   if (!p) return res.redirect('/perizinan' + JU);
   var pp = await tahapan.getPersetujuan(p.permohonan_id);
   var [prov] = await sql_enak.raw(`SELECT provider FROM provider WHERE provider_id = ?`, [p.provider_id]);
@@ -308,7 +324,7 @@ router.post(JU + '/api/persyaratan/:id_permohonan', cek_vendor, tahapan.upload_p
   var file = req.files && req.files.file && req.files.file[0];
   try {
     if (!file) return gagal(res, 'File ZIP persyaratan wajib dipilih', 400);
-    var p = await helper.getPermohonan(req.params.id_permohonan, getUser(req).id_user);
+    var p = await helper.getPermohonan(req.params.id_permohonan, getUser(req).id_user, JENIS.kode);
     var pp = p && await tahapan.getPersetujuan(p.permohonan_id);
     if (!p || !bisaKirimPersyaratan(p, pp)) {
       tahapan.hapusFile(file.filename);
@@ -325,7 +341,7 @@ router.post(JU + '/api/persyaratan/:id_permohonan', cek_vendor, tahapan.upload_p
 // Persetujuan prinsip bertanda tangan & ZIP yang sudah dikirim (milik vendor sendiri)
 router.get(JU + '/persyaratan/file/:jenis/:id_permohonan', cek_vendor, async function (req, res) {
   try {
-    var p = await helper.getPermohonan(req.params.id_permohonan, getUser(req).id_user);
+    var p = await helper.getPermohonan(req.params.id_permohonan, getUser(req).id_user, JENIS.kode);
     var pp = p && await tahapan.getPersetujuan(p.permohonan_id);
     if (!pp) return res.status(404).send('Persetujuan prinsip tidak ditemukan');
     if (req.params.jenis === 'zip') return tahapan.kirimFile(res, pp.file_persyaratan, pp.nama_asli_persyaratan);
@@ -358,7 +374,7 @@ router.get(JU + '/api/master_ruas', cek_pemohon, async function (req, res) {
 // ---------------- API: permohonan ----------------
 router.post(JU + '/api/list', cek_vendor, async function (req, res) {
   try {
-    var [data] = await sql_enak.raw(helper.SQL_REKAP + ` AND p.id_user = ? ORDER BY p.permohonan_id DESC`, [getUser(req).id_user]);
+    var [data] = await sql_enak.raw(helper.SQL_REKAP + ` AND p.id_user = ? AND p.jenis_izin = ? ORDER BY p.permohonan_id DESC`, [getUser(req).id_user, JENIS.kode]);
     data.forEach(function (d) { d.bisa_ubah = helper.bisaUbah(d); });
     res.json({ status: 200, message: 'sukses', data: data });
   } catch (err) { gagal(res, err); }
@@ -385,7 +401,7 @@ router.post(JU + '/api/simpan/:id_permohonan', cek_pemohon, async function (req,
 
     // Hanya admin yang memilih provider; pemohon lewat api/verifikasi_provider
     var provider_id = body.provider_id ? Number(body.provider_id) : null;
-    if (isAdmin(req) && provider_id !== (p.provider_id || null)) {
+    if (JENIS.pakai_provider && isAdmin(req) && provider_id !== (p.provider_id || null)) {
       await sql_enak.raw(
         `UPDATE permohonan SET provider_id = ?, status_provider = ?, keterangan_provider = NULL,
                 provider_diverifikasiAt = NOW(), provider_diverifikasi_oleh = ?, lastUpdateAt = NOW()
@@ -406,7 +422,7 @@ router.post(JU + '/api/simpan/:id_permohonan', cek_pemohon, async function (req,
       // Unit = bilangan bulat, meter = desimal; tarif lain (t_l30cm, jr_*) disalin dari master lewat salinDataRuas
       var kolom = ['ruas_id', 'tarif_tiang', 'tarif_kabel'];
       var nilai = [ruas_id, tarif.t_k30cm || 0, tarif.jr_atk15cm || 0];
-      helper.KOMPONEN_RETRIBUSI.forEach(function (k) {
+      KOMPONEN.forEach(function (k) {
         kolom.push(k.jumlah);
         // Unit & panjang kabel bilangan bulat; panjang kabel dibulatkan ke meter terdekat
         var n = k.satuan === 'Unit' ? parseInt(r[k.jumlah]) : parseFloat(r[k.jumlah]);
@@ -438,6 +454,8 @@ router.post(JU + '/api/simpan/:id_permohonan', cek_pemohon, async function (req,
   } catch (err) { gagal(res, err); }
 });
 
+// Verifikasi awal (provider + dokumen) hanya untuk jenis yang memakainya; reklame langsung isi & ajukan
+if (JENIS.verifikasi_awal) {
 // Pemohon mengirim nama provider (teks bebas) + dokumen persyaratan untuk diverifikasi admin di backoffice
 // body: { provider_usulan }
 router.post(JU + '/api/verifikasi_provider/:id_permohonan', cek_pemohon, async function (req, res) {
@@ -447,22 +465,23 @@ router.post(JU + '/api/verifikasi_provider/:id_permohonan', cek_pemohon, async f
     if (!helper.bisaIsiAwal(p)) return gagal(res, 'Provider & persyaratan sedang / sudah diverifikasi', 400);
     var usulan = String((req.body || {}).provider_usulan || '').trim().slice(0, 255);
     var kurang = [];
-    if (!usulan) kurang.push('Nama provider belum diisi');
+    if (JENIS.pakai_provider && !usulan) kurang.push('Nama provider belum diisi');
     if (!p.nama_pemohon) kurang.push('Nama pemohon belum diisi');
-    var ada = (await helper.getDokumen(p.permohonan_id)).map(function (d) { return d.jenis_dokumen; });
-    helper.DOKUMEN_WAJIB.forEach(function (j) {
-      if (ada.indexOf(j) === -1) kurang.push('Dokumen belum diupload: ' + helper.JENIS_DOKUMEN[j]);
+    var ada = (await helper.getDokumen(p.permohonan_id, p.jenis_izin)).map(function (d) { return d.jenis_dokumen; });
+    helper.dokumenWajib(JENIS.kode).forEach(function (j) {
+      if (ada.indexOf(j) === -1) kurang.push('Dokumen belum diupload: ' + JENIS_DOKUMEN[j]);
     });
     if (kurang.length) return res.status(400).json({ status: 400, message: kurang.join('\n'), data: kurang });
     await sql_enak.raw(
       `UPDATE permohonan SET provider_usulan = ?, status_provider = 'menunggu', keterangan_provider = NULL,
               provider_diusulkanAt = NOW(), lastUpdateAt = NOW()
         WHERE permohonan_id = ?`,
-      [usulan, p.permohonan_id]
+      [usulan || null, p.permohonan_id]
     );
     res.json({ status: 200, message: 'sukses', data: null });
   } catch (err) { gagal(res, err); }
 });
+}
 
 // Data pemohon + upload dokumen persyaratan (modal "Upload")
 router.post(JU + '/api/syarat/:id_permohonan', cek_pemohon, function (req, res) {
@@ -491,7 +510,7 @@ router.post(JU + '/api/syarat/:id_permohonan', cek_pemohon, function (req, res) 
           [p.permohonan_id, jenis, f.filename, f.originalname]
         );
       }
-      res.json({ status: 200, message: 'sukses', data: await helper.getDokumen(p.permohonan_id) });
+      res.json({ status: 200, message: 'sukses', data: await helper.getDokumen(p.permohonan_id, p.jenis_izin) });
     } catch (err) { gagal(res, err); }
   });
 });
@@ -515,13 +534,13 @@ router.post(JU + '/api/ajukan/:id_permohonan', cek_pemohon, async function (req,
     if (!p) return;
     if (!helper.bisaUbah(p)) return gagal(res, 'Hanya permohonan draft / revisi yang bisa diajukan', 400);
     var kurang = [];
-    if (!helper.providerTerverifikasi(p)) kurang.push('Provider belum diverifikasi admin');
+    if (!helper.providerTerverifikasi(p)) kurang.push(JENIS.pakai_provider ? 'Provider belum diverifikasi admin' : 'Dokumen persyaratan belum diverifikasi admin');
     if (!p.nama_pemohon) kurang.push('Nama pemohon belum diisi');
     var ruas = await helper.getRuas(p.permohonan_id);
     if (!ruas.length) kurang.push('Belum ada ruas jalan');
-    var ada = (await helper.getDokumen(p.permohonan_id)).map(function (d) { return d.jenis_dokumen; });
-    helper.DOKUMEN_WAJIB.forEach(function (j) {
-      if (ada.indexOf(j) === -1) kurang.push('Dokumen belum diupload: ' + helper.JENIS_DOKUMEN[j]);
+    var ada = (await helper.getDokumen(p.permohonan_id, p.jenis_izin)).map(function (d) { return d.jenis_dokumen; });
+    helper.dokumenWajib(JENIS.kode).forEach(function (j) {
+      if (ada.indexOf(j) === -1) kurang.push('Dokumen belum diupload: ' + JENIS_DOKUMEN[j]);
     });
     if (kurang.length) return res.status(400).json({ status: 400, message: kurang.join('\n'), data: kurang });
 
@@ -544,7 +563,7 @@ router.get(JU + '/api/hapus/:id_permohonan', cek_pemohon, async function (req, r
   } catch (err) { gagal(res, err); }
 });
 
-// Hapus satu baris ruas beserta digitasi tiang & kabelnya
+// Hapus satu baris ruas beserta digitasinya (tiang, kabel, titik)
 router.get(JU + '/api/ruas/hapus/:id_permohonan/:id_ruas', cek_pemohon, async function (req, res) {
   try {
     var x = await ambilRuasMilik(req, res, true);
@@ -553,6 +572,7 @@ router.get(JU + '/api/ruas/hapus/:id_permohonan/:id_ruas', cek_pemohon, async fu
     await sql_enak.raw(`UPDATE permohonan_ruas SET deletedAt = NOW() WHERE permohonan_ruas_id = ?`, [id]);
     await sql_enak.raw(`UPDATE permohonan_tiang SET deletedAt = NOW() WHERE permohonan_ruas_id = ? AND deletedAt IS NULL`, [id]);
     await sql_enak.raw(`UPDATE permohonan_kabel SET deletedAt = NOW() WHERE permohonan_ruas_id = ? AND deletedAt IS NULL`, [id]);
+    await sql_enak.raw(`UPDATE permohonan_titik SET deletedAt = NOW() WHERE permohonan_ruas_id = ? AND deletedAt IS NULL`, [id]);
     res.json({ status: 200, message: 'sukses', data: null });
   } catch (err) { gagal(res, err); }
 });
@@ -560,12 +580,16 @@ router.get(JU + '/api/ruas/hapus/:id_permohonan/:id_ruas', cek_pemohon, async fu
 // ---------------- API: digitasi tiang / kabel ----------------
 var DIGITASI = {
   tiang: { table: 'permohonan_tiang', pk: 'permohonan_tiang_id', geom: /^POINT\s*\(/i },
-  kabel: { table: 'permohonan_kabel', pk: 'permohonan_kabel_id', geom: /^LINESTRING\s*\(/i }
+  kabel: { table: 'permohonan_kabel', pk: 'permohonan_kabel_id', geom: /^LINESTRING\s*\(/i },
+  titik: { table: 'permohonan_titik', pk: 'permohonan_titik_id', geom: /^POINT\s*\(/i }
 };
+function cfgDigitasi(jenis) {
+  return JENIS.digitasi.indexOf(jenis) === -1 ? null : DIGITASI[jenis];
+}
 
 router.get(JU + '/api/digitasi/:jenis/:id_permohonan/:id_ruas', cek_pemohon, async function (req, res) {
   try {
-    if (!DIGITASI[req.params.jenis]) return gagal(res, 'Jenis tidak dikenal', 400);
+    if (!cfgDigitasi(req.params.jenis)) return gagal(res, 'Jenis tidak dikenal', 400);
     var x = await ambilRuasMilik(req, res, false);
     if (!x) return;
     var data = await helper.getDigitasi(x.permohonan.permohonan_id, x.ruas.permohonan_ruas_id);
@@ -576,7 +600,7 @@ router.get(JU + '/api/digitasi/:jenis/:id_permohonan/:id_ruas', cek_pemohon, asy
 // body: { fitur: [{ id?, wkt, jumlah, panjang?, keterangan }], hapus: [id, ...] }
 router.post(JU + '/api/digitasi/:jenis/:id_permohonan/:id_ruas', cek_pemohon, async function (req, res) {
   try {
-    var cfg = DIGITASI[req.params.jenis];
+    var cfg = cfgDigitasi(req.params.jenis);
     if (!cfg) return gagal(res, 'Jenis tidak dikenal', 400);
     var x = await ambilRuasMilik(req, res, true);
     if (!x) return;
@@ -620,298 +644,10 @@ router.post(JU + '/api/digitasi/:jenis/:id_permohonan/:id_ruas', cek_pemohon, as
     res.json({ status: 200, message: 'sukses', data: { fitur: data[req.params.jenis] } });
   } catch (err) { gagal(res, err); }
 });
-
-
-// ============================================================
-// REKLAME — permohonan izin reklame oleh vendor (is_admin = 3)
-// Alur: daftar permohonan -> ruas jalan (+ dokumen persyaratan)
-//       -> digitasi titik reklame per ruas -> ajukan -> diproses admin
-// Tabel: database/reklame.sql
-// ============================================================
-var RK = '/reklame';
-
-async function ambilReklame(req, res, wajibBisaUbah) {
-  var k = await reklame.getReklame(req.params.id_reklame, idPemilik(req));
-  if (!k) { gagal(res, 'Permohonan tidak ditemukan', 404); return null; }
-  if (wajibBisaUbah && !helper.bisaUbah(k, isAdmin(req))) { gagal(res, 'Permohonan sudah diajukan / diproses dan tidak bisa diubah', 400); return null; }
-  return k;
 }
 
-async function ambilRuasReklame(req, res, wajibBisaUbah) {
-  var k = await ambilReklame(req, res, wajibBisaUbah);
-  if (!k) return null;
-  var [rows] = await sql_enak.raw(
-    `SELECT r.*, IFNULL(r.nm_ruas, mr.nm_ruas) AS nm_ruas FROM reklame_ruas r LEFT JOIN master_retribusi mr ON mr.id = r.ruas_id
-      WHERE r.reklame_ruas_id = ? AND r.reklame_id = ? AND r.deletedAt IS NULL`,
-    [req.params.id_ruas, k.reklame_id]
-  );
-  if (!rows.length) { gagal(res, 'Ruas tidak ditemukan', 404); return null; }
-  return { reklame: k, ruas: rows[0] };
-}
+rutePermohonan('jaringan_utilitas');
+rutePermohonan('reklame');
 
-function localsReklame(req, k) {
-  return {
-    user: getUser(req),
-    reklame: k,
-    bisa_ubah: helper.bisaUbah(k, isAdmin(req)),
-    kode_wilayah: helper.KODE_WILAYAH,
-    url_kembali: '/perizinan' + RK
-  };
-}
-
-// ---------------- VIEW ----------------
-router.get(RK, cek_pemohon, function (req, res) {
-  res.render('content/reklame/dashboard', { user: getUser(req) });
-});
-
-// Tombol "Tambah Data": buat draft lalu langsung ke halaman ruas jalan
-router.get(RK + '/baru', cek_vendor, async function (req, res) {
-  try {
-    var user = getUser(req);
-    var id = await reklame.buatDraft(user, user.id_user);
-    res.redirect('/perizinan' + RK + '/ruas_jalan/' + id);
-  } catch (err) {
-    console.log(err);
-    res.redirect('/perizinan' + RK);
-  }
-});
-
-router.get(RK + '/ruas_jalan/:id_reklame', cek_pemohon, async function (req, res) {
-  var k = await reklame.getReklame(req.params.id_reklame, idPemilik(req));
-  if (!k) return res.redirect('/perizinan' + RK);
-  res.render('content/reklame/ruas_jalan', localsReklame(req, k));
-});
-
-router.get(RK + '/digitasi/:id_reklame/:id_ruas', cek_pemohon, async function (req, res) {
-  var k = await reklame.getReklame(req.params.id_reklame, idPemilik(req));
-  if (!k) return res.redirect('/perizinan' + RK);
-  var [ruas] = await sql_enak.raw(
-    `SELECT r.reklame_ruas_id, r.ruas_id, mr.nm_ruas FROM reklame_ruas r
-       LEFT JOIN master_retribusi mr ON mr.id = r.ruas_id
-      WHERE r.reklame_ruas_id = ? AND r.reklame_id = ? AND r.deletedAt IS NULL`,
-    [req.params.id_ruas, k.reklame_id]
-  );
-  if (!ruas.length) return res.redirect('/perizinan' + RK + '/ruas_jalan/' + k.reklame_id);
-  // Jalan Lain hanya punya titik dummy: peta tidak di-zoom ke sana
-  if (ruas[0].nm_ruas === helper.NAMA_RUAS_LAIN) ruas[0].ruas_id = null;
-  var locals = localsReklame(req, k);
-  locals.ruas = ruas[0];
-  res.render('content/reklame/digitasi', locals);
-});
-
-router.get(RK + '/dokumen/:id_reklame/:id_dokumen', cek_pemohon, async function (req, res) {
-  try {
-    var k = await ambilReklame(req, res, false);
-    if (!k) return;
-    var [rows] = await sql_enak.raw(
-      `SELECT * FROM reklame_dokumen WHERE reklame_dokumen_id = ? AND reklame_id = ?`,
-      [req.params.id_dokumen, k.reklame_id]
-    );
-    reklame.kirimDokumen(res, rows[0]);
-  } catch (err) { gagal(res, err); }
-});
-
-// ---------------- API ----------------
-// Baris "Jalan Lain" ditandai luar_ruas = 1; di form dipakai sebagai pilihan "Di luar ruas"
-router.get(RK + '/api/master_ruas', cek_pemohon, async function (req, res) {
-  try {
-    var [data] = await sql_enak.raw(
-      `SELECT id, no, nm_ruas, ${reklame.KOLOM_TARIF} AS tarif, (nm_ruas = ?) AS luar_ruas
-         FROM master_retribusi ORDER BY nm_ruas ASC`,
-      [helper.NAMA_RUAS_LAIN]
-    );
-    res.json({ status: 200, message: 'sukses', data: data });
-  } catch (err) { gagal(res, err); }
-});
-
-router.post(RK + '/api/list', cek_pemohon, async function (req, res) {
-  try {
-    var sql = reklame.SQL_REKAP, val = [];
-    if (idPemilik(req)) { sql += ` AND k.id_user = ?`; val.push(idPemilik(req)); }
-    var [data] = await sql_enak.raw(sql + ` ORDER BY k.reklame_id DESC`, val);
-    data.forEach(function (d) { d.bisa_ubah = helper.bisaUbah(d, isAdmin(req)); });
-    res.json({ status: 200, message: 'sukses', data: data });
-  } catch (err) { gagal(res, err); }
-});
-
-router.get(RK + '/api/detail/:id_reklame', cek_pemohon, async function (req, res) {
-  try {
-    var k = await ambilReklame(req, res, false);
-    if (!k) return;
-    res.json({ status: 200, message: 'sukses', data: await reklame.getDetail(k) });
-  } catch (err) { gagal(res, err); }
-});
-
-// Simpan baris ruas.
-// body: { ruas: [{ reklame_ruas_id?, ruas_id ('' = luar ruas), jumlah_titik, jangka_waktu }] }
-router.post(RK + '/api/simpan/:id_reklame', cek_pemohon, async function (req, res) {
-  try {
-    var k = await ambilReklame(req, res, true);
-    if (!k) return;
-    var ruas = Array.isArray((req.body || {}).ruas) ? req.body.ruas : [];
-    var idRuasLain = await helper.getIdRuasLain();
-
-    for (var i = 0; i < ruas.length; i++) {
-      var r = ruas[i];
-      // ruas kosong = di luar ruas -> pakai tarif baris Jalan Lain
-      var ruas_id = r.ruas_id ? Number(r.ruas_id) : idRuasLain;
-      var mr = { no: null, nm_ruas: null, tarif: 0 };
-      if (ruas_id) {
-        var [rows] = await sql_enak.raw(`SELECT no, nm_ruas, ${reklame.KOLOM_TARIF} AS tarif FROM master_retribusi WHERE id = ?`, [ruas_id]);
-        if (!rows.length) return gagal(res, 'Ruas jalan baris ke-' + (i + 1) + ' tidak ditemukan', 400);
-        mr = rows[0];
-      }
-      var nilai = [ruas_id, mr.no, mr.nm_ruas, mr.tarif || 0,
-        Math.max(0, parseInt(r.jumlah_titik) || 0), Math.max(1, parseInt(r.jangka_waktu) || 1)];
-      var id_tersimpan = null;
-      if (r.reklame_ruas_id) {
-        var [ubah] = await sql_enak.raw(
-          `UPDATE reklame_ruas SET ruas_id = ?, no = ?, nm_ruas = ?, tarif = ?, jumlah_titik = ?, jangka_waktu = ?, lastUpdateAt = NOW()
-            WHERE reklame_ruas_id = ? AND reklame_id = ? AND deletedAt IS NULL`,
-          nilai.concat([r.reklame_ruas_id, k.reklame_id])
-        );
-        if (ubah.affectedRows) id_tersimpan = r.reklame_ruas_id;
-      } else {
-        var [baru] = await sql_enak.raw(
-          `INSERT INTO reklame_ruas (ruas_id, no, nm_ruas, tarif, jumlah_titik, jangka_waktu, reklame_id, insertedAt, lastUpdateAt)
-           VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-          nilai.concat([k.reklame_id])
-        );
-        id_tersimpan = baru.insertId;
-      }
-      // Ruas yang sudah didigitasi: jumlah titik tetap mengikuti hasil digitasi
-      if (id_tersimpan && (await reklame.getTitik(id_tersimpan)).length) await reklame.sinkronJumlahTitik(id_tersimpan);
-    }
-    await sql_enak.raw(`UPDATE reklame SET lastUpdateAt = NOW() WHERE reklame_id = ?`, [k.reklame_id]);
-    res.json({ status: 200, message: 'sukses', data: await reklame.getRuas(k.reklame_id) });
-  } catch (err) { gagal(res, err); }
-});
-
-// Data pemohon + upload dokumen persyaratan (modal "Upload")
-router.post(RK + '/api/syarat/:id_reklame', cek_pemohon, function (req, res) {
-  reklame.upload_dokumen(req, res, async function (errUpload) {
-    if (errUpload) return gagal(res, errUpload, 400);
-    try {
-      var k = await ambilReklame(req, res, true);
-      if (!k) return;
-      var b = req.body || {};
-      await sql_enak.raw(
-        `UPDATE reklame SET nama_pemohon = ?, alamat_pemohon = ?, telp_pemohon = ?, email_pemohon = ?, lastUpdateAt = NOW()
-          WHERE reklame_id = ?`,
-        [b.nama_pemohon || null, b.alamat_pemohon || null, b.telp_pemohon || null, b.email_pemohon || null, k.reklame_id]
-      );
-      var files = req.files || {};
-      for (var jenis in files) {
-        var f = files[jenis][0];
-        await sql_enak.raw(
-          `INSERT INTO reklame_dokumen (reklame_id, jenis_dokumen, nama_file, nama_asli, insertedAt, lastUpdateAt)
-           VALUES (?, ?, ?, ?, NOW(), NOW())
-           ON DUPLICATE KEY UPDATE nama_file = VALUES(nama_file), nama_asli = VALUES(nama_asli), lastUpdateAt = NOW()`,
-          [k.reklame_id, jenis, f.filename, f.originalname]
-        );
-      }
-      res.json({ status: 200, message: 'sukses', data: await reklame.getDokumen(k.reklame_id) });
-    } catch (err) { gagal(res, err); }
-  });
-});
-
-// Ajukan ke admin: wajib nama pemohon, minimal 1 ruas bertitik, dan dokumen wajib lengkap
-router.post(RK + '/api/ajukan/:id_reklame', cek_pemohon, async function (req, res) {
-  try {
-    var k = await ambilReklame(req, res, false);
-    if (!k) return;
-    if (!helper.bisaUbah(k)) return gagal(res, 'Hanya permohonan draft / revisi yang bisa diajukan', 400);
-    var kurang = [];
-    if (!k.nama_pemohon) kurang.push('Nama pemohon belum diisi');
-    var ruas = await reklame.getRuas(k.reklame_id);
-    if (!ruas.length) kurang.push('Belum ada ruas jalan');
-    ruas.forEach(function (r, i) {
-      if (!(r.jumlah_titik > 0)) kurang.push('Ruas baris ke-' + (i + 1) + ' belum punya titik reklame');
-    });
-    var ada = (await reklame.getDokumen(k.reklame_id)).map(function (d) { return d.jenis_dokumen; });
-    reklame.DOKUMEN_WAJIB.forEach(function (j) {
-      if (ada.indexOf(j) === -1) kurang.push('Dokumen belum diupload: ' + reklame.JENIS_DOKUMEN[j]);
-    });
-    if (kurang.length) return res.status(400).json({ status: 400, message: kurang.join('\n'), data: kurang });
-
-    await sql_enak.raw(
-      `UPDATE reklame SET status = 'diajukan', diajukanAt = NOW(), lastUpdateAt = NOW() WHERE reklame_id = ?`,
-      [k.reklame_id]
-    );
-    res.json({ status: 200, message: 'sukses', data: null });
-  } catch (err) { gagal(res, err); }
-});
-
-// Hapus permohonan hanya untuk draft / revisi, juga bagi admin
-router.get(RK + '/api/hapus/:id_reklame', cek_pemohon, async function (req, res) {
-  try {
-    var k = await ambilReklame(req, res, false);
-    if (!k) return;
-    if (!helper.bisaUbah(k)) return gagal(res, 'Permohonan sudah diajukan / diproses dan tidak bisa dihapus', 400);
-    await sql_enak.raw(`UPDATE reklame SET deletedAt = NOW() WHERE reklame_id = ?`, [k.reklame_id]);
-    res.json({ status: 200, message: 'sukses', data: null });
-  } catch (err) { gagal(res, err); }
-});
-
-// Hapus satu baris ruas beserta titik reklamenya
-router.get(RK + '/api/ruas/hapus/:id_reklame/:id_ruas', cek_pemohon, async function (req, res) {
-  try {
-    var x = await ambilRuasReklame(req, res, true);
-    if (!x) return;
-    var id = x.ruas.reklame_ruas_id;
-    await sql_enak.raw(`UPDATE reklame_ruas SET deletedAt = NOW() WHERE reklame_ruas_id = ?`, [id]);
-    await sql_enak.raw(`UPDATE reklame_titik SET deletedAt = NOW() WHERE reklame_ruas_id = ? AND deletedAt IS NULL`, [id]);
-    res.json({ status: 200, message: 'sukses', data: null });
-  } catch (err) { gagal(res, err); }
-});
-
-// ---------------- API: digitasi titik reklame ----------------
-router.get(RK + '/api/digitasi/:id_reklame/:id_ruas', cek_pemohon, async function (req, res) {
-  try {
-    var x = await ambilRuasReklame(req, res, false);
-    if (!x) return;
-    res.json({ status: 200, message: 'sukses', data: { ruas: x.ruas, fitur: await reklame.getTitik(x.ruas.reklame_ruas_id) } });
-  } catch (err) { gagal(res, err); }
-});
-
-// body: { fitur: [{ id?, wkt, keterangan }], hapus: [id, ...] }
-router.post(RK + '/api/digitasi/:id_reklame/:id_ruas', cek_pemohon, async function (req, res) {
-  try {
-    var x = await ambilRuasReklame(req, res, true);
-    if (!x) return;
-    var id_k = x.reklame.reklame_id, id_r = x.ruas.reklame_ruas_id;
-    var fitur = Array.isArray(req.body.fitur) ? req.body.fitur : [];
-    var hapus = Array.isArray(req.body.hapus) ? req.body.hapus : [];
-
-    for (var i = 0; i < fitur.length; i++) {
-      if (!/^POINT\s*\(/i.test(String(fitur[i].wkt || ''))) return gagal(res, 'Geometri titik ke-' + (i + 1) + ' tidak valid', 400);
-    }
-    if (hapus.length) {
-      await sql_enak.raw(
-        `UPDATE reklame_titik SET deletedAt = NOW() WHERE reklame_titik_id IN (${hapus.map(function () { return '?'; }).join(',')})
-            AND reklame_ruas_id = ? AND deletedAt IS NULL`,
-        hapus.concat([id_r])
-      );
-    }
-    for (var j = 0; j < fitur.length; j++) {
-      var f = fitur[j];
-      if (f.id) {
-        await sql_enak.raw(
-          `UPDATE reklame_titik SET SHAPE = ST_GeomFromText(?), keterangan = ?, lastUpdateAt = NOW()
-            WHERE reklame_titik_id = ? AND reklame_ruas_id = ? AND deletedAt IS NULL`,
-          [f.wkt, f.keterangan || null, f.id, id_r]
-        );
-      } else {
-        await sql_enak.raw(
-          `INSERT INTO reklame_titik (reklame_id, reklame_ruas_id, SHAPE, keterangan, insertedAt, lastUpdateAt)
-           VALUES (?, ?, ST_GeomFromText(?), ?, NOW(), NOW())`,
-          [id_k, id_r, f.wkt, f.keterangan || null]
-        );
-      }
-    }
-    await reklame.sinkronJumlahTitik(id_r);
-    res.json({ status: 200, message: 'sukses', data: { fitur: await reklame.getTitik(id_r) } });
-  } catch (err) { gagal(res, err); }
-});
 
 module.exports = router;
