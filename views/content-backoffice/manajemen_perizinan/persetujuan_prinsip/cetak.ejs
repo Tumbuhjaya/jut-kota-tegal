@@ -1,4 +1,4 @@
-<% var REKLAME = typeof jenis !== 'undefined' && jenis && jenis.kode === 'reklame'; var OBJEK = REKLAME ? 'Reklame' : 'Bangunan dan Jaringan Utilitas'; %><%
+<% var JENIS_CETAK = typeof jenis !== 'undefined' && jenis ? jenis : null; var REKLAME = !!JENIS_CETAK && JENIS_CETAK.kode === 'reklame'; var AKSES = !!JENIS_CETAK && JENIS_CETAK.kode === 'pembukaan_jalan'; var TANPA_PROVIDER = !!JENIS_CETAK && !JENIS_CETAK.pakai_provider; var OBJEK = JENIS_CETAK ? JENIS_CETAK.objek_cetak : 'Bangunan dan Jaringan Utilitas'; %><%
   var BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
   var KOSONG = '.....';
   function tanggal(t) {
@@ -109,7 +109,7 @@
       <div>
         <div>Sdr. <%= isi(p.nama_pemohon) %></div>
         <div><%= isi(p.jabatan_pemohon) %></div>
-        <div><%= isi(ps.nama_perusahaan || (REKLAME && p.vendor ? (p.vendor.fullname || p.vendor.username) : '')) %></div>
+        <div><%= isi(ps.nama_perusahaan || (TANPA_PROVIDER && p.vendor ? (p.vendor.fullname || p.vendor.username) : '')) %></div>
         <% (alamat.length ? alamat : [KOSONG]).forEach(function (a) { %>
         <div><%= a %></div>
         <% }) %>

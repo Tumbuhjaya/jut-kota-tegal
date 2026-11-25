@@ -4,7 +4,7 @@
     <section class="section">
       <div class="w-100" style="padding: 0 30px;">
         <div class="section-header">
-          <h1>Detail Permohonan Izin<%= jenis_izin.kode === 'reklame' ? ' (Reklame)' : '' %></h1>
+          <h1>Detail Permohonan Izin<%= jenis_izin.kode !== 'jaringan_utilitas' ? ' (' + jenis_izin.label + ')' : '' %></h1>
           <div class="section-header-breadcrumb">
             <div class="breadcrumb-item active"><a href="/backoffice">Dashboard</a></div>
             <div class="breadcrumb-item"><a href="<%= base %>">Permohonan Izin</a></div>
@@ -163,6 +163,16 @@
   var layerPerRuas = {}; // permohonan_ruas_id -> [layer]
 
   function petaDigitasi(digitasi) {
+    // Titik akses (pembukaan jalan): kategori & luas M2
+    (digitasi.akses || []).forEach(function (f) {
+      var c = f.geojson.coordinates;
+      var kat = KOMPONEN.filter(function (k) { return k.kode === f.kategori; })[0];
+      var m = L.circleMarker([c[1], c[0]], { radius: 7, color: '#fff', weight: 2, fillColor: '#28a745', fillOpacity: 1 })
+        .bindPopup('<b>Titik Akses</b><br/>Ruas: ' + esc(f.nm_ruas || 'Di luar ruas') + '<br/>Kategori: ' + esc(kat ? kat.label : f.kategori) +
+          '<br/>Luas: ' + angka(f.luas) + ' m²<br/>Ket: ' + esc(f.keterangan))
+        .addTo(digitasiLayer);
+      (layerPerRuas[f.permohonan_ruas_id] = layerPerRuas[f.permohonan_ruas_id] || []).push(m);
+    });
     (digitasi.titik || []).forEach(function (f) {
       var c = f.geojson.coordinates;
       var m = L.circleMarker([c[1], c[0]], { radius: 7, color: '#fff', weight: 2, fillColor: '#f7ca18', fillOpacity: 1 })
@@ -254,7 +264,8 @@
       return b.length ? '<br/><small class="text-muted">' + b.join(' &middot; ') + '</small>' : '';
     }
     // Jumlah kabel yang berasal dari digitasi
-    var keteranganDigitasi = { panjang_kabel: ['digitasi_kabel', 'garis'] };
+    var keteranganDigitasi = {};
+    KOMPONEN.forEach(function (k) { keteranganDigitasi[k.jumlah] = k.satuan === 'Unit' ? ['digitasi_tiang', 'tiang'] : k.satuan === 'M2' ? ['digitasi_akses', 'titik'] : ['digitasi_kabel', 'garis']; });
     var t = { total: 0 };
     KOMPONEN.forEach(function (k) { t[k.kode] = { jumlah: 0, retribusi: 0 }; });
     var $tb = $('#tabel_ruas tbody').empty();
@@ -263,7 +274,7 @@
         var d = keteranganDigitasi[k.jumlah];
         t[k.kode].jumlah += Number(r[k.jumlah] || 0);
         t[k.kode].retribusi += Number(r['retribusi_' + k.kode] || 0);
-        return '<td class="text-center">' + angka(r[k.jumlah]) + (d ? ' <small class="text-muted">(' + r[d[0]] + ' ' + d[1] + ')</small>' : '') + '</td>' +
+        return '<td class="text-center">' + angka(r[k.jumlah]) + (d && Number(r[d[0]]) > 0 ? ' <small class="text-muted">(' + r[d[0]] + ' ' + d[1] + ')</small>' : '') + '</td>' +
           '<td class="text-right">' + rupiah(r[k.tarif]) + '</td>' +
           '<td class="text-right">' + rupiah(r['retribusi_' + k.kode]) + '</td>';
       }).join('');

@@ -102,8 +102,10 @@
                     <div class="w-100-flex" style="justify-content: flex-start;flex-wrap: wrap;align-items: flex-start;margin-bottom: 15px;">
                         <button type="button" class="btn btn-warning" onclick="tambahBaris()"><i class="fas fa-plus"></i> &nbsp;&nbsp;Tambah Baris Tabel</button>
                     </div>
-                    <% if (jenis_izin.pakai_retribusi) { %>
-                    <small class="text-muted"><i>Ruas jalan yang dikosongkan dianggap <b>di luar ruas</b>. Panjang kabel (Atas Tanah D &le; 15 cm) otomatis mengikuti hasil digitasi jika sudah didigitasi.</i></small>
+                    <% if (jenis_izin.kode === 'pembukaan_jalan') { %>
+                    <small class="text-muted"><i>Ruas jalan yang dikosongkan dianggap <b>di luar ruas</b>. Luas tiap kategori akses (M&sup2;) otomatis mengikuti hasil digitasi titik akses jika ruas sudah didigitasi; retribusi = luas &times; tarif kategori ruas.</i></small>
+                    <% } else if (jenis_izin.pakai_retribusi) { %>
+                    <small class="text-muted"><i>Ruas jalan yang dikosongkan dianggap <b>di luar ruas</b>. Jumlah tiang &amp; panjang kabel tiap kategori otomatis mengikuti hasil digitasi (kategori dipilih saat digitasi) jika ruas sudah didigitasi.</i></small>
                     <% } else { %>
                     <small class="text-muted"><i>Ruas jalan yang dikosongkan dianggap <b>di luar ruas</b>. Jumlah titik mengikuti hasil digitasi titik reklame.</i></small>
                     <% } %>

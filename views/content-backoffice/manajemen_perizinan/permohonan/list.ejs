@@ -4,7 +4,7 @@
     <section class="section">
       <div class="w-100" style="padding: 0 30px;">
         <div class="section-header">
-          <h1>Data Permohonan Izin<%= jenis_izin.kode === 'reklame' ? ' (Reklame)' : '' %></h1>
+          <h1>Data Permohonan Izin<%= jenis_izin.kode !== 'jaringan_utilitas' ? ' (' + jenis_izin.label + ')' : '' %></h1>
           <div class="section-header-breadcrumb">
             <div class="breadcrumb-item active"><a href="#">Dashboard</a></div>
             <div class="breadcrumb-item">Data</div>
@@ -30,7 +30,7 @@
                         <% if (jenis_izin.kode === 'jaringan_utilitas') { %>
                         <th class="text-center" rowspan="2">Provider</th>
                         <% } %>
-                        <th class="text-center" colspan="<%= jenis_izin.kode === 'jaringan_utilitas' ? 4 : 2 %>">Total</th>
+                        <th class="text-center" colspan="<%= jenis_izin.kode === 'jaringan_utilitas' ? 4 : (jenis_izin.pakai_retribusi ? 3 : 2) %>">Total</th>
                         <th class="text-center" rowspan="2">Status</th>
                         <th class="text-center" rowspan="2">Option</th>
                       </tr>
@@ -42,7 +42,8 @@
                         <th class="text-center">Panjang<br/>Kabel (m)</th>
                         <th class="text-center" style="min-width: 130px;">Retribusi (Rp)</th>
                         <% } else { %>
-                        <th class="text-center">Titik<br/>Reklame</th>
+                        <th class="text-center"><%= jenis_izin.label_titik %></th>
+                        <% if (jenis_izin.pakai_retribusi) { %><th class="text-center" style="min-width: 130px;">Retribusi (Rp)</th><% } %>
                         <% } %>
                       </tr>
                     </thead>
@@ -115,6 +116,7 @@
         { "data": 'retribusi', "className": 'text-right', "render": rupiah },
         <% } else { %>
         { "data": 'jml_titik', "className": 'text-center' },
+        <% if (jenis_izin.pakai_retribusi) { %>{ "data": 'retribusi', "className": 'text-right', "render": rupiah },<% } %>
         <% } %>
         { "data": 'status', "render": function (d) {
             var s = STATUS[d] || { label: d, badge: 'light' };
@@ -129,7 +131,7 @@
       ],
       "columnDefs": [
         { "width": "30px", "targets": 0},
-        { "width": "100px", "targets": <%= jenis_izin.kode === 'jaringan_utilitas' ? 9 : 6 %> }
+        { "width": "100px", "targets": <%= jenis_izin.kode === 'jaringan_utilitas' ? 9 : 6 + (jenis_izin.pakai_retribusi ? 1 : 0) %> }
       ],
     });
 

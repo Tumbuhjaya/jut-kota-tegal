@@ -36,7 +36,7 @@ var router = express.Router();
 var JENIS = helper.jenisIzin(kode_jenis);
 var BASE = JENIS.url_backoffice;
 // Komponen retribusi per ruas; reklame tanpa retribusi
-var KOMPONEN = JENIS.pakai_retribusi ? helper.KOMPONEN_RETRIBUSI : [];
+var KOMPONEN = JENIS.komponen;
 
 router.use(bodyParser.json());
 router.use(bodyParser.urlencoded({ extended: true }));
@@ -113,6 +113,7 @@ function viewDigitasi(jenis) {
     locals.user = getUser(req);
     locals.ruas = ruas[0];
     locals.jenis = jenis;
+    locals.kategori = helper.kategoriDigitasi(jenis);
     res.render('content-backoffice/manajemen_perizinan/digitasi', locals);
   };
 }
@@ -862,3 +863,4 @@ return router;
 
 module.exports = buatRouter('jaringan_utilitas');
 module.exports.reklame = buatRouter('reklame');
+module.exports.pembukaan_jalan = buatRouter('pembukaan_jalan');

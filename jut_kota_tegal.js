@@ -139,6 +139,7 @@ app.use('/manajemen_users', manajemen_users);
 app.use('/manajemen_perizinan', manajemen_perizinan);
 // Alur yang sama untuk permohonan izin reklame (permohonan.jenis_izin = 'reklame')
 app.use('/manajemen_reklame', manajemen_perizinan.reklame);
+app.use('/manajemen_pembukaan_jalan', manajemen_perizinan.pembukaan_jalan);
 
 // API
 app.use('/user', user);

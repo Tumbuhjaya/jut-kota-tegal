@@ -1,4 +1,4 @@
-<% var REKLAME = typeof jenis !== 'undefined' && jenis && jenis.kode === 'reklame'; var OBJEK = REKLAME ? 'Reklame' : 'Bangunan dan Jaringan Utilitas'; %><%
+<% var JENIS_CETAK = typeof jenis !== 'undefined' && jenis ? jenis : null; var REKLAME = !!JENIS_CETAK && JENIS_CETAK.kode === 'reklame'; var AKSES = !!JENIS_CETAK && JENIS_CETAK.kode === 'pembukaan_jalan'; var TANPA_PROVIDER = !!JENIS_CETAK && !JENIS_CETAK.pakai_provider; var OBJEK = JENIS_CETAK ? JENIS_CETAK.objek_cetak : 'Bangunan dan Jaringan Utilitas'; %><%
   // Data dari tahapan.getDataCetak(): permohonan, ruas, total, konfig, persetujuan, perjanjian_sewa
   // Data yang tidak tersedia di backend ditampilkan sebagai "......."
   var KOSONG = '.......';
@@ -20,8 +20,13 @@
   var ps = typeof perjanjian_sewa !== 'undefined' && perjanjian_sewa ? perjanjian_sewa : {};
   var perusahaan = p.perusahaan || {};
   // Reklame tanpa provider: pemegang izin = vendor pemohon
-  var namaPerusahaan = perusahaan.nama_perusahaan || p.provider || (REKLAME && p.vendor ? (p.vendor.fullname || p.vendor.username) : '') || KOSONG;
+  var namaPerusahaan = perusahaan.nama_perusahaan || p.provider || (TANPA_PROVIDER && p.vendor ? (p.vendor.fullname || p.vendor.username) : '') || KOSONG;
   var totalTitik = ruas.reduce(function (s, r) { return s + Number(r.jumlah_titik || 0); }, 0);
+  // Pembukaan jalan: luas akses (M2) & kategori per ruas dari komponen jenis
+  var KOMPONEN_AKSES = AKSES ? JENIS_CETAK.komponen : [];
+  function luasAkses(r) { return KOMPONEN_AKSES.reduce(function (s, k) { return s + Number(r[k.jumlah] || 0); }, 0); }
+  function kategoriAkses(r) { return KOMPONEN_AKSES.filter(function (k) { return Number(r[k.jumlah]) > 0; }).map(function (k) { return k.label.replace('Akses Jalan ', ''); }).join(', '); }
+  var totalLuas = ruas.reduce(function (s, r) { return s + luasAkses(r); }, 0);
   var jabatanPemohon = p.jabatan_pemohon || KOSONG;
 
   // No. ruas "33.76.758" -> 3 kolom seperti format surat; selain itu digabung 1 sel
@@ -41,7 +46,8 @@
     return j.join(', ');
   }
   var totalTiang = ruas.reduce(function (s, r) { return s + jumlahTiang(r); }, 0);
-  var totalKabel = ruas.reduce(function (s, r) { return s + Number(r.panjang_kabel || 0); }, 0);
+  // Panjang kabel = semua kategori (atas & bawah tanah)
+  var totalKabel = ruas.reduce(function (s, r) { return s + Number(r.total_kabel || 0); }, 0);
 %>
 <!DOCTYPE html>
 <html lang="id">
@@ -169,6 +175,11 @@
                   <% if (REKLAME) { %>
                   <th style="width: 70px;">Panjang Jalan (meter)</th>
                   <th style="width: 70px;">Jumlah Titik Reklame</th>
+                  <% } else if (AKSES) { %>
+                  <th style="width: 70px;">Panjang Jalan (meter)</th>
+                  <th style="width: 60px;">Jumlah Titik Akses</th>
+                  <th style="width: 70px;">Luas (M²)</th>
+                  <th style="width: 110px;">Kategori</th>
                   <% } else { %>
                   <th style="width: 60px;">Jumlah Tiang</th>
                   <th style="width: 70px;">Panjang Jalan (meter)</th>
@@ -186,10 +197,15 @@
                   <% if (REKLAME) { %>
                   <td class="c"><%= panjangMeter(r) %></td>
                   <td class="c"><%= angka(r.jumlah_titik) %></td>
+                  <% } else if (AKSES) { %>
+                  <td class="c"><%= panjangMeter(r) %></td>
+                  <td class="c"><%= angka(r.jumlah_titik) %></td>
+                  <td class="c"><%= angka(luasAkses(r), 2) %></td>
+                  <td><%= kategoriAkses(r) %></td>
                   <% } else { %>
                   <td class="c"><%= angka(jumlahTiang(r)) %></td>
                   <td class="c"><%= panjangMeter(r) %></td>
-                  <td class="c"><%= angka(r.panjang_kabel) %></td>
+                  <td class="c"><%= angka(r.total_kabel) %></td>
                   <td><%= keteranganRuas(r) %></td>
                   <% } %>
                 </tr>
@@ -202,6 +218,11 @@
                   <% if (REKLAME) { %>
                   <th></th>
                   <th><%= angka(totalTitik) %></th>
+                  <% } else if (AKSES) { %>
+                  <th></th>
+                  <th><%= angka(totalTitik) %></th>
+                  <th><%= angka(totalLuas, 2) %></th>
+                  <th></th>
                   <% } else { %>
                   <th><%= angka(totalTiang) %></th>
                   <th></th>

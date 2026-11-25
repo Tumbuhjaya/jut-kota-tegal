@@ -533,7 +533,7 @@
                                                         <% if (UTILITAS) { %>
                                                         <th class="text-center" rowspan="2">Provider</th>
                                                         <% } %>
-                                                        <th class="text-center" colspan="<%= UTILITAS ? 4 : 2 %>">Total</th>
+                                                        <th class="text-center" colspan="<%= UTILITAS ? 4 : (jenis_izin.pakai_retribusi ? 3 : 2) %>">Total</th>
                                                         <th class="text-center" style="min-width: 100px;" rowspan="2">Status</th>
                                                          <th class="text-center" rowspan="2">Nomor SK</th>
                                                         <th class="text-center" style="min-width: 100px;" rowspan="2">Option</th>
@@ -545,7 +545,8 @@
                                                         <th style="min-width: 80px;;">Panjang<br/>Kabel (m)</th>
                                                         <th style="min-width: 140px;">Retribusi</th>
                                                         <% } else { %>
-                                                        <th>Titik Reklame</th>
+                                                        <th><%= jenis_izin.label_titik %></th>
+                                                        <% if (jenis_izin.pakai_retribusi) { %><th style="min-width: 140px;">Retribusi</th><% } %>
                                                         <% } %>
                                                     </tr>
                                                 </thead>
@@ -654,6 +655,7 @@
                 <% } else { %>
                 { data: 'jml_ruas', className: 'text-center' },
                 { data: 'jml_titik', className: 'text-center' },
+                <% if (jenis_izin.pakai_retribusi) { %>{ data: 'retribusi', className: 'text-right', render: rupiah },<% } %>
                 <% } %>
                 { data: null, render: function (r) {
                     return badgeStatus(r) +

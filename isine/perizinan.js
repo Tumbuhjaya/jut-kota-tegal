@@ -184,7 +184,7 @@ var JENIS = helper.jenisIzin(kode_jenis);
 var JU = '/' + JENIS.kode;
 var BASE_BO = JENIS.url_backoffice;
 // Komponen retribusi per ruas; reklame tanpa retribusi
-var KOMPONEN = JENIS.pakai_retribusi ? helper.KOMPONEN_RETRIBUSI : [];
+var KOMPONEN = JENIS.komponen;
 var JENIS_DOKUMEN = helper.jenisDokumen(JENIS.kode);
 
 // Halaman pemohon memakai view jaringan_utilitas: base = awalan URL, jenis_izin = konfigurasi jenis
@@ -283,6 +283,7 @@ function viewDigitasi(jenis) {
     var locals = await localsPengisian(req, p);
     locals.ruas = ruas[0];
     locals.jenis = jenis;
+    locals.kategori = helper.kategoriDigitasi(jenis);
     res.render('content/jaringan_utilitas/' + (jenis === 'kabel' ? 'kabel' : 'tiang'), locals);
   };
 }
@@ -447,7 +448,7 @@ router.post(JU + '/api/simpan/:id_permohonan', cek_pemohon, async function (req,
       }
       if (id_ruas_tersimpan) {
         await helper.salinDataRuas(id_ruas_tersimpan);
-        await helper.sinkronTiangRetribusi(id_ruas_tersimpan);
+        await helper.sinkronKomponenDigitasi(id_ruas_tersimpan);
       }
     }
     res.json({ status: 200, message: 'sukses', data: await helper.getRuas(p.permohonan_id) });
@@ -573,6 +574,7 @@ router.get(JU + '/api/ruas/hapus/:id_permohonan/:id_ruas', cek_pemohon, async fu
     await sql_enak.raw(`UPDATE permohonan_tiang SET deletedAt = NOW() WHERE permohonan_ruas_id = ? AND deletedAt IS NULL`, [id]);
     await sql_enak.raw(`UPDATE permohonan_kabel SET deletedAt = NOW() WHERE permohonan_ruas_id = ? AND deletedAt IS NULL`, [id]);
     await sql_enak.raw(`UPDATE permohonan_titik SET deletedAt = NOW() WHERE permohonan_ruas_id = ? AND deletedAt IS NULL`, [id]);
+    await sql_enak.raw(`UPDATE permohonan_akses SET deletedAt = NOW() WHERE permohonan_ruas_id = ? AND deletedAt IS NULL`, [id]);
     res.json({ status: 200, message: 'sukses', data: null });
   } catch (err) { gagal(res, err); }
 });
@@ -583,6 +585,7 @@ var DIGITASI = {
   kabel: { table: 'permohonan_kabel', pk: 'permohonan_kabel_id', geom: /^LINESTRING\s*\(/i },
   titik: { table: 'permohonan_titik', pk: 'permohonan_titik_id', geom: /^POINT\s*\(/i }
 };
+DIGITASI.akses = { table: 'permohonan_akses', pk: 'permohonan_akses_id', geom: DIGITASI.titik.geom };
 function cfgDigitasi(jenis) {
   return JENIS.digitasi.indexOf(jenis) === -1 ? null : DIGITASI[jenis];
 }
@@ -623,6 +626,11 @@ router.post(JU + '/api/digitasi/:jenis/:id_permohonan/:id_ruas', cek_pemohon, as
       var kolom = { jumlah: Math.max(1, parseInt(f.jumlah) || 1), keterangan: f.keterangan || null };
       // Panjang kabel disimpan dalam meter bulat (tanpa desimal)
       if (req.params.jenis === 'kabel') kolom.panjang = Math.max(0, Math.round(parseFloat(f.panjang) || 0));
+      // Titik akses: luas (M2) untuk retribusi per M2
+      if (req.params.jenis === 'akses') kolom.luas = Math.max(0, Math.round((parseFloat(f.luas) || 0) * 100) / 100);
+      // Kategori tiang (t_*) / kabel (jr_*); di luar daftar -> kategori bawaan
+      var kategori = helper.kategoriValid(req.params.jenis, f.kategori);
+      if (kategori) kolom.kategori = kategori;
       var set = Object.keys(kolom);
       var nilai = set.map(function (k) { return kolom[k]; });
       if (f.id) {
@@ -648,6 +656,7 @@ router.post(JU + '/api/digitasi/:jenis/:id_permohonan/:id_ruas', cek_pemohon, as
 
 rutePermohonan('jaringan_utilitas');
 rutePermohonan('reklame');
+rutePermohonan('pembukaan_jalan');
 
 
 module.exports = router;

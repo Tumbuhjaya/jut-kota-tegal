@@ -3,7 +3,7 @@
     <section class="section">
       <div class="w-100" style="padding: 0 30px;">
         <div class="section-header" style="border-radius: 0.25rem;">
-          <h1><%= permohonan.status === 'draft' ? 'Tambah' : 'Edit' %> Permohonan Izin<%= jenis_izin.kode === 'reklame' ? ' (Reklame)' : '' %></h1>
+          <h1><%= permohonan.status === 'draft' ? 'Tambah' : 'Edit' %> Permohonan Izin<%= jenis_izin.kode !== 'jaringan_utilitas' ? ' (' + jenis_izin.label + ')' : '' %></h1>
           <div class="section-header-breadcrumb">
             <div class="breadcrumb-item active"><a href="/backoffice">Dashboard</a></div>
             <div class="breadcrumb-item active"><a href="<%= base %>">Permohonan Izin</a></div>
@@ -117,7 +117,7 @@
                                         <hr>
 
                                         <div class="form-group">
-                                            <label for="pernyataan_kesanggupan">Surat Pernyataan kesanggupan memenuhi dan mematuhi semua persyaratan yang ditentukan dalam pembangunan/penempatan <%= jenis_izin.kode === 'reklame' ? 'reklame' : 'bangunan dan jaringan utilitas' %>.</label>
+                                            <label for="pernyataan_kesanggupan">Surat Pernyataan kesanggupan memenuhi dan mematuhi semua persyaratan yang ditentukan dalam pembangunan/penempatan <%= jenis_izin.kode === 'jaringan_utilitas' ? 'bangunan dan jaringan utilitas' : jenis_izin.objek %>.</label>
                                             <div class="custom-file">
                                                 <input type="file" class="custom-file-input" id="pernyataan_kesanggupan" name="pernyataan_kesanggupan" accept=".pdf,.jpg,.jpeg,.png">
                                                 <label class="custom-file-label" for="pernyataan_kesanggupan">Pilih File</label>
@@ -153,7 +153,7 @@
                                 <div class="row mt-3">
                                     <div class="col-12">
                                         <div class="form-group">
-                                            <label for="gambar_lokasi">Gambar Lokasi Pembangunan/Penempatan <%= jenis_izin.kode === 'reklame' ? 'Iklan' : 'Bangunan dan Jaringan Utilitas' %></label>
+                                            <label for="gambar_lokasi">Gambar Lokasi Pembangunan/Penempatan <%= jenis_izin.kode === 'jaringan_utilitas' ? 'Bangunan dan Jaringan Utilitas' : (jenis_izin.kode === 'reklame' ? 'Iklan' : 'Jalan / Akses') %></label>
                                             <div class="custom-file">
                                                 <input type="file" class="custom-file-input" id="gambar_lokasi" name="gambar_lokasi" accept=".pdf,.jpg,.jpeg,.png">
                                                 <label class="custom-file-label" for="gambar_lokasi">Pilih File</label>
@@ -169,7 +169,7 @@
                                                 <input type="file" class="custom-file-input" id="rencana_teknis" name="rencana_teknis" accept=".pdf,.jpg,.jpeg,.png">
                                                 <label class="custom-file-label" for="rencana_teknis">Pilih File</label>
                                             </div>
-                                            <small class="form-text text-muted"><i>Gambar Konstruksi dan bahan Konstruksi <%= jenis_izin.kode === 'reklame' ? 'reklame' : 'bangunan dan jaringan utilitas' %></i></small>
+                                            <small class="form-text text-muted"><i>Gambar Konstruksi dan bahan Konstruksi <%= jenis_izin.kode === 'jaringan_utilitas' ? 'bangunan dan jaringan utilitas' : jenis_izin.objek %></i></small>
                                             <small class="form-text dok-info" data-jenis="rencana_teknis"></small>
                                         </div>
 
@@ -226,7 +226,8 @@
         var TOMBOL_DIGITASI = {
             tiang: '<button type="button" class="btn btn-info btn-digitasi" data-jenis="tiang" title="Digitasi Tiang"><i class="fas fa-map-pin"></i></button>',
             kabel: '<button type="button" class="btn btn-dark btn-digitasi" data-jenis="kabel" title="Digitasi Kabel"><i class="fas fa-grip-lines"></i></button>',
-            titik: '<button type="button" class="btn btn-info btn-digitasi" data-jenis="titik" title="Digitasi Titik Reklame"><i class="fas fa-map-pin"></i></button>'
+            titik: '<button type="button" class="btn btn-info btn-digitasi" data-jenis="titik" title="Digitasi Titik Reklame"><i class="fas fa-map-pin"></i></button>',
+            akses: '<button type="button" class="btn btn-info btn-digitasi" data-jenis="akses" title="Digitasi Titik Akses"><i class="fas fa-map-pin"></i></button>'
         };
         var KOMPONEN = <%- JSON.stringify(komponen) %>; // komponen retribusi per ruas (helpper/permohonan.js)
 
@@ -253,7 +254,9 @@
             row = row || {};
             var dis = BISA_UBAH ? '' : 'disabled';
             // Panjang kabel yang sudah didigitasi mengikuti hasil digitasi
-            var digitasi = { panjang_kabel: [row.digitasi_kabel, 'garis'] };
+            // Komponen tiang (Unit) mengikuti digitasi tiang, komponen kabel (Meter) mengikuti digitasi kabel per kategori
+            var digitasi = {};
+            KOMPONEN.forEach(function (k) { digitasi[k.jumlah] = k.satuan === 'Unit' ? [row.digitasi_tiang, 'tiang'] : k.satuan === 'M2' ? [row.digitasi_akses, 'titik'] : [row.digitasi_kabel, 'garis']; });
             // Tiap komponen: jumlah (isian) | nilai retribusi (tarif) | total
             var selKomponen = KOMPONEN.map(function (k) {
                 var d = digitasi[k.jumlah];

@@ -608,6 +608,7 @@
                                                         <th class="text-center" style="width: 140px;">Panjang (m)</th>
                                                         <th class="text-center" style="width: 120px;">Jumlah Kabel</th>
                                                         <% } %>
+                                                        <% if (kategori.daftar.length) { %><th class="text-center" style="min-width: 210px;">Kategori</th><% } %>
                                                         <th class="text-center">Keterangan</th>
                                                         <th class="text-center" style="width: 110px;">Option</th>
                                                     </tr>
@@ -661,6 +662,11 @@
         var ID_RUAS = <%= ruas.permohonan_ruas_id %>;
         var RUAS_MASTER_ID = <%= ruas.ruas_id || 'null' %>;
         var JENIS = '<%= jenis %>';
+        // Kategori tiang (t_k30cm / t_l30cm) / kabel (jr_*), sama dengan kolom kategori di tabel tiang / kabel
+        var KATEGORI = <%- JSON.stringify(kategori) %>;
+        var LABEL_KATEGORI = {};
+        KATEGORI.daftar.forEach(function (k) { LABEL_KATEGORI[k.kode] = k.label; });
+        var WARNA_KABEL = { jr_atk15cm: '#e74c3c', jr_atl15cm: '#8e44ad', jr_btk15cm: '#16a085', jr_btl15cm: '#d35400' };
         var BISA_UBAH = <%= bisa_ubah ? 'true' : 'false' %>;
         var API_DIGITASI = rooturl + '<%= base %>/api/digitasi/' + JENIS + '/' + ID_PERMOHONAN + '/' + ID_RUAS;
 
@@ -2330,7 +2336,7 @@ function loadGeoJsoninovasi(data) {
             var layer = JENIS === 'tiang'
                 ? L.marker([c[1], c[0]], { icon: ikonTiang })
                 : L.polyline(c.map(function (p) { return [p[1], p[0]]; }), { color: '#e74c3c', weight: 4 });
-            layer.fitur = { id: f.id, jumlah: f.jumlah, keterangan: f.keterangan || '', panjang: Math.round(Number(f.panjang || 0)) };
+            layer.fitur = { id: f.id, jumlah: f.jumlah, kategori: f.kategori || KATEGORI.bawaan, keterangan: f.keterangan || '', panjang: Math.round(Number(f.panjang || 0)) };
             return layer;
         }
 
@@ -2344,7 +2350,7 @@ function loadGeoJsoninovasi(data) {
 
         function digitasiBaru(layer) {
             if (JENIS === 'tiang') layer.setIcon(ikonTiang);
-            layer.fitur = { id: null, jumlah: 1, keterangan: '', panjang: hitungPanjang(layer) };
+            layer.fitur = { id: null, jumlah: 1, kategori: KATEGORI.bawaan, keterangan: '', panjang: hitungPanjang(layer) };
             drawnItems.addLayer(layer);
             adaPerubahan = true;
             renderTabel();
@@ -2371,28 +2377,33 @@ function loadGeoJsoninovasi(data) {
                     '<td class="text-center">' + (i + 1) + '.</td>' +
                     '<td class="text-center">' + info + '</td>' +
                     '<td><input type="number" min="1" step="1" class="form-control form-control-sm in-jumlah" ' + dis + '></td>' +
+                    (KATEGORI.daftar.length ? '<td><select class="form-control form-control-sm in-kat" ' + dis + '>' +
+                        KATEGORI.daftar.map(function (k) { return '<option value="' + k.kode + '">' + k.label + '</option>'; }).join('') + '</select></td>' : '') +
                     '<td><input type="text" class="form-control form-control-sm in-ket" ' + dis + '></td>' +
                     '<td class="text-center"><div class="w-100-flex" style="justify-content: center;gap: 5px;">' +
                         '<button type="button" class="btn btn-info btn-sm btn-zoom" title="Lihat di peta"><i class="fas fa-search-location"></i></button>' +
                         (BISA_UBAH ? '<button type="button" class="btn btn-danger btn-sm btn-hapus" title="Hapus"><i class="fas fa-trash"></i></button>' : '') +
                     '</div></td></tr>');
                 $tr.find('.in-jumlah').val(f.jumlah);
+                $tr.find('.in-kat').val(f.kategori);
+                if (JENIS === 'kabel' && layer.setStyle) layer.setStyle({ color: WARNA_KABEL[f.kategori] || '#e74c3c' });
                 $tr.find('.in-ket').val(f.keterangan);
                 $tr.data('layer', layer);
                 $tb.append($tr);
-                layer.bindTooltip(JENIS + ' ' + (i + 1));
+                layer.bindTooltip(JENIS + ' ' + (i + 1) + (LABEL_KATEGORI[f.kategori] ? ' - ' + LABEL_KATEGORI[f.kategori] : ''));
             });
             if (!drawnItems.getLayers().length) {
-                $tb.append('<tr><td colspan="5" class="text-center"><i>Belum ada data ' + JENIS + '</i></td></tr>');
+                $tb.append('<tr><td colspan="' + (KATEGORI.daftar.length ? 6 : 5) + '" class="text-center"><i>Belum ada data ' + JENIS + '</i></td></tr>');
             }
             $('#total_digitasi').text(JENIS === 'tiang' ? total + ' unit' : total.toLocaleString('id-ID') + ' m');
         }
 
-        $('#tabel_digitasi').on('change', '.in-jumlah, .in-ket', function () {
+        $('#tabel_digitasi').on('change', '.in-jumlah, .in-kat, .in-ket', function () {
             var $tr = $(this).closest('tr');
             var f = $tr.data('layer').fitur;
             f.jumlah = Math.max(1, parseInt($tr.find('.in-jumlah').val()) || 1);
             f.keterangan = $tr.find('.in-ket').val();
+            if ($tr.find('.in-kat').length) f.kategori = $tr.find('.in-kat').val();
             adaPerubahan = true;
             renderTabel();
         });
@@ -2420,6 +2431,7 @@ function loadGeoJsoninovasi(data) {
                     id: layer.fitur.id,
                     wkt: toWKT(layer),
                     jumlah: layer.fitur.jumlah,
+                    kategori: layer.fitur.kategori,
                     panjang: layer.fitur.panjang,
                     keterangan: layer.fitur.keterangan
                 };

@@ -1,4 +1,4 @@
-<% var REKLAME = typeof jenis !== 'undefined' && jenis && jenis.kode === 'reklame'; var OBJEK = REKLAME ? 'Reklame' : 'Bangunan dan Jaringan Utilitas'; %><%
+<% var JENIS_CETAK = typeof jenis !== 'undefined' && jenis ? jenis : null; var REKLAME = !!JENIS_CETAK && JENIS_CETAK.kode === 'reklame'; var AKSES = !!JENIS_CETAK && JENIS_CETAK.kode === 'pembukaan_jalan'; var TANPA_PROVIDER = !!JENIS_CETAK && !JENIS_CETAK.pakai_provider; var OBJEK = JENIS_CETAK ? JENIS_CETAK.objek_cetak : 'Bangunan dan Jaringan Utilitas'; %><%
   var BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
   var HARI = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', "Jum'at", 'Sabtu'];
   var SATUAN = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh', 'sebelas'];
@@ -153,7 +153,7 @@
       <tr class="isi">
         <td class="no">1.</td>
         <td class="nama"><%= p.nama_pemohon || '.........................................' %></td>
-        <td class="instansi"><%= p.provider || (REKLAME && p.vendor ? (p.vendor.fullname || p.vendor.username) : '') %></td>
+        <td class="instansi"><%= p.provider || (TANPA_PROVIDER && p.vendor ? (p.vendor.fullname || p.vendor.username) : '') %></td>
         <td class="ttd">1. <span></span></td>
       </tr>
 

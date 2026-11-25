@@ -10,19 +10,30 @@ var sql_enak = require('../database/mysql_enak.js').connection;
 var DIR_DOKUMEN = path.join(__dirname, '..', 'uploads', 'permohonan');
 fs.mkdirSync(DIR_DOKUMEN, { recursive: true });
 
-// Jenis izin (permohonan.jenis_izin). Alur & tabel sama; reklame tanpa provider & retribusi, digitasinya hanya titik.
+// Jenis izin (permohonan.jenis_izin). Alur & tabel sama; reklame tanpa provider & retribusi, digitasinya hanya titik;
+// pembukaan jalan tanpa provider, digitasi titik akses berkategori + luas (retribusi per M2). komponen diisi di bawah.
+// objek_cetak = objek izin pada dokumen cetak ("Pembangunan/Penempatan <objek_cetak>"), label_titik = nama titik di tabel.
 var JENIS_IZIN = {
   jaringan_utilitas: {
-    kode: 'jaringan_utilitas', label: 'Jaringan Utilitas', objek: 'jaringan utilitas',
+    kode: 'jaringan_utilitas', label: 'Jaringan Utilitas', objek: 'jaringan utilitas', objek_cetak: 'Bangunan dan Jaringan Utilitas',
+    label_titik: 'Titik',
     url_pemohon: '/perizinan/jaringan_utilitas', url_backoffice: '/manajemen_perizinan',
     digitasi: ['tiang', 'kabel'], pakai_provider: true, pakai_retribusi: true,
     verifikasi_awal: true   // provider + dokumen diverifikasi admin sebelum isi ruas
   },
   reklame: {
-    kode: 'reklame', label: 'Reklame', objek: 'reklame',
+    kode: 'reklame', label: 'Reklame', objek: 'reklame', objek_cetak: 'Reklame',
+    label_titik: 'Titik Reklame',
     url_pemohon: '/perizinan/reklame', url_backoffice: '/manajemen_reklame',
     digitasi: ['titik'], pakai_provider: false, pakai_retribusi: false,
     verifikasi_awal: false  // tanpa provider, pemohon langsung isi & ajukan; dokumen diperiksa saat verifikasi permohonan
+  },
+  pembukaan_jalan: {
+    kode: 'pembukaan_jalan', label: 'Pembukaan Jalan', objek: 'pembukaan jalan / akses', objek_cetak: 'Pembukaan Jalan / Akses',
+    label_titik: 'Titik Akses',
+    url_pemohon: '/perizinan/pembukaan_jalan', url_backoffice: '/manajemen_pembukaan_jalan',
+    digitasi: ['akses'], pakai_provider: false, pakai_retribusi: true,
+    verifikasi_awal: false
   }
 };
 function jenisIzin(permohonan_atau_kode) {
@@ -49,8 +60,14 @@ var JENIS_DOKUMEN_REKLAME = Object.assign({}, JENIS_DOKUMEN, {
   rencana_anggaran: 'Rencana Anggaran Biaya (RAB)'
 });
 delete JENIS_DOKUMEN_REKLAME.pernyataan_retribusi;
+var JENIS_DOKUMEN_AKSES = Object.assign({}, JENIS_DOKUMEN, {
+  gambar_lokasi: 'Gambar Lokasi Pembukaan Jalan / Akses'
+});
 function jenisDokumen(jenis) {
-  return jenisIzin(jenis).kode === 'reklame' ? JENIS_DOKUMEN_REKLAME : JENIS_DOKUMEN;
+  var kode = jenisIzin(jenis).kode;
+  if (kode === 'reklame') return JENIS_DOKUMEN_REKLAME;
+  if (kode === 'pembukaan_jalan') return JENIS_DOKUMEN_AKSES;
+  return JENIS_DOKUMEN;
 }
 // surat kuasa hanya diperlukan jika surat tidak ditandatangani penanggung jawab
 var DOKUMEN_WAJIB = Object.keys(JENIS_DOKUMEN).filter(function (k) { return k !== 'surat_kuasa'; });
@@ -94,6 +111,43 @@ var KOMPONEN_RETRIBUSI = [
   { kode: 'jr_atk15cm', jumlah: 'panjang_kabel',  tarif: 'tarif_kabel', satuan: 'Meter', label: 'Jaringan Utilitas Atas Tanah D ≤ 15 cm' },
   { kode: 'jr_atl15cm', jumlah: 'jml_jr_atl15cm', tarif: 'jr_atl15cm',  satuan: 'Meter', label: 'Jaringan Utilitas Atas Tanah D > 15 cm' }
 ];
+// Pembukaan jalan / akses: luas (M2) per kategori, tarif Rp/M2/tahun dari master_retribusi (kolom bernama sama)
+var KOMPONEN_AKSES = [
+  { kode: 'jl_pribadi', jumlah: 'jml_jl_pribadi', tarif: 'jl_pribadi', satuan: 'M2', label: 'Akses Jalan Kepentingan Pribadi' },
+  { kode: 'usaha_kcl',  jumlah: 'jml_usaha_kcl',  tarif: 'usaha_kcl',  satuan: 'M2', label: 'Akses Jalan Usaha Kecil' },
+  { kode: 'usaha_mngh', jumlah: 'jml_usaha_mngh', tarif: 'usaha_mngh', satuan: 'M2', label: 'Akses Jalan Usaha Menengah' },
+  { kode: 'usaha_bsr',  jumlah: 'jml_usaha_bsr',  tarif: 'usaha_bsr',  satuan: 'M2', label: 'Akses Jalan Usaha Besar' }
+];
+// Semua komponen dipakai di query bersama (kolom jenis lain bernilai 0, jadi tidak menambah retribusi)
+var KOMPONEN_SEMUA = KOMPONEN_RETRIBUSI.concat(KOMPONEN_AKSES);
+JENIS_IZIN.jaringan_utilitas.komponen = KOMPONEN_RETRIBUSI;
+JENIS_IZIN.reklame.komponen = [];
+JENIS_IZIN.pembukaan_jalan.komponen = KOMPONEN_AKSES;
+
+// Kategori digitasi = komponen retribusi (kode sama dengan kolom kategori di tabel tiang / kabel).
+// Tiang: komponen satuan Unit, kabel: komponen satuan Meter, titik akses: komponen M2.
+// bawaan = kategori digitasi lama / baru; nilai = ekspresi jumlah komponen per fitur.
+var KATEGORI_DIGITASI = {
+  tiang: { tabel: 'permohonan_tiang', bawaan: 't_k30cm', nilai: 'jumlah', daftar: KOMPONEN_RETRIBUSI.filter(function (k) { return k.satuan === 'Unit'; }) },
+  kabel: { tabel: 'permohonan_kabel', bawaan: 'jr_atk15cm', nilai: 'ROUND(panjang) * jumlah', daftar: KOMPONEN_RETRIBUSI.filter(function (k) { return k.satuan === 'Meter'; }) },
+  akses: { tabel: 'permohonan_akses', bawaan: 'jl_pribadi', nilai: 'luas * jumlah', daftar: KOMPONEN_AKSES }
+};
+// Untuk view: [{ kode, label }] + bawaan; jenis tanpa kategori (titik) -> daftar kosong
+function kategoriDigitasi(jenis) {
+  var k = KATEGORI_DIGITASI[jenis];
+  if (!k) return { bawaan: null, daftar: [] };
+  return { bawaan: k.bawaan, daftar: k.daftar.map(function (x) { return { kode: x.kode, label: x.label }; }) };
+}
+function kategoriValid(jenis, kategori) {
+  var k = KATEGORI_DIGITASI[jenis];
+  if (!k) return null;
+  return k.daftar.some(function (x) { return x.kode === kategori; }) ? kategori : k.bawaan;
+}
+// Total panjang kabel semua kategori satu baris permohonan_ruas (a = alias tabel)
+function sqlTotalKabel(a) {
+  var p = a ? a + '.' : '';
+  return KATEGORI_DIGITASI.kabel.daftar.map(function (k) { return 'IFNULL(' + p + k.jumlah + ', 0)'; }).join(' + ');
+}
 
 // Ekspresi SQL retribusi satu komponen / seluruh komponen baris permohonan_ruas (a = alias tabel)
 function sqlRetribusiKomponen(k, a) {
@@ -101,7 +155,7 @@ function sqlRetribusiKomponen(k, a) {
   return p + k.jumlah + ' * IFNULL(' + p + k.tarif + ', 0)';
 }
 function sqlRetribusi(a) {
-  return KOMPONEN_RETRIBUSI.map(function (k) { return sqlRetribusiKomponen(k, a); }).join(' + ');
+  return KOMPONEN_SEMUA.map(function (k) { return sqlRetribusiKomponen(k, a); }).join(' + ');
 }
 
 async function getIdRuasLain() {
@@ -153,7 +207,7 @@ var SQL_REKAP = `
       SELECT permohonan_id,
              COUNT(*) AS jml_ruas,
              SUM(jumlah_tiang) AS jml_tiang,
-             SUM(panjang_kabel) AS jml_kabel,
+             SUM(${sqlTotalKabel()}) AS jml_kabel,
              SUM(jumlah_titik) AS jml_titik,
              SUM(${sqlRetribusi()}) AS retribusi
         FROM permohonan_ruas
@@ -185,7 +239,8 @@ async function getPermohonan(permohonan_id, id_user, jenis) {
 async function getRuas(permohonan_id) {
   var [rows] = await sql_enak.raw(
     `SELECT r.permohonan_ruas_id, r.ruas_id, r.jumlah_tiang, r.panjang_kabel, r.jumlah_titik, r.tarif_tiang, r.tarif_kabel,
-            ${KOMPONEN_RETRIBUSI.map(function (k) { return 'r.' + k.jumlah + ', ' + sqlRetribusiKomponen(k, 'r') + ' AS retribusi_' + k.kode; }).join(', ')},
+            ${sqlTotalKabel('r')} AS total_kabel,
+            ${KOMPONEN_SEMUA.map(function (k) { return 'r.' + k.jumlah + ', ' + sqlRetribusiKomponen(k, 'r') + ' AS retribusi_' + k.kode; }).join(', ')},
             r.jml_t_k30cm * r.tarif_tiang AS retribusi_tiang,
             r.panjang_kabel * r.tarif_kabel AS retribusi_kabel,
             ${sqlRetribusi('r')} AS retribusi_total,
@@ -194,7 +249,8 @@ async function getRuas(permohonan_id) {
             (r.ruas_id IS NULL OR mr.nm_ruas = '${NAMA_RUAS_LAIN}') AS luar_ruas,
             (SELECT COUNT(*) FROM permohonan_tiang pt WHERE pt.permohonan_ruas_id = r.permohonan_ruas_id AND pt.deletedAt IS NULL) AS digitasi_tiang,
             (SELECT COUNT(*) FROM permohonan_kabel pk WHERE pk.permohonan_ruas_id = r.permohonan_ruas_id AND pk.deletedAt IS NULL) AS digitasi_kabel,
-            (SELECT COUNT(*) FROM permohonan_titik px WHERE px.permohonan_ruas_id = r.permohonan_ruas_id AND px.deletedAt IS NULL) AS digitasi_titik
+            (SELECT COUNT(*) FROM permohonan_titik px WHERE px.permohonan_ruas_id = r.permohonan_ruas_id AND px.deletedAt IS NULL) AS digitasi_titik,
+            (SELECT COUNT(*) FROM permohonan_akses pa WHERE pa.permohonan_ruas_id = r.permohonan_ruas_id AND pa.deletedAt IS NULL) AS digitasi_akses
        FROM permohonan_ruas r
        LEFT JOIN master_retribusi mr ON mr.id = r.ruas_id
        LEFT JOIN kecamatan kc ON kc.kec_id = IFNULL(r.id_kec, mr.id_kec)
@@ -260,7 +316,7 @@ async function getDigitasi(permohonan_id, permohonan_ruas_id) {
   var filter = permohonan_ruas_id ? ` AND x.permohonan_ruas_id = ?` : ``;
   var val = permohonan_ruas_id ? [permohonan_id, permohonan_ruas_id] : [permohonan_id];
   var [tiang] = await sql_enak.raw(
-    `SELECT x.permohonan_tiang_id AS id, x.permohonan_ruas_id, x.jumlah, x.keterangan,
+    `SELECT x.permohonan_tiang_id AS id, x.permohonan_ruas_id, x.jumlah, x.kategori, x.keterangan,
             ST_AsGeoJSON(x.SHAPE) AS geojson, mr.nm_ruas
        FROM permohonan_tiang x
        JOIN permohonan_ruas r ON r.permohonan_ruas_id = x.permohonan_ruas_id AND r.deletedAt IS NULL
@@ -269,7 +325,7 @@ async function getDigitasi(permohonan_id, permohonan_ruas_id) {
     val
   );
   var [kabel] = await sql_enak.raw(
-    `SELECT x.permohonan_kabel_id AS id, x.permohonan_ruas_id, x.jumlah, x.panjang, x.keterangan,
+    `SELECT x.permohonan_kabel_id AS id, x.permohonan_ruas_id, x.jumlah, x.kategori, x.panjang, x.keterangan,
             ST_AsGeoJSON(x.SHAPE) AS geojson, mr.nm_ruas
        FROM permohonan_kabel x
        JOIN permohonan_ruas r ON r.permohonan_ruas_id = x.permohonan_ruas_id AND r.deletedAt IS NULL
@@ -286,10 +342,19 @@ async function getDigitasi(permohonan_id, permohonan_ruas_id) {
       WHERE x.permohonan_id = ? AND x.deletedAt IS NULL` + filter + ` ORDER BY x.permohonan_titik_id`,
     val
   );
-  [tiang, kabel, titik].forEach(function (list) {
+  var [akses] = await sql_enak.raw(
+    `SELECT x.permohonan_akses_id AS id, x.permohonan_ruas_id, x.jumlah, x.kategori, x.luas, x.keterangan,
+            ST_AsGeoJSON(x.SHAPE) AS geojson, mr.nm_ruas
+       FROM permohonan_akses x
+       JOIN permohonan_ruas r ON r.permohonan_ruas_id = x.permohonan_ruas_id AND r.deletedAt IS NULL
+       LEFT JOIN master_retribusi mr ON mr.id = r.ruas_id
+      WHERE x.permohonan_id = ? AND x.deletedAt IS NULL` + filter + ` ORDER BY x.permohonan_akses_id`,
+    val
+  );
+  [tiang, kabel, titik, akses].forEach(function (list) {
     list.forEach(function (f) { if (typeof f.geojson === 'string') f.geojson = JSON.parse(f.geojson); });
   });
-  return { tiang: tiang, kabel: kabel, titik: titik };
+  return { tiang: tiang, kabel: kabel, titik: titik, akses: akses };
 }
 
 // Jumlah fitur digitasi satu ruas (kabel baru boleh didigitasi setelah ada tiang)
@@ -305,7 +370,7 @@ async function hitungDigitasi(permohonan_ruas_id) {
 // Kolom master_retribusi yang disalin ke permohonan_ruas agar data ruas saat permohonan tetap utuh walau master berubah
 // (tarif t_k30cm & jr_atk15cm disimpan sebagai tarif_tiang & tarif_kabel)
 var KOLOM_SALINAN_RUAS = ['no', 'nm_ruas', 'tk_ruas_aw', 'tk_ruas_ak', 'lbr_keras', 'panjang', 'id_kec', 'id_kel']
-  .concat(KOMPONEN_RETRIBUSI.filter(function (k) { return k.tarif === k.kode; }).map(function (k) { return k.kode; }));
+  .concat(KOMPONEN_SEMUA.filter(function (k) { return k.tarif === k.kode; }).map(function (k) { return k.kode; }));
 
 async function salinDataRuas(permohonan_ruas_id) {
   await sql_enak.raw(
@@ -323,24 +388,33 @@ async function sinkronTotalRuas(permohonan_ruas_id) {
     `UPDATE permohonan_ruas r
         SET r.jumlah_tiang = (SELECT IFNULL(SUM(jumlah), 0) FROM permohonan_tiang
                                WHERE permohonan_ruas_id = r.permohonan_ruas_id AND deletedAt IS NULL),
-            r.panjang_kabel = (SELECT IFNULL(SUM(ROUND(panjang) * jumlah), 0) FROM permohonan_kabel
-                                WHERE permohonan_ruas_id = r.permohonan_ruas_id AND deletedAt IS NULL),
+            -- titik reklame / titik akses (satu ruas hanya punya salah satunya)
             r.jumlah_titik = (SELECT IFNULL(SUM(jumlah), 0) FROM permohonan_titik
+                               WHERE permohonan_ruas_id = r.permohonan_ruas_id AND deletedAt IS NULL)
+                           + (SELECT COUNT(*) FROM permohonan_akses
                                WHERE permohonan_ruas_id = r.permohonan_ruas_id AND deletedAt IS NULL),
             r.lastUpdateAt = NOW()
       WHERE r.permohonan_ruas_id = ?`,
     [permohonan_ruas_id]
   );
-  await sinkronTiangRetribusi(permohonan_ruas_id);
+  await sinkronKomponenDigitasi(permohonan_ruas_id);
 }
 
-// Jumlah tiang retribusi (D <= 30 cm + D > 30 cm) mengikuti tiang hasil digitasi.
-// Tiang D > 30 cm tetap isian manual, sisanya dihitung sebagai D <= 30 cm. Tanpa digitasi, isian manual dibiarkan.
-async function sinkronTiangRetribusi(permohonan_ruas_id) {
+// Jumlah tiap komponen retribusi mengikuti kategori hasil digitasi: tiang (unit) per kategori t_*,
+// kabel (meter = panjang bulat x jumlah) per kategori jr_*. Ruas tanpa digitasi tiang / kabel tetap memakai isian manual.
+async function sinkronKomponenDigitasi(permohonan_ruas_id) {
+  var set = [];
+  Object.keys(KATEGORI_DIGITASI).forEach(function (jenis) {
+    var cfg = KATEGORI_DIGITASI[jenis];
+    var nilai = cfg.nilai;
+    var ada = `EXISTS (SELECT 1 FROM ${cfg.tabel} WHERE permohonan_ruas_id = r.permohonan_ruas_id AND deletedAt IS NULL)`;
+    cfg.daftar.forEach(function (k) {
+      set.push(`r.${k.jumlah} = IF(${ada}, (SELECT IFNULL(SUM(${nilai}), 0) FROM ${cfg.tabel}
+                 WHERE permohonan_ruas_id = r.permohonan_ruas_id AND deletedAt IS NULL AND kategori = '${k.kode}'), r.${k.jumlah})`);
+    });
+  });
   await sql_enak.raw(
-    `UPDATE permohonan_ruas
-        SET jml_t_k30cm = GREATEST(jumlah_tiang - IFNULL(jml_t_l30cm, 0), 0), lastUpdateAt = NOW()
-      WHERE permohonan_ruas_id = ? AND jumlah_tiang > 0`,
+    `UPDATE permohonan_ruas r SET ${set.join(',\n        ')}, r.lastUpdateAt = NOW() WHERE r.permohonan_ruas_id = ?`,
     [permohonan_ruas_id]
   );
 }
@@ -348,14 +422,15 @@ async function sinkronTiangRetribusi(permohonan_ruas_id) {
 // Salin digitasi permohonan yang disetujui ke data utama `tiang` & `kabel`.
 // Salinan lama permohonan ini dihapus dulu agar persetujuan ulang tidak dobel.
 // Format kolom mengikuti data survey: kode_ruas = master_retribusi.no,
-// t_k30cm / jr_atk15cm berisi penanda kelas tarif, kd_kec/kd_kel dari poligon kelurahan.
+// kolom kategori (t_k30cm / t_l30cm, jr_btk15cm / jr_btl15cm / jr_atk15cm / jr_atl15cm) berisi kodenya sendiri
+// sesuai kategori digitasi (lainnya NULL), kd_kec/kd_kel dari poligon kelurahan.
 // Digitasi permohonan tersimpan SRID 0, sedangkan tiang/kabel/kelurahan SRID 1 -> dikonversi saat disalin.
 // Salin tiang permohonan ke tabel `tiang`; dipakai saat persetujuan & sinkron manual (tambah filter AND ...)
 var SQL_SALIN_TIANG = `
-  INSERT INTO tiang (SHAPE, kode_ruas, kode_gps, jumlah_tia, provider, t_k30cm, ciri_tiang, surveyor,
+  INSERT INTO tiang (SHAPE, kode_ruas, kode_gps, jumlah_tia, provider, t_k30cm, t_l30cm, ciri_tiang, surveyor,
                      kd_kec, kd_kel, provider_id, insertedAt, lastUpdateAt, permohonan_id, permohonan_tiang_id)
   SELECT ST_GeomFromWKB(ST_AsWKB(pt.SHAPE), 1), mr.no, CONCAT('IZIN-', p.permohonan_id, '-', pt.permohonan_tiang_id), pt.jumlah, pr.provider,
-         't_k30cm', pt.keterangan, u.fullname,
+         IF(pt.kategori = 't_k30cm', 't_k30cm', NULL), IF(pt.kategori = 't_l30cm', 't_l30cm', NULL), pt.keterangan, u.fullname,
          (SELECT kl.kec_id FROM kelurahan kl WHERE ST_Contains(kl.SHAPE, ST_GeomFromWKB(ST_AsWKB(pt.SHAPE), 1)) LIMIT 1),
          (SELECT kl.kel_id FROM kelurahan kl WHERE ST_Contains(kl.SHAPE, ST_GeomFromWKB(ST_AsWKB(pt.SHAPE), 1)) LIMIT 1),
          p.provider_id, NOW(), NOW(), p.permohonan_id, pt.permohonan_tiang_id
@@ -421,12 +496,16 @@ async function salinKeDataUtama(permohonan_id) {
   await hapusDariDataUtama(permohonan_id);
   var [tiang] = await sql_enak.raw(SQL_SALIN_TIANG + ` AND pt.permohonan_id = ?`, [permohonan_id]);
   var [kabel] = await sql_enak.raw(
-    `INSERT INTO kabel (SHAPE, kode_ruas, kode_gps_p, kode_gps_u, provider, ciri_kabel, jumlah, jr_atk15cm, surveyor, panjang,
+    `INSERT INTO kabel (SHAPE, kode_ruas, kode_gps_p, kode_gps_u, provider, ciri_kabel, jumlah,
+                        jr_btk15cm, jr_btl15cm, jr_atk15cm, jr_atl15cm, surveyor, panjang,
                         kd_kec, kd_kel, provider_id, insertedAt, lastUpdateAt, permohonan_id, permohonan_kabel_id)
      SELECT ST_GeomFromWKB(ST_AsWKB(pk.SHAPE), 1), mr.no,
             CONCAT('IZIN-', p.permohonan_id, '-', pk.permohonan_kabel_id, '-A'),
             CONCAT('IZIN-', p.permohonan_id, '-', pk.permohonan_kabel_id, '-B'),
-            pr.provider, pk.keterangan, pk.jumlah, 'jr_atk15cm', u.fullname, pk.panjang,
+            pr.provider, pk.keterangan, pk.jumlah,
+            IF(pk.kategori = 'jr_btk15cm', 'jr_btk15cm', NULL), IF(pk.kategori = 'jr_btl15cm', 'jr_btl15cm', NULL),
+            IF(pk.kategori = 'jr_atk15cm', 'jr_atk15cm', NULL), IF(pk.kategori = 'jr_atl15cm', 'jr_atl15cm', NULL),
+            u.fullname, pk.panjang,
             (SELECT kl.kec_id FROM kelurahan kl WHERE ST_Contains(kl.SHAPE, ST_StartPoint(ST_GeomFromWKB(ST_AsWKB(pk.SHAPE), 1))) LIMIT 1),
             (SELECT kl.kel_id FROM kelurahan kl WHERE ST_Contains(kl.SHAPE, ST_StartPoint(ST_GeomFromWKB(ST_AsWKB(pk.SHAPE), 1))) LIMIT 1),
             IFNULL(p.provider_id, 0), NOW(), NOW(), p.permohonan_id, pk.permohonan_kabel_id
@@ -481,15 +560,15 @@ function terbilang(n) {
 async function getDataSk(permohonan) {
   var detail = await getDetail(permohonan);
   var total = { tiang: 0, kabel: 0, titik: 0, retribusi_tiang: 0, retribusi_kabel: 0, retribusi: 0, komponen: {} };
-  KOMPONEN_RETRIBUSI.forEach(function (k) { total.komponen[k.kode] = { jumlah: 0, retribusi: 0 }; });
+  KOMPONEN_SEMUA.forEach(function (k) { total.komponen[k.kode] = { jumlah: 0, retribusi: 0 }; });
   detail.ruas.forEach(function (r) {
     total.titik += Number(r.jumlah_titik || 0);
-    KOMPONEN_RETRIBUSI.forEach(function (k) {
+    KOMPONEN_SEMUA.forEach(function (k) {
       total.komponen[k.kode].jumlah += Number(r[k.jumlah] || 0);
       total.komponen[k.kode].retribusi += Number(r['retribusi_' + k.kode] || 0);
     });
     total.tiang += Number(r.jml_t_k30cm);
-    total.kabel += Number(r.panjang_kabel);
+    total.kabel += Number(r.total_kabel || 0);
     total.retribusi_tiang += Number(r.retribusi_tiang);
     total.retribusi_kabel += Number(r.retribusi_kabel);
     total.retribusi += Number(r.retribusi_total);
@@ -591,7 +670,7 @@ function buatExcelReklame(data) {
 async function buatExcel(data) {
   if (data.jenis && data.jenis.kode === 'reklame') return buatExcelReklame(data);
   var p = data.permohonan;
-  var K = KOMPONEN_RETRIBUSI;
+  var K = data.jenis ? data.jenis.komponen : KOMPONEN_RETRIBUSI;
   var nKolom = 6 + K.length * 3 + 1;           // No..Panjang, 3 kolom per komponen, total
   function huruf(n) { var h = ''; while (n > 0) { var m = (n - 1) % 26; h = String.fromCharCode(65 + m) + h; n = (n - m - 1) / 26; } return h; }
   function kolKomponen(i, j) { return huruf(7 + i * 3 + j); }   // j: 0 jumlah, 1 nilai retribusi, 2 total
@@ -604,7 +683,7 @@ async function buatExcel(data) {
     .map(function (w) { return { width: w }; });
 
   ws.mergeCells('A1:' + AKHIR + '1');
-  ws.getCell('A1').value = 'Rincian Permohonan Izin Jaringan Utilitas';
+  ws.getCell('A1').value = 'Rincian Permohonan Izin ' + (data.jenis ? data.jenis.label : 'Jaringan Utilitas');
   ws.getCell('A1').font = { bold: true, size: 14 };
   [
     ['Vendor', (p.vendor && (p.vendor.fullname || p.vendor.username)) || '-'],
@@ -751,10 +830,13 @@ module.exports = {
   getDigitasi: getDigitasi,
   hitungDigitasi: hitungDigitasi,
   sinkronTotalRuas: sinkronTotalRuas,
-  sinkronTiangRetribusi: sinkronTiangRetribusi,
+  sinkronKomponenDigitasi: sinkronKomponenDigitasi,
+  kategoriDigitasi: kategoriDigitasi,
+  kategoriValid: kategoriValid,
   salinDataRuas: salinDataRuas,
   KOLOM_SALINAN_RUAS: KOLOM_SALINAN_RUAS,
   KOMPONEN_RETRIBUSI: KOMPONEN_RETRIBUSI,
+  KOMPONEN_AKSES: KOMPONEN_AKSES,
   salinKeDataUtama: salinKeDataUtama,
   daftarSinkronTiang: daftarSinkronTiang,
   tiangDalamArea: tiangDalamArea,

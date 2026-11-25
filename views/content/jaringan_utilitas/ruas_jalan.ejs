@@ -671,8 +671,10 @@
                                             <div class="w-100-flex" style="justify-content: flex-start;flex-wrap: wrap;align-items: flex-start;margin-bottom: 15px;">
                                                 <button type="button" class="btn btn-gradient-yellow btn-sm" onclick="tambahBaris()"><i class="fas fa-plus"></i> &nbsp;&nbsp;Tambah Baris Tabel</button>
                                             </div>
-                                            <% if (jenis_izin.pakai_retribusi) { %>
-                                            <small class="text-muted"><i>Ruas jalan yang dikosongkan dianggap <b>di luar ruas</b>. Panjang kabel (Atas Tanah D &le; 15 cm) otomatis mengikuti hasil digitasi jika sudah didigitasi.</i></small>
+                                            <% if (jenis_izin.kode === 'pembukaan_jalan') { %>
+                                            <small class="text-muted"><i>Ruas jalan yang dikosongkan dianggap <b>di luar ruas</b>. Luas tiap kategori akses (M&sup2;) otomatis mengikuti hasil digitasi titik akses jika ruas sudah didigitasi; retribusi = luas &times; tarif kategori ruas.</i></small>
+                                            <% } else if (jenis_izin.pakai_retribusi) { %>
+                                            <small class="text-muted"><i>Ruas jalan yang dikosongkan dianggap <b>di luar ruas</b>. Jumlah tiang &amp; panjang kabel tiap kategori otomatis mengikuti hasil digitasi (kategori dipilih saat digitasi) jika ruas sudah didigitasi.</i></small>
                                             <% } else { %>
                                             <small class="text-muted"><i>Ruas jalan yang dikosongkan dianggap <b>di luar ruas</b>. Simpan baris ruas, lalu klik tombol <i class="fas fa-map-pin"></i> untuk menandai titik reklame di peta; jumlah titik mengikuti hasil digitasi.</i></small>
                                             <% } %>
@@ -792,7 +794,7 @@
                                         <hr>
 
                                         <div class="form-group">
-                                            <label for="pernyataan_kesanggupan">Surat Pernyataan kesanggupan memenuhi dan mematuhi semua persyaratan yang ditentukan dalam pembangunan/penempatan <%= jenis_izin.kode === 'reklame' ? 'reklame' : 'bangunan dan jaringan utilitas' %>.</label>
+                                            <label for="pernyataan_kesanggupan">Surat Pernyataan kesanggupan memenuhi dan mematuhi semua persyaratan yang ditentukan dalam pembangunan/penempatan <%= jenis_izin.kode === 'jaringan_utilitas' ? 'bangunan dan jaringan utilitas' : jenis_izin.objek %>.</label>
                                             <div class="custom-file">
                                                 <input type="file" class="custom-file-input" id="pernyataan_kesanggupan" name="pernyataan_kesanggupan" accept=".pdf,.jpg,.jpeg,.png">
                                                 <label class="custom-file-label" for="pernyataan_kesanggupan">Pilih File</label>
@@ -844,7 +846,7 @@
                                                 <input type="file" class="custom-file-input" id="rencana_teknis" name="rencana_teknis" accept=".pdf,.jpg,.jpeg,.png">
                                                 <label class="custom-file-label" for="rencana_teknis">Pilih File</label>
                                             </div>
-                                            <small class="form-text text-muted"><i>Gambar Konstruksi dan bahan Konstruksi <%= jenis_izin.kode === 'reklame' ? 'reklame' : 'bangunan dan jaringan utilitas' %></i></small>
+                                            <small class="form-text text-muted"><i>Gambar Konstruksi dan bahan Konstruksi <%= jenis_izin.kode === 'jaringan_utilitas' ? 'bangunan dan jaringan utilitas' : jenis_izin.objek %></i></small>
                                             <small class="form-text dok-info" data-jenis="rencana_teknis"></small>
                                         </div>
 
@@ -908,7 +910,8 @@
         var TOMBOL_DIGITASI = {
             tiang: '<button type="button" class="btn btn-info btn-digitasi" data-jenis="tiang" title="Digitasi Tiang"><i class="fas fa-map-pin"></i></button>',
             kabel: '<button type="button" class="btn btn-dark btn-digitasi" data-jenis="kabel" title="Digitasi Kabel"><i class="fas fa-grip-lines"></i></button>',
-            titik: '<button type="button" class="btn btn-info btn-digitasi" data-jenis="titik" title="Digitasi Titik Reklame"><i class="fas fa-map-pin"></i></button>'
+            titik: '<button type="button" class="btn btn-info btn-digitasi" data-jenis="titik" title="Digitasi Titik Reklame"><i class="fas fa-map-pin"></i></button>',
+            akses: '<button type="button" class="btn btn-info btn-digitasi" data-jenis="akses" title="Digitasi Titik Akses"><i class="fas fa-map-pin"></i></button>'
         };
         var BISA_UBAH = <%= bisa_ubah ? 'true' : 'false' %> && PROVIDER_OK;
         var API = rooturl + '<%= base %>/api/';
@@ -940,7 +943,9 @@
             row = row || {};
             var dis = BISA_UBAH ? '' : 'disabled';
             // Panjang kabel yang sudah didigitasi mengikuti hasil digitasi
-            var digitasi = { panjang_kabel: [row.digitasi_kabel, 'garis'] };
+            // Komponen tiang (Unit) mengikuti digitasi tiang, komponen kabel (Meter) mengikuti digitasi kabel per kategori
+            var digitasi = {};
+            KOMPONEN.forEach(function (k) { digitasi[k.jumlah] = k.satuan === 'Unit' ? [row.digitasi_tiang, 'tiang'] : k.satuan === 'M2' ? [row.digitasi_akses, 'titik'] : [row.digitasi_kabel, 'garis']; });
             // Tiap komponen: jumlah (isian) | nilai retribusi (tarif) | total
             var selKomponen = KOMPONEN.map(function (k) {
                 var d = digitasi[k.jumlah];
